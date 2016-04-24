@@ -1,5 +1,5 @@
 # handyfinder
-A handy finder is file indexing and searching program working on cross platform
+A handy finder is file indexing and searching program working on cross platform (like : http://file-finder.en.informer.com/Offline-Search-Engine/)
 
 # functionality
 - raw string indexing from files on file systems
