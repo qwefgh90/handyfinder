@@ -1,0 +1,87 @@
+.box-style {
+	margin-right: 0;
+	margin-left: 0;
+	background-color: #fff;
+	border-color: #ddd;
+	border-width: 1px;
+	border-radius: 4px 4px 0 0;
+	-webkit-box-shadow: none;
+	box-shadow: none
+}
+[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+	display: none !important;
+}
+
+/* less
+ @brand-primary: darken(#428bca, 6.5%);
+ @link-color:       @brand-primary;
+ @link-hover-color: darken(@link-color, 15%);
+
+ a {
+ color: @link-color;
+ text-decoration: none;
+ }
+ a:hover {
+ color: @link-hover-color;
+ text-decoration: underline;
+ }
+ }*/
+
+/*#337ab7*/
+/* Usage */
+
+a {
+	color: #337ab7;
+	text-decoration: none;
+}
+a:hover {
+	color: #23527c;
+	text-decoration: none;
+}
+
+.top-header {
+	font-size: 18px;
+	margin-bottom: 30px;
+	padding-bottom: 10px;
+	padding-top: 10px;
+}
+
+.header-layout {
+	padding-top: 1em;
+}
+.content-layout {
+	padding-top: 1em;
+}
+.common-layout {
+	/*padding-left: 5em;*/
+}
+
+.content-wrapper {
+	/*margin-top: 1em;*/
+	background-color: #f7f7f9;
+	border: 1px solid #e1e1e8;
+	border-radius: 4px;
+}
+
+.content-wrapper-outer {
+	padding-top: 0.5em;
+}
+
+/* paragraph */
+.title {
+	font-size: 30px;
+}
+a.title {
+	color: #777;
+	text-decoration: none;
+}
+a.title:hover {
+	color: #5f64c1;
+	text-decoration: none;
+}
+
+.url {
+
+}
+.description {
+}
