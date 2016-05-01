@@ -13,15 +13,26 @@
 
 		<div class="common-layout header-layout container" >
 
-			<div class="row">
-				<div class="text-center col-xs-12">
+			<div class="row" style="">
+				<div class="text-left col-xs-12">
 					<div class="container-fluid">
 						<div class="row">
-							<div class="col-xs-12  top-header">
-								<a href="#top" role="button" class="h2 title"> HandyFinder </a>
+							<div class="col-xs-9  top-header">
+								<a href="" role="button" class="h2 title"> HandyFinder 
+								<span class="glyphicon glyphicon-search"></span></a>
+
+							</div>
+							<div class="text-right col-xs-3">
+								<button type="button" class="btn btn-default" aria-label="Left Align" uib-popover="Add Index on Files" popover-trigger="mouseenter" popover-placement="bottom">
+									<span class="glyphicon glyphicon-plus"></span>
+								</button>
+								<button type="button" class="btn btn-default" aria-label="Left Align" uib-popover="Setting" popover-trigger="mouseenter"  popover-placement="bottom">
+									<span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+								</button>
 							</div>
 						</div>
 					</div>
+
 				</div>
 			</div>
 			<div class="row">
@@ -35,14 +46,6 @@
 										<input class="btn btn-default searchbt " type="submit" value="Search" ng-click="controller.go()">
 									</span>
 								</div>
-							</div>
-							<div class="text-right col-xs-3">
-								<button type="button" class="btn btn-default" aria-label="Left Align" uib-popover="Add Index on Files" popover-trigger="mouseenter" popover-placement="bottom">
-									<span class="glyphicon glyphicon-plus"></span>
-								</button>
-								<button type="button" class="btn btn-default" aria-label="Left Align" uib-popover="Setting" popover-trigger="mouseenter"  popover-placement="bottom">
-									<span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
-								</button>
 							</div>
 						</div>
 					</div>
