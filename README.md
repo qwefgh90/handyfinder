@@ -1,37 +1,19 @@
-javafxwebview
-=============
+# handyfinder
+A handy finder is search program for document indexing and searching on multiple platforms (like : http://file-finder.en.informer.com/Offline-Search-Engine/)
 
-A demonstration of how to create next-gen Java desktop applications with [AngularJS](https://www.angularjs.org) and [Bootstrap](http://getbootstrap.com), by means of the JavaFX WebView component.
+# feature
+- a application is designed with Angularjs 1.5.5, bootstrap 3.3.6, angular-ui-bootstrap 1.3.2, javafx webview
+- frontend is SPA (Single Page Application)
+- backend is Restful API with embedded tomcat
+- only local ip binding (127.0.0.1) with internal auth token
+- a lucene is used for indexing & search
+- JSearch is used for body text of document
 
-Requisites
-==========
-1. Download and install Java 8.
-2. Install [Apache Maven](http://maven.apache.org).
+# functionality
+- raw string indexing from files on file systems
+- after full indexing, update indexing when required
+- file's meta data show (modified timestamp, filename, path, size)
+- opening dir and logging search result and so on...
+- only utf-8
 
-
-Download, compile and run
-=========================
-* Clone this repository (or download directly from github)
-```
-git clone https://github.com/lipido/javafxwebview.git
-```
-* Compile and run
-```
-cd javafxwebview
-mvn package
-cd target
-java -jar javafx-webview-demo-0.0.1-SNAPSHOT.jar
-```
-
-Warning: Windows Users
--------------
-There is a bug since Java 8 update 60 in Windows (http://hg.openjdk.java.net/openjfx/9-dev/rt/rev/d4f8c9496683),
-where WebView is unable to load resources of the webpage if the project is delivered inside a JAR file.
-The workaround is to run the project in this way:
-```
-cd javafxwebview
-mvn package
-cd target
-java -cp classes;dependency-jars\json-simple-1.1.1.jar
-es.uvigo.ei.sing.webviewdemo.WebViewDemo
-```
+>>>>>>> 2a8117a9305db32faf07a59948333019c4612d3e
