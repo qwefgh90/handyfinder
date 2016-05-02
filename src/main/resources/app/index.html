@@ -12,133 +12,32 @@
 	<body ng-controller="mainApplicationController">
 
 		<div class="common-layout header-layout container" >
-
-			<div class="row" style="">
-				<div class="text-left col-xs-12">
-					<div class="container-fluid">
-						<div class="row">
-							<div class="col-xs-9  top-header">
-								<a href="" role="button" class="h2 title"> HandyFinder 
-								<span class="glyphicon glyphicon-search"></span></a>
-
-							</div>
-							<div class="text-right col-xs-3">
-								<button type="button" class="btn btn-default" aria-label="Left Align" uib-popover="Add Index on Files" popover-trigger="mouseenter" popover-placement="bottom">
-									<span class="glyphicon glyphicon-plus"></span>
-								</button>
-								<button type="button" class="btn btn-default" aria-label="Left Align" uib-popover="Setting" popover-trigger="mouseenter"  popover-placement="bottom">
-									<span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
-								</button>
-							</div>
-						</div>
-					</div>
-
+			<!-- app title  -->
+			<div class="row text-left " style="">
+				<div class="col-xs-9 top-header">
+					<a href="/app/index.html" role="button" class="h2 title" style="padding-left: 10px"> HandyFinder <span class="glyphicon glyphicon-search"></span></a>
+					<span href="" class="h4" style="color: #347AA7"> {{path}} </span>
 				</div>
-			</div>
-			<div class="row">
-				<div class="col-xs-12">
-					<div class="container-fluid">
-						<div class="row">
-							<div class="col-xs-9">
-								<div class="input-group">
-									<input class="form-control" type="search" focus-me="false" placeholder="EX) Java programming" ng-model="controller.searchString">
-									<span class="input-group-btn">
-										<input class="btn btn-default searchbt " type="submit" value="Search" ng-click="controller.go()">
-									</span>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<div class="common-layout content-layout container" >
-				<div class="row">
-					<div class="col-xs-12">
-						<div class="container-fluid">
-							<label>102434 found, accuracy order</label>
-							<button type="button" class="btn btn-default btn-sm" aria-label="Left Align" uib-popover="Setting" popover-trigger="mouseenter"  popover-placement="bottom">
-								<span class="glyphicon glyphicon-save" style="font-weight: 600" aria-hidden="true">Download</span>
-							</button>
-						</div>
-					</div>
-				</div>
-				<div class="row">
-					<div class="col-xs-12 content-wrapper-outer">
-						<div class="content-wrapper container-fluid">
-							<span class="col-xs-12" style="padding-left:0px;"><a class="title" href="object.downloadlink">object.title</a></span>
-							<span class="col-xs-12" style="padding-left:0px;"> <a class="url text-warning" style="padding-left: 0px;" target="_blank" href="file:///home/choechangwon/다운로드/glyphicons_free/glyphicons/png/glyphicons-11-envelope.png">/home/</a>
-								<button class="btn-default btn btn-xs">
-									open folder
-								</button> </span>
-							<div class="col-xs-12 description " style="padding-left:0px;">
-								<small>object.date | date:'yyyy-MM-dd HH:mm:ss'</small>
-								<p style="max-height:5.1em;line-height:2em">
-									<label class="control-label">자바(200)</label>
-									<label class="control-label">C언어(20)</label>
-									<label class="control-label">언어(10)</label>
-									<label class="control-label">데이터베이스(5)</label>
-									<label class="control-label">java(3)</label>
-									<label class="ccontrol-label">static(1)</label>
-									<label class="control-label">int(1)</label>
-									<label class="control-label">클래스(1)</label>
-									<label class="control-label">비용(1)</label>
-								</p>
-							</div>
-						</div>
-
-						<div class="content-wrapper container-fluid ">
-							<span class="col-xs-12 title" style="padding-left:0px;"><a href="object.downloadlink">object.title</a></span>
-							<span class="col-xs-12" style="padding-left:0px;"> <a class="url text-warning" style="padding-left: 0px;" target="_blank" href="file:///home/choechangwon/다운로드/glyphicons_free/glyphicons/png/glyphicons-11-envelope.png">/home/</a>
-								<button class="btn-default btn  btn-xs">
-									open folder
-								</button> </span>
-							<div class="col-xs-12 description " style="padding-left:0px;">
-								<small>object.date | date:'yyyy-MM-dd HH:mm:ss'</small>
-								<p style="max-height:5.1em;line-height:2em">
-									<label class="control-label">자바(200)</label>
-									<label class="control-label">C언어(20)</label>
-									<label class="control-label">언어(10)</label>
-									<label class="control-label">데이터베이스(5)</label>
-									<label class="control-label">java(3)</label>
-									<label class="ccontrol-label">static(1)</label>
-									<label class="control-label">int(1)</label>
-									<label class="control-label">클래스(1)</label>
-									<label class="control-label">비용(1)</label>
-								</p>
-							</div>
-						</div>
-						<div class="content-wrapper container-fluid ">
-							<span class="col-xs-12 title" style="padding-left:0px;"><a href="object.downloadlink">object.title</a></span>
-							<span class="col-xs-12" style="padding-left:0px;"> <a class="url text-warning" style="padding-left: 0px;" target="_blank" href="file:///home/choechangwon/다운로드/glyphicons_free/glyphicons/png/glyphicons-11-envelope.png">/home/</a>
-								<button class="btn-default btn  btn-xs">
-									open folder
-								</button> </span>
-							<div class="col-xs-12 description " style="padding-left:0px;">
-								<small>object.date | date:'yyyy-MM-dd HH:mm:ss'</small>
-								<p style="max-height:5.1em;line-height:2em">
-									<label class="control-label">자바(200)</label>
-									<label class="control-label">C언어(20)</label>
-									<label class="control-label">언어(10)</label>
-									<label class="control-label">데이터베이스(5)</label>
-									<label class="control-label">java(3)</label>
-									<label class="ccontrol-label">static(1)</label>
-									<label class="control-label">int(1)</label>
-									<label class="control-label">클래스(1)</label>
-									<label class="control-label">비용(1)</label>
-								</p>
-							</div>
-						</div>
-					</div>
+				<div class="text-right col-xs-3">
+					<button ng-click="go('/search')" type="button" ng-style="{ 'background-color': path.toLowerCase().indexOf('search') > -1 && false ? '#549AD7' : '' }" class="btn btn-default" aria-label="Left Align" uib-popover="Search" popover-trigger="mouseenter"  popover-placement="bottom">
+						<span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+					</button>
+					<button ng-click="go('/index')" type="button" ng-style="{ 'background-color': path.toLowerCase().indexOf('index') > -1 && false ? '#549AD7' : '' }" class="btn btn-default" aria-label="Left Align" uib-popover="Add Index on Files" popover-trigger="mouseenter" popover-placement="bottom">
+						<span class="glyphicon glyphicon-plus"></span>
+					</button>
+					<button ng-click="go('/setting')" type="button" ng-style="{ 'background-color': path.toLowerCase().indexOf('setting') > -1 && false ? '#549AD7' : ''}" class="btn btn-default" aria-label="Left Align" uib-popover="Setting" popover-trigger="mouseenter"  popover-placement="bottom">
+						<span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+					</button>
 				</div>
 			</div>
 		</div>
-
-		<a href="index.html">Reload page</a>
+		
+     <ng-view></ng-view>
 
 	</body>
 
 	<script src="bower_components/angular/angular.min.js"></script>
+	<script src="bower_components/angular-route/angular-route.min.js"></script>
 	<script src="bower_components/angular-animate/angular-animate.min.js"></script>
 	<script src="bower_components/jquery/dist/jquery.min.js"></script>
 	<script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
