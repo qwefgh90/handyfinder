@@ -8,12 +8,15 @@ A handy finder is search program for document indexing and searching on multiple
 - only local ip binding (127.0.0.1) with internal auth token
 - a lucene is used for indexing & search
 - JSearch is used for body text of document
+- only utf-8
 
 # functionality
 - raw string indexing from files on file systems
-- after full indexing, update indexing when required
+- after full indexing, update indexing when required or on scheduled time
 - file's meta data show (modified timestamp, filename, path, size)
 - opening dir and logging search result and so on...
-- only utf-8
+- management of index based on directory to be indexed recursively and extension filtering
 
->>>>>>> 2a8117a9305db32faf07a59948333019c4612d3e
+# plan
+- archive search (zip, tar.gz)
+- open document file
