@@ -15,5 +15,5 @@ A handy finder is search program for document indexing and searching on multiple
 - file's meta data show (modified timestamp, filename, path, size)
 - opening dir and logging search result and so on...
 - only utf-8
-- management of directory to be indexed and extension filtering manager
+- management of directory to be indexed and extension filtering
 - archive search
