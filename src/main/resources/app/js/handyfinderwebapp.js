@@ -1,4 +1,4 @@
-var app = angular.module('handyfinderwebapp', ['ngRoute', 'ngAnimate', 'ui.bootstrap', 'apiServiceApp']);
+var app = angular.module('handyfinderwebapp', ['ngRoute', 'ngAnimate', 'ui.bootstrap', 'apiServiceApp', 'ngContextMenu', 'indexModelApp']);
 
 app.config(function($routeProvider) {
 	//Module의 config API를 사용하면 서비스 제공자provider에 접근할 수 있다. 여기선 $route 서비스 제공자를 인자로 받아온다.
@@ -35,38 +35,29 @@ app.controller('searchController', ['$location', '$scope', 'apiService',
 function($location, $scope, apiService) {
 	$scope.tempvar2 = 1;
 }]);
-app.controller('indexController', ['$location', '$scope', 'apiService',
-function($location, $scope, apiService) {
-	$scope.oneAtATime = false;
 
-	$scope.groups = [{
-		title : 'Dynamic Group Header - 1',
-		content : 'Dynamic Group Body - 1'
-	}, {
-		title : 'Dynamic Group Header - 2',
-		content : 'Dynamic Group Body - 2'
-	}];
-
-	$scope.items = ['Item 1', 'Item 2', 'Item 3'];
-
-	$scope.addItem = function() {
-		var newItemNo = $scope.items.length + 1;
-		$scope.items.push('Item ' + newItemNo);
-	};
-	
+app.controller('indexController', ['$location', '$scope', 'apiService', 'Path',
+function($location, $scope, apiService, Path) {
+	$scope.pathList = [];
+	var path1 = Path.createInstance('c:/windows');
+	var path2 = Path.createInstance('c:/document');
+	$scope.pathList.push(path1);
+	$scope.pathList.push(path2);
+	$scope.temp = 0;
 	$scope.status = {
-		isFirstOpen : true,
-		isFirstDisabled : false,
-		open: true
+		open : true
 	};
-	$scope.status2 = {
-		isFirstOpen : true,
-		isFirstDisabled : false,
-		open: true
+
+	$scope.edit = function() {
+		$scope.temp =  guiService.sum(1,123);
+		alert(guiService.openDialogAndSelectDirectory());
 	};
+	$scope.delete = function() {
+		alert('delete');
+	}
 }]);
+
 app.controller('settingController', ['$location', '$scope', 'apiService',
 function($location, $scope, apiService) {
 	$scope.tempvar = 1;
 }]);
-

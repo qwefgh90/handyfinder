@@ -8,28 +8,24 @@
 						Path Manager <i class="pull-right glyphicon" ng-class="{'glyphicon-chevron-down': status.open, 'glyphicon-chevron-right': !status.open}"></i>
 					</uib-accordion-heading>
 					<div class="list-group" style="margin-bottom: 10px">
-						<a href="" class="list-group-item disabled"> Cras justo odio </a>
-						<a href="" class="list-group-item">Dapibus ac facilisis in</a>
-						<a href="" class="list-group-item">Morbi leo risus</a>
-						<a href="" class="list-group-item">Porta ac consectetur ac</a>
-						<a href="" class="list-group-item">Vestibulum at eros</a>
-					</div>
-					<div style="text-align:right">
-						<button type="button" ng-click="" class="btn btn-default btn-sm" aria-label="Left Align">
-							<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-						</button>
-						<button type="button" class="btn btn-default btn-sm" aria-label="Left Align">
-							<span class="glyphicon glyphicon-minus" aria-hidden="true"></span>
+
+						<a data-context-menu="views/context-menu/index-contextmenu.html" href class="list-group-item" ng-repeat="path in pathList">{{path.path}}</a>
+
+						<button type="button" class="list-group-item btn btn-default" style="text-align:center" aria-label="Left Align">
+							<span class="glyphicon glyphicon-plus" aria-hidden="true"></span> ADD DIRECTORY
 						</button>
 					</div>
-				</uib-accordion-group>
-				<uib-accordion-group is-open="status2.open">
-					<uib-accordion-heading>
-						Extensions <i class="pull-right glyphicon" ng-class="{'glyphicon-chevron-down': status2.open, 'glyphicon-chevron-right': !status2.open}"></i>
-					</uib-accordion-heading>
-					This is just some content to illustrate fancy headings.
-				</uib-accordion-group>
 			</uib-accordion>
+					{{temp}}
+			<span uib-dropdown on-toggle=""> <a href id="simple-dropdown" uib-dropdown-toggle> Click me for a dropdown, yo! </a>
+				<ul class="dropdown-menu" uib-dropdown-menu aria-labelledby="simple-dropdown">
+					<li>
+						<a href>i1</a>
+						<a href>i2</a>
+						<a href>i3</a>
+						<a href>i4</a>
+					</li>
+				</ul> </span>
 
 		</div>
 	</div>
