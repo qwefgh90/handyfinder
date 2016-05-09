@@ -36,8 +36,8 @@ function($location, $scope, apiService) {
 	$scope.tempvar2 = 1;
 }]);
 
-app.controller('indexController', ['$location', '$scope', 'apiService', 'Path',
-function($location, $scope, apiService, Path) {
+app.controller('indexController', ['$timeout','$location', '$scope', 'apiService', 'Path',
+function($timeout, $location, $scope, apiService, Path) {
 	$scope.pathList = [];
 	var promise = apiService.getDirectories();
 	promise.then(function(msg) {
@@ -137,10 +137,12 @@ function($location, $scope, apiService, Path) {
 	};
 
 	$scope.remove = function(path) {
-		var index = $scope.pathList.indexOf(path);
-		if (index > -1) {
-			$scope.pathList.splice(index, 1);
-		}
+		$timeout(function(){
+			var index = $scope.pathList.indexOf(path);
+			if (index > -1) {
+				$scope.pathList.splice(index, 1);
+			}
+		},100);
 	};
 
 }]);

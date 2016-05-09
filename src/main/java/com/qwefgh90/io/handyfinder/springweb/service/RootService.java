@@ -19,7 +19,13 @@ public class RootService {
 		return indexProperty.selectDirectory();
 	}
 
+	/**
+	 * no transaction, no required.
+	 * @param list
+	 * @throws SQLException
+	 */
 	public void updateDirectories(List<Directory> list) throws SQLException {
+		indexProperty.deleteDirectories();
 		indexProperty.save(list);
 	}
 }

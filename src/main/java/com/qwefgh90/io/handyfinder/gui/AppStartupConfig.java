@@ -57,57 +57,6 @@ public class AppStartupConfig extends Application implements Runnable {
 	private final static String TEST_URL = "http://127.0.0.1:8020/app/index.html#/index";
 
 	private static final Log LOG = LogFactory.getLog(AppStartupConfig.class);
-	static {
-	}
-
-	@Override
-	public void start(Stage primaryStage) {
-		createWebView(primaryStage, PAGE);
-	}
-
-	private void createWebView(Stage primaryStage, String page) {
-
-		AppStartupConfig.primaryStage = primaryStage;
-		AppStartupConfig.app = this;
-
-		// create the JavaFX webview
-		final WebView webView = new WebView();
-
-		// show "alert" Javascript messages in stdout (useful to debug)
-		webView.getEngine().setOnAlert(new EventHandler<WebEvent<String>>() {
-			@Override
-			public void handle(WebEvent<String> arg0) {
-				System.err.println("alertwb1: " + arg0.getData());
-			}
-		});
-
-		// load index.html
-		webView.getEngine().load(getClass().getResource(page).toExternalForm());
-		webView.getEngine().documentProperty().addListener(new ChangeListener<Document>() {
-			@Override
-			public void changed(ObservableValue<? extends Document> prop, Document oldDoc, Document newDoc) {
-				connectBackendObject(webView.getEngine(), "guiService", new GUIService(), true);
-			}
-		});
-
-		primaryStage.setScene(new Scene(webView));
-		primaryStage.setTitle("Handy Finder for you");
-		primaryStage.show();
-
-		LOG.info("\nhandyfinder started completely " + "\n" + "Webengine load: "
-				+ getClass().getResource(page).toExternalForm()); // handyfinder
-																	// app data
-	}
-
-	// initize variable
-	public static Path deployedPath;
-	public static Path parentOfClassPath;
-	public static Path pathForAppdata;
-	public static Path tomatLoggingFilePath;
-	public static Path appLoggingFilePath;
-	public static String address;
-	public static int port;
-
 	/**
 	 * this method must be called in main() method
 	 * 
@@ -133,23 +82,59 @@ public class AppStartupConfig extends Application implements Runnable {
 		address = "127.0.0.1";
 		port = findFreePort();
 
-		// Formatter customFormat = new Formatter() {
-		// DateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		//
-		// @Override
-		// public String format(LogRecord record) {
-		// String format = record.getLevel().toString() + " : " +
-		// record.getSourceClassName() + " "
-		// + record.getSourceMethodName() + " (" + formatter.format(new
-		// Date(record.getMillis())) + ") "
-		// + "\n" + "---> " + record.getMessage() + "\n";
-		// return format;
-		// }
-		// };
-
 		LOG.info("\nhandyfinder environment is initialized" + "\n" + "classpath: " + getCurrentBuildPath() + "\n"
 				+ "appdata: " + pathForAppdata.toString());
 	}
+	
+	@Override
+	public void start(Stage primaryStage) {
+		createWebView(primaryStage, PAGE);
+	}
+
+	private void createWebView(Stage primaryStage, String page) {
+
+		AppStartupConfig.primaryStage = primaryStage;
+		AppStartupConfig.app = this;
+
+		// create the JavaFX webview
+		final WebView webView = new WebView();
+
+		// show "alert" Javascript messages in stdout (useful to debug)
+		webView.getEngine().setOnAlert(new EventHandler<WebEvent<String>>() {
+			@Override
+			public void handle(WebEvent<String> arg0) {
+				System.err.println("alertwb1: " + arg0.getData());
+			}
+		});
+
+		// load index.html
+//		webView.getEngine().load(getClass().getResource(page).toExternalForm());
+		webView.getEngine().load(URL);
+		webView.getEngine().documentProperty().addListener(new ChangeListener<Document>() {
+			@Override
+			public void changed(ObservableValue<? extends Document> prop, Document oldDoc, Document newDoc) {
+				connectBackendObject(webView.getEngine(), "guiService", new GUIService(), true);
+			}
+		});
+		
+		primaryStage.setScene(new Scene(webView));
+		primaryStage.setTitle("Your Assistant");
+		primaryStage.show();
+
+		LOG.info("\nhandyfinder started completely " + "\n" + "Webengine load: "
+				+ getClass().getResource(page).toExternalForm()); // handyfinder
+																	// app data
+	}
+
+	// initize variable
+	public static Path deployedPath;
+	public static Path parentOfClassPath;
+	public static Path pathForAppdata;
+	public static Path tomatLoggingFilePath;
+	public static Path appLoggingFilePath;
+	public static String address;
+	public static int port;
+
 
 	public static void main(String[] args)
 			throws LifecycleException, ServletException, IOException, URISyntaxException {

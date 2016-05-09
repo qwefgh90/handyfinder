@@ -118,7 +118,7 @@ public class IndexProperty {
 				conn.close();
 		}
 	}
-
+	
 	public void deleteDirectories() throws SQLException {
 		try (Connection conn = dataSource.getConnection()) {
 			try (Statement stmt = conn.createStatement()) {
