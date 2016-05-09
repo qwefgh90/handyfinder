@@ -7,8 +7,6 @@ import javafx.stage.DirectoryChooser;
 public class GUIService {
 
 	public GUIService() {
-
-		System.out.println("init GUIService");
 	}
 
 	// sync function
@@ -19,7 +17,7 @@ public class GUIService {
 	public String openDialogAndSelectDirectory() {
 		try {
 			final DirectoryChooser directoryChooser = new DirectoryChooser();
-			final File selectedDirectory = directoryChooser.showDialog(AppStartup.primaryStage);
+			final File selectedDirectory = directoryChooser.showDialog(AppStartupConfig.primaryStage);
 			if (selectedDirectory != null) {
 				return selectedDirectory.getAbsolutePath();
 			}

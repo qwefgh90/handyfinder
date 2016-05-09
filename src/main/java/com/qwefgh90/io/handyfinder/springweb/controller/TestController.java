@@ -13,23 +13,22 @@ public class TestController {
 	@Autowired
 	TestService service;
 	
-	@RequestMapping(path="/hello")
+	@RequestMapping(path="/health")
 	@ResponseBody
-	public Test hello(){
-		return new Test();
+	public Health health(){
+		return new Health();
 	}
 	
-	class Test{
-		String name;
+	class Health{
+		boolean health = true;
 
-		public String getName() {
-			return name;
+		public boolean isHealth() {
+			return health;
 		}
 
-		public void setName(String name) {
-			this.name = name;
+		public void setHealth(boolean health) {
+			this.health = health;
 		}
-		
 		
 	}
 }

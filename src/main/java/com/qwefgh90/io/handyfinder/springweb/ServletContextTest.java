@@ -20,12 +20,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
 import com.qwefgh90.io.handyfinder.springweb.repository.Query;
 
+/**
+ * for Test Servlet Context
+ * @author choechangwon
+ *
+ */
 @Configuration
 @EnableWebMvc
 @ComponentScan(basePackages = {"com.qwefgh90.io.handyfinder.springweb","com.qwefgh90.io.handyfinder.springweb.service","com.qwefgh90.io.handyfinder.springweb.controller"})
-public class ServletContext extends WebMvcConfigurerAdapter {
+public class ServletContextTest extends WebMvcConfigurerAdapter {
 
-	Log LOG = LogFactory.getLog(ServletContext.class);
+	Log LOG = LogFactory.getLog(ServletContextTest.class);
 	
 	
 	@Override
@@ -45,7 +50,7 @@ public class ServletContext extends WebMvcConfigurerAdapter {
 	@Bean(name="dataSource")
 	public DataSource dataSource(){
 		EmbeddedDataSource ds = new EmbeddedDataSource();
-		ds.setDatabaseName(AppStartupConfig.pathForAppdata.resolve(Query.dbname).toString());
+		ds.setDatabaseName("target/testdb");
 		ds.setCreateDatabase("create");
 		LOG.info(ds.toString());
 		return ds;

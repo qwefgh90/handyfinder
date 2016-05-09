@@ -29,6 +29,11 @@
 			<artifactId>tomcat-embed-jasper</artifactId>
 			<version>${org.apache.tomcat}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-logging-log4j</artifactId>
+			<version>${org.apache.tomcat}</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -50,6 +55,23 @@
 			<artifactId>jackson-databind</artifactId>
 			<version>2.7.3</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.derby</groupId>
+			<artifactId>derby</artifactId>
+			<version>10.12.1.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<version>4.2.6.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-lang</groupId>
+			<artifactId>commons-lang</artifactId>
+			<version>2.3</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>
@@ -64,8 +86,8 @@
 				<artifactId>javafx-maven-plugin</artifactId>
 				<version>8.1.4</version>
 				<configuration>
-					<mainClass>es.uvigo.ei.sing.webviewdemo.WebViewMain</mainClass>
-					<vendor>hello</vendor>
+					<mainClass>com.qwefgh90.io.handyfinder.gui.AppStartup</mainClass>
+					<vendor>com.qwefgh90.io</vendor>
 				</configuration>
 			</plugin>
 

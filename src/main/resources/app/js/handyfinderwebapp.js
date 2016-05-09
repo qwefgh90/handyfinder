@@ -39,25 +39,116 @@ function($location, $scope, apiService) {
 app.controller('indexController', ['$location', '$scope', 'apiService', 'Path',
 function($location, $scope, apiService, Path) {
 	$scope.pathList = [];
-	var path1 = Path.createInstance('c:/windows');
-	var path2 = Path.createInstance('c:/document');
-	$scope.pathList.push(path1);
-	$scope.pathList.push(path2);
-	$scope.temp = 0;
-	$scope.status = {
+	var promise = apiService.getDirectories();
+	promise.then(function(msg) {
+		$scope.pathList = msg;
+		$scope.index_progress_status.addAlertQ(2);
+	}, function(msg) {
+		$scope.index_progress_status.addAlertQ(3);
+	}, function(msg) {
+		$scope.index_progress_status.addAlertQ(3);
+	});
+
+	$scope.index_manager_status = {
+		open : true
+	};
+	$scope.index_progress_status = {
+		open : false,
+		progress : false,
+		progressItemCount : 0,
+		alerts : [{//0
+			open : false,
+			type : 'success',
+			msg : 'Directories are stored on disk!'
+		}, {//1
+			open : false,
+			type : 'danger',
+			msg : 'Storing directories is failed on disk!'
+		}, {//2
+			open : false,
+			type : 'success',
+			msg : 'Directories are loaded on disk!'
+		}, {//3
+			open : false,
+			type : 'danger',
+			msg : 'Loading directories is failed from disk!'
+		}],
+		alertQ : [],
+		addAlertQ : function(index) {
+			if($scope.index_progress_status.alertQ.indexOf($scope.index_progress_status.alerts[index]) != -1)
+				return;
+			$scope.index_progress_status.alertQ.push($scope.index_progress_status.alerts[index]);
+			$scope.index_progress_status.progressItemCount++;
+			$scope.index_progress_status.refreshState();
+		},
+		removeAlertQ : function(index) {
+			$scope.index_progress_status.alertQ.splice(index, 1);
+			$scope.index_progress_status.progressItemCount--;
+			$scope.index_progress_status.refreshState();
+		},
+		refreshState : function() {
+			if ($scope.index_progress_status.progressItemCount > 0) {
+				$scope.index_progress_status.progress = true;
+				$scope.index_progress_status.open = true;
+			} else {
+				$scope.index_progress_status.progress = false;
+				$scope.index_progress_status.open = false;
+			}
+		}
+	};
+
+	$scope.index_option_status = {
 		open : true
 	};
 
-	$scope.edit = function() {
-		$scope.temp =  guiService.sum(1,123);
-		alert(guiService.openDialogAndSelectDirectory());
+	$scope.run = function() {
+		var promise = apiService.updateDirectories($scope.pathList);
+		promise.then(function() {
+			$scope.index_progress_status.addAlertQ(0);
+		}, function() {
+			$scope.index_progress_status.addAlertQ(1);
+		}, function() {
+			$scope.index_progress_status.addAlertQ(1);
+		});
 	};
-	$scope.delete = function() {
-		alert('delete');
-	}
+
+	$scope.selectDirectory = function() {
+		return guiService.openDialogAndSelectDirectory();
+	};
+
+	$scope.addDirectory = function() {
+		var returnedPath = $scope.selectDirectory();
+		if (returnedPath != '') {
+			var path = Path.createInstance(returnedPath);
+			$scope.pathList.push(path);
+		}
+	};
+
+	$scope.enableToggle = function(path) {
+		path.used = !path.used;
+	};
+
+	$scope.recursvelyToggle = function(path) {
+		path.recursively = !path.recursively;
+	};
+
+	$scope.edit = function() {
+		return $scope.selectDirectory();
+	};
+
+	$scope.remove = function(path) {
+		var index = $scope.pathList.indexOf(path);
+		if (index > -1) {
+			$scope.pathList.splice(index, 1);
+		}
+	};
+
 }]);
 
 app.controller('settingController', ['$location', '$scope', 'apiService',
 function($location, $scope, apiService) {
-	$scope.tempvar = 1;
+	$scope.extension_status = {
+		open : true
+	};
+
 }]);

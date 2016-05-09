@@ -17,7 +17,10 @@ import netscape.javascript.JSObject;
  * 
  * It also allows to call callback functions.
  * 
- * @author lipido, qwefgh90
+ * modified by qwefgh90
+ * 
+ * @author lipido
+ * 
  */
 public class Java2JavascriptUtils {
 	
@@ -43,7 +46,7 @@ public class Java2JavascriptUtils {
 	 * @param webEngine The webEngine to register the new variable.
 	 * @param varname The name of the variable in javascript.
 	 * @param backend The Java backend object.
-	 * @param immediately if true, javascript variable is usable as soon as calling.
+	 * @param immediately if true, javascript variable is usable as soon as call.
 	 */
 	public static void connectBackendObject(
 			final WebEngine webEngine,
