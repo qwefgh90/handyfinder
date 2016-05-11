@@ -8,7 +8,29 @@
 		<org.apache.tomcat>8.5.0</org.apache.tomcat>
 		<spring.webmvc.version>4.2.5.RELEASE</spring.webmvc.version>
 	</properties>
+
+	<repositories>
+		<repository>
+			<id>local-repo</id>
+			<name>local-repo</name>
+			<url>https://github.com/qwefgh90/maven-repository/raw/master/repository </url>
+			<releases>
+				<enabled>true</enabled>
+				<updatePolicy>never</updatePolicy>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>never</updatePolicy>
+			</snapshots>
+		</repository>
+	</repositories>
 	<dependencies>
+
+		<dependency>
+			<groupId>com.qwefgh90.io.jsearch</groupId>
+			<artifactId>JSearch</artifactId>
+			<version>1.0</version>
+		</dependency>
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>
 			<artifactId>json-simple</artifactId>
@@ -70,6 +92,23 @@
 			<artifactId>commons-lang</artifactId>
 			<version>2.3</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-core</artifactId>
+			<version>6.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-analyzers-common</artifactId>
+			<version>6.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-queryparser</artifactId>
+			<version>6.0.0</version>
+		</dependency>
+
 
 
 	</dependencies>
