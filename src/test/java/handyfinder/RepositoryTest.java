@@ -2,6 +2,7 @@ package handyfinder;
 
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,10 +16,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import com.qwefgh90.io.handfinder.springweb.model.Directory;
+import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
 import com.qwefgh90.io.handyfinder.springweb.RootContext;
 import com.qwefgh90.io.handyfinder.springweb.ServletContextTest;
-import com.qwefgh90.io.handyfinder.springweb.repository.IndexProperty;
+import com.qwefgh90.io.handyfinder.springweb.model.Directory;
+import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -27,13 +29,21 @@ import com.qwefgh90.io.handyfinder.springweb.repository.IndexProperty;
 @ContextConfiguration(classes = { ServletContextTest.class, RootContext.class })
 public class RepositoryTest {
 	@Autowired
-	IndexProperty indexProperty;
+	MetaRespository indexProperty;
 	Directory dir1;
 	Directory dir2;
 	List list = new ArrayList();
 
+	static {
+		try {
+			AppStartupConfig.initializeEnv(null);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	@Before
-	public void setup() throws SQLException {
+	public void setup() throws SQLException, IOException {
 		indexProperty.dropDirectoryTable();
 		indexProperty.createDirectoryTable();
 

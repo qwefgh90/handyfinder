@@ -45,9 +45,11 @@ public class ServletContext extends WebMvcConfigurerAdapter {
 	@Bean(name="dataSource")
 	public DataSource dataSource(){
 		EmbeddedDataSource ds = new EmbeddedDataSource();
-		ds.setDatabaseName(AppStartupConfig.pathForAppdata.resolve(Query.dbname).toString());
+		ds.setDatabaseName(AppStartupConfig.pathForDatabase.toString());
 		ds.setCreateDatabase("create");
 		LOG.info(ds.toString());
 		return ds;
 	}
+	
+	
 }

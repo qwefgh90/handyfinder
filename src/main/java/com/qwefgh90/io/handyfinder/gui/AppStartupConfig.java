@@ -19,16 +19,24 @@ import java.nio.file.Paths;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.startup.Tomcat;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;
 
 import javafx.application.Application;
@@ -45,34 +53,85 @@ import javafx.stage.Stage;
  * 
  * @author choechangwon
  */
-public class AppStartupConfig extends Application implements Runnable {
-
-	public final static String APP_DIRECTORY_NAME = "app";
-	public final static String PAGE = "/" + APP_DIRECTORY_NAME + "/index.html";
-	public final static String REDIRECT_PAGE = "/" + APP_DIRECTORY_NAME + "/redirect.html";
-	public static String URL;
-	public static Stage primaryStage;
-	public static Application app;
+public class AppStartupConfig extends Application {
 
 	private final static String TEST_URL = "http://127.0.0.1:8020/app/index.html#/index";
 
+	// initial variable
+	public final static String TEST_APP_DATA_DIR_NAME = "temp_appdata";
+	public static boolean TEST_MODE = false;
+	
+	//exchagable to TEST_APP_DATA_DIR_NAME
+	public static String APP_DATA_DIR_NAME = "appdata";
+	public final static String DB_NAME = "handyfinderdb";
+	public final static String INDEX_DIR_NAME = "index";
+	public final static String WEB_APP_DIRECTORY_NAME = "app";
+	public static Path deployedPath;
+	public static Path parentOfClassPath;
+	public static Path pathForAppdata;
+	public static Path pathForDatabase;
+	public static Path pathForIndex;
+	public static Path tomatLoggingFilePath;
+	public static Path appLoggingFilePath;
+	public static String address;
+	public static int port;
+	public static String homeUrl;
+
+	public final static String PAGE = "/" + WEB_APP_DIRECTORY_NAME + "/index.html";
+	public final static String REDIRECT_PAGE = "/" + WEB_APP_DIRECTORY_NAME + "/redirect.html";
+	public static Application app;
+	public static Stage primaryStage;
+	public static boolean SERVER_ONLY = false;
+
 	private static final Log LOG = LogFactory.getLog(AppStartupConfig.class);
+
 	/**
 	 * this method must be called in main() method
 	 * 
 	 * @throws IOException
 	 */
-	public static void initializeEnv() throws IOException {
+	public static boolean initializeEnv(String[] args) throws IOException {
+		// create the command line parser
+		CommandLineParser parser = new DefaultParser();
+
+		// create the Options
+		Options options = new Options();
+		options.addOption("n", "no-gui", false, "execute server only without GUI (User Interface)");
+		options.addOption("t", "test-mode", false, "execute server on test mode (diffrent path)");
+		options.addOption("h", "help", false, "print help text");
+
+		if (args != null) {
+			// parse the command line arguments
+			try {
+				CommandLine line = parser.parse(options, args);
+				if (line.hasOption("help")) {
+					HelpFormatter formatter = new HelpFormatter();
+					formatter.printHelp("handyfinder", options);
+					return false;
+				} 
+				if (line.hasOption("no-gui")) {
+					SERVER_ONLY = true;
+				} 
+				if (line.hasOption("test-mode")) {
+					APP_DATA_DIR_NAME = TEST_APP_DATA_DIR_NAME;
+				}
+			} catch (ParseException e) {
+				LOG.info(ExceptionUtils.getStackTrace(e));
+			}
+		}
+
 		// Application Path
 		deployedPath = getCurrentBuildPath();
 		parentOfClassPath = deployedPath.getParent();
-		pathForAppdata = parentOfClassPath.resolve("appdata");
+		pathForAppdata = parentOfClassPath.resolve(APP_DATA_DIR_NAME);
+		pathForDatabase = pathForAppdata.resolve(DB_NAME);
+		pathForIndex = pathForAppdata.resolve(INDEX_DIR_NAME);
 		tomatLoggingFilePath = pathForAppdata.resolve("catalina.out");
 		appLoggingFilePath = pathForAppdata.resolve("handyfinder.log");
 
 		if (!Files.isWritable(parentOfClassPath)) {
 			LOG.error("can't write resource");
-			return;
+			return false;
 		} else if (Files.exists(pathForAppdata)) {
 			// Pass
 		} else {
@@ -84,8 +143,9 @@ public class AppStartupConfig extends Application implements Runnable {
 
 		LOG.info("\nhandyfinder environment is initialized" + "\n" + "classpath: " + getCurrentBuildPath() + "\n"
 				+ "appdata: " + pathForAppdata.toString());
+		return true;
 	}
-	
+
 	@Override
 	public void start(Stage primaryStage) {
 		createWebView(primaryStage, PAGE);
@@ -108,74 +168,80 @@ public class AppStartupConfig extends Application implements Runnable {
 		});
 
 		// load index.html
-//		webView.getEngine().load(getClass().getResource(page).toExternalForm());
-		webView.getEngine().load(URL);
+		// webView.getEngine().load(getClass().getResource(page).toExternalForm());
+		webView.getEngine().load(homeUrl);
 		webView.getEngine().documentProperty().addListener(new ChangeListener<Document>() {
 			@Override
 			public void changed(ObservableValue<? extends Document> prop, Document oldDoc, Document newDoc) {
 				connectBackendObject(webView.getEngine(), "guiService", new GUIService(), true);
 			}
 		});
-		
+
 		primaryStage.setScene(new Scene(webView));
 		primaryStage.setTitle("Your Assistant");
 		primaryStage.show();
 
 		LOG.info("\nhandyfinder started completely " + "\n" + "Webengine load: "
-				+ getClass().getResource(page).toExternalForm()); // handyfinder
-																	// app data
+				+ getClass().getResource(page).toExternalForm().toString()); // handyfinder
+		// app data
 	}
-
-	// initize variable
-	public static Path deployedPath;
-	public static Path parentOfClassPath;
-	public static Path pathForAppdata;
-	public static Path tomatLoggingFilePath;
-	public static Path appLoggingFilePath;
-	public static String address;
-	public static int port;
-
 
 	public static void main(String[] args)
 			throws LifecycleException, ServletException, IOException, URISyntaxException {
-		initializeEnv();
-
+		if (false == initializeEnv(args))
+			return;
 		// System.setProperty("prism.lcdtext", "false"); // enhance fonts
 		// local server
 		Tomcat tomcat = new Tomcat();
+		AppStartupConfig.tomcat = tomcat;
 		tomcat.getConnector().setAttribute("address", address);
 		tomcat.getConnector().setAttribute("port", port);
-
 		File pathForAppdataFile = pathForAppdata.toFile();
 
 		if (isJarStart())
-			copyDirectoryInJar(deployedPath.toString(), APP_DIRECTORY_NAME, pathForAppdataFile);
+			copyDirectoryInJar(deployedPath.toString(), WEB_APP_DIRECTORY_NAME, pathForAppdataFile);
 		else
 			FileUtils.copyDirectory(new File(deployedPath.toString()), pathForAppdataFile);
 
-		Context ctx = tomcat.addWebapp("", pathForAppdataFile.getAbsolutePath());
+		Context context = tomcat.addWebapp("", pathForAppdataFile.getAbsolutePath());
 		// https://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/catalina/startup/Tomcat.html#addWebapp(org.apache.catalina.Host,%20java.lang.String,%20java.lang.String)
 
-		ServletContext context = ctx.getServletContext();
-		ctx.addWelcomeFile(REDIRECT_PAGE);
+		context.addWelcomeFile(REDIRECT_PAGE);
 		tomcat.init();
 		tomcat.start();
-		URL = "http://" + address + ":" + port;
+		homeUrl = "http://" + address + ":" + port;
 		try {
 			healthCheck();
 		} catch (TomcatInitFailException e) {
-			//handling
-			
+			// handling
+
 			LOG.fatal(e.toString());
-			assert false;	//dead "-ea" jvm option
+			assert false; // dead "-ea" jvm option
 		}
-		LOG.info("tomcat started completely : " + URL); // handyfinder app data
-		launch(args); // sync function // can't bean in spring container.
-		tomcat.stop();
+		LOG.info("tomcat started completely : " + homeUrl); // handyfinder app
+															// data
+		if (SERVER_ONLY == false) {
+			launch(args); // sync function // can't bean in spring container.
+			tomcat.stop();
+		}
+	}
+
+	/**
+	 * terminate application
+	 * 
+	 * @throws Exception
+	 */
+	private static Tomcat tomcat;
+
+	public static void terminateApp() throws Exception {
+		if (tomcat != null)
+			tomcat.stop();
+		if (app != null)
+			app.stop();
 	}
 
 	public static void healthCheck() throws TomcatInitFailException {
-		String strUrl = "http://" + address + ":"+port+"/health";
+		String strUrl = "http://" + address + ":" + port + "/health";
 
 		URL url;
 		try {
@@ -188,10 +254,10 @@ public class AppStartupConfig extends Application implements Runnable {
 			}
 		} catch (MalformedURLException e) {
 			LOG.error(e.toString());
-			assert false;	//dead "-ea" jvm option
+			assert false; // dead "-ea" jvm option
 		} catch (IOException e) {
 			LOG.error(e.toString());
-			assert false;	//dead "-ea" jvm option
+			assert false; // dead "-ea" jvm option
 		}
 	}
 
@@ -386,9 +452,23 @@ public class AppStartupConfig extends Application implements Runnable {
 
 	}
 
-	@Override
-	public void run() {
-		launch();
+	/*
+	 * dirty hack use it if can't annotated base injection
+	 */
+	private static WebApplicationContext rootAppContext;
+	private static WebApplicationContext servletAppContext;
+
+	public static <T> T getBean(Class<T> c) {
+		T svc = servletAppContext.getBean(c);
+		return svc;
+	}
+
+	public static void setRootAppContext(WebApplicationContext rootAppContext) {
+		AppStartupConfig.rootAppContext = rootAppContext;
+	}
+
+	public static void setServletAppContext(WebApplicationContext servletAppContext) {
+		AppStartupConfig.servletAppContext = servletAppContext;
 	}
 
 }

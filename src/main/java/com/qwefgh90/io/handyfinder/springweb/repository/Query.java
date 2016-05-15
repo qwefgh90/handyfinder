@@ -4,7 +4,6 @@ public class Query {
 	static enum TABLE_NAMES{
 		DIRECTORY;
 	}
-	public final static String dbname = "handyfinderdb";
 	
 	public final static String createTable(String tableName){
 		if(TABLE_NAMES.DIRECTORY.name().equals(tableName))

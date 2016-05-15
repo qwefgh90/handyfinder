@@ -1,4 +1,4 @@
-package com.qwefgh90.io.handfinder.springweb.model;
+package com.qwefgh90.io.handyfinder.springweb.model;
 
 public class Directory {
 	String pathString;

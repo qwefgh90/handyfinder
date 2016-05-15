@@ -5,13 +5,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.qwefgh90.io.handyfinder.springweb.service.TestService;
-
 @Controller
-public class TestController {
-
-	@Autowired
-	TestService service;
+public class HealthController {
 	
 	@RequestMapping(path="/health")
 	@ResponseBody

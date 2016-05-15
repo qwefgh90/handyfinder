@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Repository;
 
-import com.qwefgh90.io.handfinder.springweb.model.Directory;
+import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.repository.Query.TABLE_NAMES;
 
 /**
@@ -27,7 +27,7 @@ import com.qwefgh90.io.handyfinder.springweb.repository.Query.TABLE_NAMES;
  */
 @Repository
 @DependsOn({ "dataSource" })
-public class IndexProperty {
+public class MetaRespository {
 
 	@Autowired
 	@Qualifier("dataSource")

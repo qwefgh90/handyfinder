@@ -36,7 +36,7 @@ function($location, $scope, apiService) {
 	$scope.tempvar2 = 1;
 }]);
 
-app.controller('indexController', ['$timeout','$location', '$scope', 'apiService', 'Path',
+app.controller('indexController', ['$timeout', '$location', '$scope', 'apiService', 'Path',
 function($timeout, $location, $scope, apiService, Path) {
 	$scope.pathList = [];
 	var promise = apiService.getDirectories();
@@ -75,7 +75,7 @@ function($timeout, $location, $scope, apiService, Path) {
 		}],
 		alertQ : [],
 		addAlertQ : function(index) {
-			if($scope.index_progress_status.alertQ.indexOf($scope.index_progress_status.alerts[index]) != -1)
+			if ($scope.index_progress_status.alertQ.indexOf($scope.index_progress_status.alerts[index]) != -1)
 				return;
 			$scope.index_progress_status.alertQ.push($scope.index_progress_status.alerts[index]);
 			$scope.index_progress_status.progressItemCount++;
@@ -137,12 +137,12 @@ function($timeout, $location, $scope, apiService, Path) {
 	};
 
 	$scope.remove = function(path) {
-		$timeout(function(){
+		$timeout(function() {
 			var index = $scope.pathList.indexOf(path);
 			if (index > -1) {
 				$scope.pathList.splice(index, 1);
 			}
-		},100);
+		}, 100);
 	};
 
 }]);
