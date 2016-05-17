@@ -3,7 +3,7 @@ package com.qwefgh90.io.handyfinder.springweb.model;
 public class Directory {
 	String pathString;
 	boolean used;
-	boolean recusively;
+	boolean recursively;
 	public String getPathString() {
 		return pathString;
 	}
@@ -16,11 +16,11 @@ public class Directory {
 	public void setUsed(boolean used) {
 		this.used = used;
 	}
-	public boolean isRecusively() {
-		return recusively;
+	public boolean isRecursively() {
+		return recursively;
 	}
-	public void setRecusively(boolean recusively) {
-		this.recusively = recusively;
+	public void setRecursively(boolean recusively) {
+		this.recursively = recusively;
 	}
 	
 	

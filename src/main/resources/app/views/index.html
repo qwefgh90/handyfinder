@@ -11,8 +11,11 @@
 					  ng-repeat="alert in index_progress_status.alertQ"
 					  type="{{alert.type}}" 
 					  close="index_progress_status.removeAlertQ($index);">{{alert.msg}}</uib-alert>
+					  <div ng-show="progressBarVisible">
+					   <h3>Indexing</h3>
+					   <uib-progressbar max="totalProcessCount" value="processIndex"><span style="color:black; white-space:nowrap;">{{processPath}} ({{processIndex}}/{{totalProcessCount}})</span></uib-progressbar>
+					    </div>
 					<strong ng-if="index_progress_status.progress==false">We currently do not running.</strong>
-					
 				</uib-accordion-group>
 				<uib-accordion-group is-open="index_manager_status.open">
 					<uib-accordion-heading>

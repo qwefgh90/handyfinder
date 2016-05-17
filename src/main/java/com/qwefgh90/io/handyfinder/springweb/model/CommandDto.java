@@ -5,20 +5,23 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(value = { "auth" })
 public class CommandDto {
 	public enum COMMAND{
-		START_INDEXING
+		START_INDEXING,
+		STOP_INDEXING,
+		DIRECTORY
 		
 	}
 	
 //	private MessageAuthDto auth;
-	private int command;
+	private CommandDto.COMMAND command;
 
-	public int getCommand() {
+	public CommandDto.COMMAND getCommand() {
 		return command;
 	}
 
-	public void setCommand(int command) {
+	public void setCommand(CommandDto.COMMAND command) {
 		this.command = command;
 	}
+
 //
 //	public MessageAuthDto getAuth() {
 //		return auth;

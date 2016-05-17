@@ -16,8 +16,9 @@ public class GUIService {
 
 	public String openDialogAndSelectDirectory() {
 		try {
-			final DirectoryChooser directoryChooser = new DirectoryChooser();
-			final File selectedDirectory = directoryChooser.showDialog(AppStartupConfig.primaryStage);
+			DirectoryChooser directoryChooser = new DirectoryChooser();
+			File selectedDirectory = directoryChooser.showDialog(AppStartupConfig.primaryStage);
+			AppStartupConfig.primaryStage.show();
 			if (selectedDirectory != null) {
 				return selectedDirectory.getAbsolutePath();
 			}

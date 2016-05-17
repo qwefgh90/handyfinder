@@ -22,13 +22,13 @@ import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.model.DocumentDto;
 import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
 import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler.IndexException;
-import com.qwefgh90.io.handyfinder.springweb.websocket.InteractionInvoker;
+import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 
 @Service
 public class RootService {
 
 	@Autowired
-	InteractionInvoker invokerForCommand;
+	CommandInvoker invokerForCommand;
 
 	@Autowired
 	MetaRespository indexProperty;
@@ -74,39 +74,34 @@ public class RootService {
 			log.info(ExceptionUtils.getStackTrace(e));
 		} catch (IOException e) {
 			log.info(ExceptionUtils.getStackTrace(e));
-		} 
+		}
 		return Optional.empty();
 	}
 
 	public void handleCommand(CommandDto command) {
-		if (COMMAND.values().length <= command.getCommand())
-			throw new IllegalArgumentException();
-		else {
-			COMMAND inputCommand = COMMAND.values()[command.getCommand()];
-			switch (inputCommand) {
-			case START_INDEXING: {
-				try {
-					List<Directory> list = indexProperty.selectDirectory();
-					LuceneHandler handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invokerForCommand);
-					handler.indexDirectories(list);
-					return;
-				} catch (SQLException e) {
-					log.info(ExceptionUtils.getStackTrace(e));
-					//terminate command
-				} catch (IOException e) {
-					log.info(ExceptionUtils.getStackTrace(e));
-					//terminate command
-				} catch (IndexException e) {
-					log.info(ExceptionUtils.getStackTrace(e));
-					//terminate command
-				}
-				break;
+		COMMAND inputCommand = command.getCommand();
+		switch (inputCommand) {
+		case START_INDEXING: {
+			try {
+				List<Directory> list = indexProperty.selectDirectory();
+				LuceneHandler handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invokerForCommand);
+				handler.startIndex(list);
+				return;
+			} catch (SQLException e) {
+				log.info(ExceptionUtils.getStackTrace(e));
+				// terminate command
+			} catch (IOException e) {
+				log.info(ExceptionUtils.getStackTrace(e));
+				// terminate command
+			} catch (IndexException e) {
+				log.info(ExceptionUtils.getStackTrace(e));
+				// terminate command
 			}
-			default: {
-				break;
-			}
-			}
+			break;
+		}
+		default: {
+			break;
+		}
 		}
 	}
-
 }

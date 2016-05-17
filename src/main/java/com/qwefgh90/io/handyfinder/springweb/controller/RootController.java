@@ -12,6 +12,7 @@ import org.apache.juli.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -60,32 +61,45 @@ public class RootController {
 			return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
-	@RequestMapping(value="/search", method = RequestMethod.POST)
-	public ResponseEntity<List<DocumentDto>> search(@RequestParam String keyword){
+
+	@RequestMapping(value = "/search", method = RequestMethod.POST)
+	public ResponseEntity<List<DocumentDto>> search(@RequestParam String keyword) {
 		Optional<List<DocumentDto>> result = Optional.empty();
 		try {
 			result = rootService.search(keyword);
 		} catch (IndexException e) {
-			return new ResponseEntity<List<DocumentDto>>(HttpStatus.LOCKED);
+			return new ResponseEntity<List<DocumentDto>>(HttpStatus.SERVICE_UNAVAILABLE);
 		}
-		if(result.isPresent()){
+		if (result.isPresent()) {
 			return new ResponseEntity<List<DocumentDto>>(result.get(), HttpStatus.OK);
-		}else{
+		} else {
 			return new ResponseEntity<List<DocumentDto>>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-			
 	}
 
-	@MessageMapping("/command")
-	public void command(CommandDto message, SimpMessageHeaderAccessor accessor) {
-		rootService.handleCommand(message);
+	/**
+	 * 
+	 * @param command "start", "stop"
+	 * @param accessor
+	 */
+	@MessageMapping("/command/index/{command}")
+	public void command1(@DestinationVariable String command, SimpMessageHeaderAccessor accessor) {
+		if (command == null)
+			return;
+		CommandDto dto = new CommandDto();
+		if (command.equals("start"))
+			dto.setCommand(CommandDto.COMMAND.START_INDEXING);
+		else if (command.equals("stop"))
+			dto.setCommand(CommandDto.COMMAND.STOP_INDEXING);
+		else
+			return;
+		
+		rootService.handleCommand(dto);
 	}
-	
-	
+
 	@MessageMapping("/hello")
 	@Deprecated
 	public void hello(String hello, SimpMessageHeaderAccessor accessor) {
-		messaging.convertAndSend("/receiver/hi", "hi");
+		messaging.convertAndSend("/test/hi", "hi");
 	}
 }

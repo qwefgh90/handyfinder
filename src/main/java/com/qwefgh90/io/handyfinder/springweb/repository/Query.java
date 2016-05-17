@@ -42,6 +42,6 @@ public class Query {
 	}
 	
 	public final static String selectDirectory(){
-		return "SELECT pathString, used, recursively DIRECTORY FROM DIRECTORY"; 
+		return "SELECT pathString, used, recursively FROM DIRECTORY"; 
 	}
 }

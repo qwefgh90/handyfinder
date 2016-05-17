@@ -60,7 +60,7 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.poi.util.LongField;
 
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
-import com.qwefgh90.io.handyfinder.springweb.websocket.InteractionInvoker;
+import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 import com.qwefgh90.io.handyfinder.springweb.websocket.ProgressCommand;
 import com.qwefgh90.io.jsearch.JSearch;
 
@@ -87,31 +87,50 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	private IndexSearcher searcher;
 	private StandardQueryParser parser;
 
-	// state
+	// indexing state (startIndex(), stopIndex() use state)
 	private enum INDEX_WRITE_STATE {
-		START, TERMINATE
+		PROGRESS, STOPPING, TERMINATE
 	}
 
-	private INDEX_WRITE_STATE writeState;
-	private int currentProgress = 0;
-	private int totalProcess = 0;
-	private InteractionInvoker invokerForCommand;
+	private INDEX_WRITE_STATE writeState;	//current state
+	private int currentProgress = 0;		//indexed documents count
+	private int totalProcess = 0;			//total documents count to be indexed
+	private CommandInvoker invokerForCommand;	//for command to client
 
+	/**
+	 * manage state private API
+	 * @param state
+	 */
 	private void updateHandlerState(INDEX_WRITE_STATE state) {
-		this.writeState = state;
+		// progress
+		if(state == INDEX_WRITE_STATE.PROGRESS)
+			this.writeState = state;
+		
+		// terminate
 		if (state == INDEX_WRITE_STATE.TERMINATE) {
 			currentProgress = 0;
 			totalProcess = 0;
+			this.writeState = state;
+		}
+
+		// current progress
+		if (state == LuceneHandler.INDEX_WRITE_STATE.STOPPING) {
+			if (writeState == LuceneHandler.INDEX_WRITE_STATE.PROGRESS) {
+				this.writeState = state;
+			}
 		}
 	}
+
 	/**
 	 * current indexing state
+	 * 
 	 * @return
 	 */
-	public INDEX_WRITE_STATE getWriteState() { return writeState; }
+	public INDEX_WRITE_STATE getWriteState() {
+		return writeState;
+	}
 
 	private static ConcurrentHashMap<String, LuceneHandler> map = new ConcurrentHashMap<>();
-
 
 	/**
 	 * static factory method
@@ -120,7 +139,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 *            : path where index stored
 	 * @return object identified by path
 	 */
-	public static LuceneHandler getInstance(Path indexWriterPath, InteractionInvoker invoker) {
+	public static LuceneHandler getInstance(Path indexWriterPath, CommandInvoker invoker) {
 		if (Files.isDirectory(indexWriterPath.getParent()) && Files.isWritable(indexWriterPath.getParent())) {
 			String pathString = indexWriterPath.toAbsolutePath().toString();
 			if (!map.containsKey(pathString)) {
@@ -169,23 +188,35 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * 
 	 * @param list
 	 * @throws IOException
-	 * @throws IndexException 
+	 * @throws IndexException
 	 */
-	public void indexDirectories(List<Directory> list) throws IOException, IndexException {
-		if(INDEX_WRITE_STATE.START == writeState)
+	public void startIndex(List<Directory> list) throws IOException, IndexException {
+		if (INDEX_WRITE_STATE.PROGRESS == writeState)
 			throw new IndexException("already indexing");
 		checkIndexWriter();
-		
-		updateHandlerState(INDEX_WRITE_STATE.START);
 		totalProcess = sizeOfindexDirectories(list);
+		updateHandlerState(INDEX_WRITE_STATE.PROGRESS);
+		invokerForCommand.startProgress(totalProcess);
 		for (Directory dir : list) {
 			Path tmp = Paths.get(dir.getPathString());
-			if (dir.isRecusively())
+			if (dir.isRecursively()) {
 				indexDirectory(tmp, true);
-			else
+			} else {
 				indexDirectory(tmp, false);
+			}
+			if (writeState == LuceneHandler.INDEX_WRITE_STATE.STOPPING) {
+				break;
+			}
 		}
 		updateHandlerState(INDEX_WRITE_STATE.TERMINATE);
+		invokerForCommand.terminateProgress(totalProcess);
+	}
+
+	/**
+	 * stop indexing
+	 */
+	public void stopIndex() {
+		updateHandlerState(LuceneHandler.INDEX_WRITE_STATE.STOPPING);
 	}
 
 	/**
@@ -197,7 +228,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 */
 	public void indexDirectory(Path path, boolean recursively) throws IOException {
 		checkIndexWriter();
-		
+
 		if (Files.isDirectory(path)) {
 			Path rootDirectory = path;
 			if (recursively) {
@@ -205,8 +236,12 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 					public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
 						if (attrs.isRegularFile()) {
 							index(file);
-							currentProgress++;
-							invokerForCommand.updateProgress(currentProgress, file, totalProcess);
+							currentProgress++; // STATE UPDATE
+							invokerForCommand.updateProgress(currentProgress, file, totalProcess); // STATE
+																									// UPDATE
+							if (writeState == LuceneHandler.INDEX_WRITE_STATE.STOPPING) {
+								return FileVisitResult.TERMINATE;
+							}
 						}
 						return FileVisitResult.CONTINUE;
 					}
@@ -217,9 +252,12 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 							public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
 								if (attrs.isRegularFile()) {
 									index(file);
-									currentProgress++;
-									invokerForCommand.updateProgress(currentProgress, file,
-											totalProcess);
+									currentProgress++; // STATE UPDATE
+									invokerForCommand.updateProgress(currentProgress, file, totalProcess); // STATE
+																											// UPDATE
+									if (writeState == LuceneHandler.INDEX_WRITE_STATE.STOPPING) {
+										return FileVisitResult.TERMINATE;
+									}
 								}
 								return FileVisitResult.CONTINUE;
 							}
@@ -249,29 +287,29 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		StringField pathStringField = new StringField("pathString", path.toAbsolutePath().toString(), Store.YES);
 		Field contentsField = new Field("contents", contents, type);
 
-		
 		doc.add(pathStringField);
 		doc.add(contentsField);
 		writer.updateDocument(new Term("pathString", path.toAbsolutePath().toString()), doc);
 		log.info("indexing complete : " + path);
 		writer.commit(); // commit() is important for real-time search
 	}
+
 	/**
-	 * search full string which contains space charactor. 
-	 * it's translated to Query
+	 * search full string which contains space charactor. it's translated to
+	 * Query
 	 * 
 	 * @param fullString
 	 * @return
 	 * @throws IOException
 	 * @throws org.apache.lucene.queryparser.classic.ParseException
 	 * @throws QueryNodeException
-	 * @throws InvalidActivityException - now indexing
-	 * @throws IOException 
-	 * @throws IndexException 
+	 * @throws InvalidActivityException
+	 *             - now indexing
+	 * @throws IOException
+	 * @throws IndexException
 	 */
-	public TopDocs search(String fullString) throws  QueryNodeException, IOException, IndexException
-			{
-		if(INDEX_WRITE_STATE.START == writeState)
+	public TopDocs search(String fullString) throws QueryNodeException, IOException, IndexException {
+		if (INDEX_WRITE_STATE.PROGRESS == writeState)
 			throw new IndexException("now indexing");
 		checkDirectoryReader();
 		updateSearcher();
@@ -482,7 +520,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		Size size = new Size();
 		for (Directory dir : list) {
 			Path tmp = Paths.get(dir.getPathString());
-			if (dir.isRecusively())
+			if (dir.isRecursively())
 				size.add(sizeOfindexDirectory(tmp, true));
 			else
 				size.add(sizeOfindexDirectory(tmp, false));
@@ -575,8 +613,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		dir = null;
 	}
 
-
-	public class IndexException extends Exception{
+	public class IndexException extends Exception {
 		public IndexException() {
 			super();
 			// TODO Auto-generated constructor stub
@@ -601,6 +638,6 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			super(cause);
 			// TODO Auto-generated constructor stub
 		}
-		
+
 	}
 }

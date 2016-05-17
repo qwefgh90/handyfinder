@@ -1,4 +1,4 @@
-var app = angular.module('handyfinderwebapp', ['ngRoute', 'ngAnimate', 'ui.bootstrap', 'apiServiceApp', 'ngContextMenu', 'indexModelApp']);
+var app = angular.module('handyfinderwebapp', ['ngRoute', 'ngAnimate', 'ui.bootstrap', 'apiServiceApp', 'ngContextMenu', 'indexModelApp', 'websocketModelApp']);
 
 app.config(function($routeProvider) {
 	//Module의 config API를 사용하면 서비스 제공자provider에 접근할 수 있다. 여기선 $route 서비스 제공자를 인자로 받아온다.
@@ -36,17 +36,20 @@ function($location, $scope, apiService) {
 	$scope.tempvar2 = 1;
 }]);
 
-app.controller('indexController', ['$timeout', '$location', '$scope', 'apiService', 'Path',
-function($timeout, $location, $scope, apiService, Path) {
+app.controller('indexController', ['$q','$log', '$timeout', '$location', '$scope', 'apiService', 'Path', 'ProgressService',
+function($q, $log, $timeout, $location, $scope, apiService, Path, progressService) {
 	$scope.pathList = [];
 	var promise = apiService.getDirectories();
 	promise.then(function(msg) {
 		$scope.pathList = msg;
 		$scope.index_progress_status.addAlertQ(2);
+		$scope.startWatch();
 	}, function(msg) {
 		$scope.index_progress_status.addAlertQ(3);
+		$scope.startWatch();
 	}, function(msg) {
 		$scope.index_progress_status.addAlertQ(3);
+		$scope.startWatch();
 	});
 
 	$scope.index_manager_status = {
@@ -87,7 +90,7 @@ function($timeout, $location, $scope, apiService, Path) {
 			$scope.index_progress_status.refreshState();
 		},
 		refreshState : function() {
-			if ($scope.index_progress_status.progressItemCount > 0) {
+			if ($scope.index_progress_status.progressItemCount > 0 || $scope.progressBarVisible == true) {
 				$scope.index_progress_status.progress = true;
 				$scope.index_progress_status.open = true;
 			} else {
@@ -101,19 +104,33 @@ function($timeout, $location, $scope, apiService, Path) {
 		open : true
 	};
 
-	$scope.run = function() {
+	$scope.save = function() {
+		var deferred = $q.defer();
 		var promise = apiService.updateDirectories($scope.pathList);
 		promise.then(function() {
-			$scope.index_progress_status.addAlertQ(0);
+			//$scope.index_progress_status.addAlertQ(0);
+			deferred.resolve();
 		}, function() {
 			$scope.index_progress_status.addAlertQ(1);
+			deferred.reject();
 		}, function() {
 			$scope.index_progress_status.addAlertQ(1);
+			deferred.reject();
+		});
+		return deferred.promise;
+	};
+
+	$scope.startWatch = function() {
+		$scope.$watchCollection('pathList', function(newNames, oldNames) {
+			$scope.save();
+			$log.log('update a list of indexes in server');
 		});
 	};
 
 	$scope.selectDirectory = function() {
-		return guiService.openDialogAndSelectDirectory();
+		var path = guiService.openDialogAndSelectDirectory();
+		alert(path);
+		return path;
 	};
 
 	$scope.addDirectory = function() {
@@ -121,6 +138,7 @@ function($timeout, $location, $scope, apiService, Path) {
 		if (returnedPath != '') {
 			var path = Path.createInstance(returnedPath);
 			$scope.pathList.push(path);
+			alert('pushed path');
 		}
 	};
 
@@ -128,7 +146,7 @@ function($timeout, $location, $scope, apiService, Path) {
 		path.used = !path.used;
 	};
 
-	$scope.recursvelyToggle = function(path) {
+	$scope.recursivelyToggle = function(path) {
 		path.recursively = !path.recursively;
 	};
 
@@ -144,6 +162,41 @@ function($timeout, $location, $scope, apiService, Path) {
 			}
 		}, 100);
 	};
+
+	$scope.run = function() {
+		var promise = $scope.save();
+		promise.then(function(){progressService.sendStartIndex();},function(){},function(){});
+	};
+
+	$scope.processIndex = 0;
+	$scope.totalProcessCount = 100;
+	$scope.processPath = '';
+	$scope.state = 'TERMINATE';
+	$scope.progressBarVisible = false;
+
+	var promise = progressService.connect();
+	promise.then(function(frame) {
+		$log.log(frame);
+		var progressPromise = progressService.subProgress();
+		progressPromise.then(function() {
+		}, function(msg) {
+			$log.log(msg);
+		}, function(progressObject) {
+			if (progressObject.state == 'START')
+				$scope.progressBarVisible = true;
+			else if (progressObject.state == 'TERMINATE')
+				$scope.progressBarVisible = false;
+
+			$scope.processIndex = progressObject.processIndex;
+			$scope.processPath = progressObject.processPath;
+			$scope.totalProcessCount = progressObject.totalProcessCount;
+			$scope.state = progressObject.state;
+			$scope.index_progress_status.refreshState();
+			$log.log(progressObject.processIndex + ", " + progressObject.totalProcessCount + ", " + progressObject.processPath + ", " + progressObject.state);
+		});
+	}, function() {
+	}, function() {
+	});
 
 }]);
 

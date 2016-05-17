@@ -33,6 +33,7 @@ public class MetaRespository {
 	@Qualifier("dataSource")
 	DataSource dataSource;
 
+	
 	/**
 	 * table create
 	 * 
@@ -93,7 +94,7 @@ public class MetaRespository {
 			pstmt = conn.prepareStatement(Query.insertDirectory());
 			pstmt.setString(1, dir.getPathString());
 			pstmt.setBoolean(2, dir.isUsed());
-			pstmt.setBoolean(3, dir.isRecusively());
+			pstmt.setBoolean(3, dir.isRecursively());
 			pstmt.executeUpdate();
 		} finally {
 			if (pstmt != null)
@@ -133,15 +134,19 @@ public class MetaRespository {
 		PreparedStatement pstmt = null;
 		List<Directory> list = new ArrayList<Directory>();
 		try {
-			Directory dir = new Directory();
 			conn = dataSource.getConnection();
 			pstmt = conn.prepareStatement(Query.selectDirectory());
 			rs = pstmt.executeQuery();
+			
 			while (rs.next()) {
+				Directory dir = new Directory();
 				dir.setPathString(rs.getString(1));
 				dir.setUsed(rs.getBoolean(2));
-				dir.setRecusively(rs.getBoolean(3));
+				dir.setRecursively(rs.getBoolean(3));
 				list.add(dir);
+			}
+			if(list.size() ==0){
+				list.clear();
 			}
 		} finally {
 			if (pstmt != null)

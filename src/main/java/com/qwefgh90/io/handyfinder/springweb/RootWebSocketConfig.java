@@ -23,8 +23,8 @@ public class RootWebSocketConfig extends AbstractWebSocketMessageBrokerConfigure
 
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry config) {
-		config.setApplicationDestinationPrefixes("/websocket");
-		config.enableSimpleBroker("/receiver");// sub/pub channel
+		config.setApplicationDestinationPrefixes("/handyfinder");	//channel to sent from client 
+		config.enableSimpleBroker("/progress","/test","/gui");// sub/pub channel
 	}
 
 	@Override

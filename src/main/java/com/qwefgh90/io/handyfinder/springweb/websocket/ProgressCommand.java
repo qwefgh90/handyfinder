@@ -12,24 +12,24 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * @author choechangwon
  *
  */
-@JsonIgnoreProperties({ "receiver", "state" })
+@JsonIgnoreProperties({ "receiver", "command" })
 public class ProgressCommand implements ICommand {
 	public enum STATE {
-		START, TERMINATE, PROGRESS
+		START, PROGRESS, TERMINATE
 	}
 
-	private STATE state;
-	private int processIndex; // start from one
-	private Path processPath;
-	private int totalProcessCount;
-	private IInteractionReceiver receiver;
+	private STATE state;	//START , PROGRESS , TERMINATE
+	private int processIndex; // integer starting from ZERO
+	private Path processPath; // path string
+	private int totalProcessCount; // integer
+	private ICommandReceiver receiver;
 
 	private ProgressCommand() {
 	}
 
 	private static ProgressCommand command;
 
-	public static ProgressCommand getInstance(IInteractionReceiver receiver) {
+	public static ProgressCommand getInstance(ICommandReceiver receiver) {
 		if (command == null)
 			command = new ProgressCommand();
 		command.receiver = receiver;
@@ -40,13 +40,13 @@ public class ProgressCommand implements ICommand {
 	public void execute() {
 		switch (this.state) {
 		case START:
-			// receiver.startProgressChannel();
+			receiver.startProgressChannel(this);
 			break;
 		case PROGRESS:
 			receiver.sendToProgressChannel(this);
 			break;
 		case TERMINATE:
-			// receiver.terminateProgressChannel();
+			receiver.terminateProgressChannel(this);
 			break;
 		default:
 			break;
@@ -85,11 +85,11 @@ public class ProgressCommand implements ICommand {
 		this.totalProcessCount = totalProcessCount;
 	}
 
-	public IInteractionReceiver getReceiver() {
+	public ICommandReceiver getReceiver() {
 		return receiver;
 	}
 
-	public void setReceiver(IInteractionReceiver receiver) {
+	public void setReceiver(ICommandReceiver receiver) {
 		this.receiver = receiver;
 	}
 

@@ -28,7 +28,7 @@ import com.qwefgh90.io.handyfinder.springweb.RootContext;
 import com.qwefgh90.io.handyfinder.springweb.ServletContextTest;
 import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler;
 import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler.IndexException;
-import com.qwefgh90.io.handyfinder.springweb.websocket.InteractionInvoker;
+import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -38,7 +38,7 @@ import com.qwefgh90.io.handyfinder.springweb.websocket.InteractionInvoker;
 public class IndexWriterTest {
 	Log log = LogFactory.getLog(IndexWriterTest.class);
 	@Autowired
-	InteractionInvoker invoker;
+	CommandInvoker invoker;
 	
 	LuceneHandler handler;
 	LuceneHandler handler2;

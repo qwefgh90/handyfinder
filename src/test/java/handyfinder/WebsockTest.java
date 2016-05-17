@@ -51,6 +51,7 @@ import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
 import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler;
 import com.qwefgh90.io.handyfinder.springweb.service.RootService;
 import com.qwefgh90.io.handyfinder.springweb.websocket.ProgressCommand;
+import com.qwefgh90.io.handyfinder.springweb.websocket.ProgressCommand.STATE;
 
 public class WebsockTest {
 
@@ -67,7 +68,7 @@ public class WebsockTest {
 		index = AppStartupConfig.getBean(MetaRespository.class);
 
 		Directory dir = new Directory();
-		dir.setRecusively(true);
+		dir.setRecursively(true);
 		dir.setUsed(true);
 		dir.setPathString(Paths.get(new ClassPathResource("").getFile().getAbsolutePath()).resolve("index-test-files")
 				.toAbsolutePath().toString());
@@ -129,11 +130,9 @@ public class WebsockTest {
 		}
 
 		public void sendMsg() {
-			CommandDto c1 = new CommandDto();
-			c1.setCommand(0);
 			try {
-				session.send("/websocket/hello", "hello");
-				session.send("/websocket/command", c1);
+				session.send("/handyfinder/hello", "hello");
+				session.send("/handyfinder/command/index/start","");
 			} catch (Exception e) {
 				log.info(ExceptionUtils.getStackTrace(e));
 			}
@@ -143,7 +142,7 @@ public class WebsockTest {
 		@Override
 		public void afterConnected(final StompSession session, StompHeaders connectedHeaders) {
 			this.session = session;
-			session.subscribe("/receiver/hi", new StompFrameHandler() {
+			session.subscribe("/test/hi", new StompFrameHandler() {
 				@Override
 				public Type getPayloadType(StompHeaders headers) {
 					return String.class;
@@ -161,7 +160,7 @@ public class WebsockTest {
 				}
 			});
 
-			session.subscribe("/receiver/progress", new StompFrameHandler() {
+			session.subscribe("/progress/single", new StompFrameHandler() {
 				@Override
 				public Type getPayloadType(StompHeaders headers) {
 					return ProgressCommand.class;
@@ -171,7 +170,7 @@ public class WebsockTest {
 				public void handleFrame(StompHeaders headers, Object payload) {
 					ProgressCommand json = (ProgressCommand) payload;
 					log.info("Got " + ToStringBuilder.reflectionToString(json));
-					if (json.getProcessIndex() == json.getTotalProcessCount()) {
+					if (json.getState() == STATE.PROGRESS.TERMINATE) {
 
 						 session.disconnect();
 						 try {

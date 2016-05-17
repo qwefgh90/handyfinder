@@ -3,7 +3,7 @@
     <li ng-click="enableToggle(path)">
         <a href >{{path.used == true ? 'Not used' : 'Use'}}</a>
     </li>
-    <li ng-click="recursvelyToggle(path)">
+    <li ng-click="recursivelyToggle(path)">
         <a href >{{path.recursively == true ? 'Not recursively' : 'Recursively'}}</a>
     </li>
     <li  ng-click="path.pathString=selectDirectory()">

@@ -166,7 +166,7 @@ public class AppStartupConfig extends Application {
 				System.err.println("alertwb1: " + arg0.getData());
 			}
 		});
-
+		
 		// load index.html
 		// webView.getEngine().load(getClass().getResource(page).toExternalForm());
 		webView.getEngine().load(homeUrl);
