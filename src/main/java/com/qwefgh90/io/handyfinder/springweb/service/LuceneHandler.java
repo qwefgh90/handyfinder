@@ -57,12 +57,11 @@ import org.apache.lucene.search.highlight.TextFragment;
 import org.apache.lucene.search.highlight.TokenSources;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
-import org.apache.poi.util.LongField;
-
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 import com.qwefgh90.io.handyfinder.springweb.websocket.ProgressCommand;
 import com.qwefgh90.io.jsearch.JSearch;
+import com.qwefgh90.io.jsearch.JSearch.ParseException;
 
 /**
  * document indexing, search class based on Lucene
@@ -282,7 +281,13 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		type.setStoreTermVectors(true);
 		type.setStoreTermVectorOffsets(true);
 
-		String contents = JSearch.extractContentsFromFile(path.toFile());
+		String contents;
+		try {
+			contents = JSearch.extractContentsFromFile(path.toFile());
+		} catch (ParseException e) {
+			log.info(ExceptionUtils.getStackTrace(e));
+			return;
+		}
 
 		StringField pathStringField = new StringField("pathString", path.toAbsolutePath().toString(), Store.YES);
 		Field contentsField = new Field("contents", contents, type);
@@ -314,7 +319,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		checkDirectoryReader();
 		updateSearcher();
 		// Query query = parser.parse(addWildcardString(fullString));
-		// //pathString:자바* contents:자바*
+		// //pathString:�옄諛�* contents:�옄諛�*
 
 		Query q1 = parser.parse(addBiWildcardString(fullString), "pathString");
 		Query q2 = parser.parse(addWildcardString(fullString), "contents");

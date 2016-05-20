@@ -12,22 +12,17 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
 import javax.servlet.ServletException;
-
 import org.apache.catalina.LifecycleException;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
-import org.apache.poi.poifs.property.RootProperty;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
-import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
@@ -43,12 +38,9 @@ import org.springframework.web.socket.sockjs.client.RestTemplateXhrTransport;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.Transport;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
-
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
-import com.qwefgh90.io.handyfinder.springweb.model.CommandDto;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
-import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler;
 import com.qwefgh90.io.handyfinder.springweb.service.RootService;
 import com.qwefgh90.io.handyfinder.springweb.websocket.ProgressCommand;
 import com.qwefgh90.io.handyfinder.springweb.websocket.ProgressCommand.STATE;

@@ -2,7 +2,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>sing</groupId>
-	<artifactId>javafx-webview-demo</artifactId>
+	<artifactId>handyfinder</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<properties>
 		<org.apache.tomcat>8.5.0</org.apache.tomcat>
@@ -14,7 +14,7 @@
 		<repository>
 			<id>local-repo</id>
 			<name>local-repo</name>
-			<url>https://github.com/qwefgh90/maven-repository/raw/master/repository </url>
+			<url>https://github.com/qwefgh90/maven-repository/raw/master/repository</url>
 			<releases>
 				<enabled>true</enabled>
 				<updatePolicy>never</updatePolicy>
@@ -26,7 +26,6 @@
 		</repository>
 	</repositories>
 	<dependencies>
-
 		<dependency>
 			<groupId>com.qwefgh90.io.jsearch</groupId>
 			<artifactId>JSearch</artifactId>

@@ -54,7 +54,7 @@ public class IndexWriterTest {
 
 	@Before
 	public void setup() throws IOException {
-		indexStoredPath = Paths.get(new ClassPathResource("").getFile().getAbsolutePath()).resolve("index_");
+		indexStoredPath = Paths.get(new ClassPathResource("").getFile().getAbsolutePath()).resolve(AppStartupConfig.TEST_APP_DATA_DIR_NAME);
 		handler = LuceneHandler.getInstance(indexStoredPath, invoker);
 		handler2 = LuceneHandler.getInstance(indexStoredPath, invoker);
 		assertTrue(handler == handler2);
@@ -77,7 +77,7 @@ public class IndexWriterTest {
 	@Test
 	public void writeTest() throws IOException, org.apache.lucene.queryparser.classic.ParseException,
 			InvalidTokenOffsetsException, QueryNodeException, IndexException {
-		handler.indexDirectory(AppStartupConfig.pathForAppdata.resolve("index-test-files"), true);
+		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 
 		TopDocs docs = handler.search("고언어 자바");
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
@@ -129,9 +129,9 @@ public class IndexWriterTest {
 	@Test
 	public void fileURITest() throws IOException, org.apache.lucene.queryparser.classic.ParseException,
 			QueryNodeException, InvalidTokenOffsetsException, IndexException {
-		handler.indexDirectory(AppStartupConfig.pathForAppdata.resolve("index-test-files"), true);
+		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 
-		TopDocs docs = handler.search("/depth/ homec/choe");
+		TopDocs docs = handler.search("부트로더");
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
 			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
 

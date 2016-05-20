@@ -32,7 +32,7 @@ public class RepositoryTest {
 	MetaRespository indexProperty;
 	Directory dir1;
 	Directory dir2;
-	List list = new ArrayList();
+	List<Directory> list = new ArrayList();
 
 	static {
 		try {
@@ -42,6 +42,7 @@ public class RepositoryTest {
 			e.printStackTrace();
 		}
 	}
+	
 	@Before
 	public void setup() throws SQLException, IOException {
 		indexProperty.dropDirectoryTable();
