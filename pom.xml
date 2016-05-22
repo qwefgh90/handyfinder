@@ -152,7 +152,7 @@
 
 	<build>
 		<finalName>
-			javafxsample
+			handyfinder
 		</finalName>
 		<plugins>
 			<!-- You should run this on you command-line: mvn jfx:jar -->
@@ -162,7 +162,7 @@
 				<artifactId>javafx-maven-plugin</artifactId>
 				<version>8.1.4</version>
 				<configuration>
-					<mainClass>com.qwefgh90.io.handyfinder.gui.AppStartup</mainClass>
+					<mainClass>com.qwefgh90.io.handyfinder.gui.AppStartupConfig</mainClass>
 					<vendor>com.qwefgh90.io</vendor>
 				</configuration>
 			</plugin>

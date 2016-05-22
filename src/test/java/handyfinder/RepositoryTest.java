@@ -32,7 +32,7 @@ public class RepositoryTest {
 	MetaRespository indexProperty;
 	Directory dir1;
 	Directory dir2;
-	List<Directory> list = new ArrayList();
+	List<Directory> list = new ArrayList<>();
 
 	static {
 		try {
