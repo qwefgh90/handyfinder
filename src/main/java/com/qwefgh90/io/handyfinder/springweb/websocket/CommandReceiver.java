@@ -49,6 +49,5 @@ public class CommandReceiver implements ICommandReceiver {
 			}
 			messaging.convertAndSend("/gui/directory", result);
 		}
-
 	}
 }

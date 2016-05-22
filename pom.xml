@@ -5,7 +5,7 @@
 	<artifactId>handyfinder</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<properties>
-		<org.apache.tomcat>8.5.0</org.apache.tomcat>
+		<org.apache.tomcat>8.0.33</org.apache.tomcat>
 		<spring.webmvc.version>4.2.5.RELEASE</spring.webmvc.version>
 		<org.springframework.security-version>4.1.0.RELEASE</org.springframework.security-version>
 	</properties>
@@ -56,6 +56,11 @@
 			<artifactId>tomcat-embed-logging-log4j</artifactId>
 			<version>${org.apache.tomcat}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-websocket</artifactId>
+			<version>${org.apache.tomcat}</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -86,6 +91,7 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
 			<version>4.2.6.RELEASE</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -132,7 +138,7 @@
 		<dependency>
 			<groupId>javax.websocket</groupId>
 			<artifactId>javax.websocket-api</artifactId>
-			<version>1.0</version>
+			<version>1.1</version>
 			<scope>test</scope>
 		</dependency><!-- http://mvnrepository.com/artifact/org.projectodd.stilts/stilts-stomp-client -->
 

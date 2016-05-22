@@ -27,7 +27,6 @@ public class ServletContext extends WebMvcConfigurerAdapter {
 
 	Log LOG = LogFactory.getLog(ServletContext.class);
 	
-	
 	@Override
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {
 		registry.addResourceHandler("/app/**").addResourceLocations("/app/");	//classpath 기준으로 정적 파일들을 등록해주는 함수
@@ -39,6 +38,7 @@ public class ServletContext extends WebMvcConfigurerAdapter {
 	}
 	
 	MappingJackson2HttpMessageConverter jsonMessageConverter() {
+
 		return new MappingJackson2HttpMessageConverter();
 	}
 	

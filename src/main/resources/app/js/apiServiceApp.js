@@ -17,7 +17,7 @@ app.factory('apiService', ['$http', '$q', function($http, $q){
 			'headers' : headers
 		};
 
-		$http.get(url = '/getDirectories', config = config).then(function(response) {
+		$http.get(url = '/getDirectories', config).then(function(response) {
 			if (response.status == 200) {
 				deferred.resolve(response.data);
 			} else {
@@ -61,7 +61,39 @@ app.factory('apiService', ['$http', '$q', function($http, $q){
 		return deferred.promise;
 		// then(successCallback, errorCallback, notifyCallback)
 	};
+	
+	var search = function(keyword){
+		var deferred = $q.defer();
+		
+		// ajax $http
+		var headers = {
+			'Accept' : 'application/json'
+		};
+		var params = {
+			keyword : keyword
+		};
+		var config = {
+			params : params,
+			headers : headers
+		};
+
+		$http.get(url = '/search', config).then(function(response) {
+			if (response.status == 200) {
+				deferred.resolve(response.data);
+			} else {
+				deferred.reject(response.data);
+			}
+		}, function(response) {
+			deferred.reject(response.data);
+		}, function(response) {
+			deferred.reject(response.data);
+		});
+		return deferred.promise;
+		
+		
+	}
 
 	return {getDirectories : getDirectories
-			,updateDirectories : updateDirectories};
+			,updateDirectories : updateDirectories
+			,search : search};
 }]);

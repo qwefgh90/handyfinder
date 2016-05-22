@@ -1,6 +1,11 @@
 package com.qwefgh90.io.handyfinder.springweb.service;
 
+import java.awt.Desktop;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,8 +15,10 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -64,9 +71,25 @@ public class RootService {
 			for (int i = 0; i < docs.scoreDocs.length; i++) {
 				Document document = handler.getDocument(docs.scoreDocs[i].doc);
 				DocumentDto dto = new DocumentDto();
+				String highlightTag;
+				try {
+					highlightTag = handler.highlight(docs.scoreDocs[i].doc, keyword);
+				} catch (ParseException e) {
+					log.info(e.toString());
+					continue;
+				} catch (InvalidTokenOffsetsException e) {
+					log.info(e.toString());
+					continue;
+				}
 
-				dto.setContents(document.get("contents"));
+				dto.setCreatedTime(document.getField("createdTime").numericValue().longValue());
+				dto.setTitle(document.get("title"));
+				dto.setContents(highlightTag);
 				dto.setPathString(document.get("pathString"));
+				dto.setParentPathString(Paths.get(document.get("pathString")).getParent().toAbsolutePath().toString());
+
+				Path path = Paths.get(dto.getPathString());
+				dto.setModifiedTime(Files.getLastModifiedTime(path).toMillis());
 				list.add(dto);
 			}
 			return Optional.of(list);
@@ -78,8 +101,8 @@ public class RootService {
 		return Optional.empty();
 	}
 
-	public void handleCommand(CommandDto command) {
-		COMMAND inputCommand = command.getCommand();
+	public void handleCommand(COMMAND command) {
+		COMMAND inputCommand = command;
 		switch (inputCommand) {
 		case START_INDEXING: {
 			try {
@@ -102,6 +125,19 @@ public class RootService {
 		default: {
 			break;
 		}
+		}
+	}
+
+	public void openDirectory(String pathStr) {
+		Path path = Paths.get(pathStr);
+		if (Files.exists(path) && Files.isDirectory(path)) {
+			if (Desktop.isDesktopSupported()) {
+				try {
+					Desktop.getDesktop().open(path.toFile());
+				} catch (IOException e) {
+					log.info(e.toString());
+				}
+			}
 		}
 	}
 }

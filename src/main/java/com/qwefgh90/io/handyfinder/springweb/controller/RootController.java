@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -25,7 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.qwefgh90.io.handyfinder.springweb.model.CommandDto;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.model.DocumentDto;
-import com.qwefgh90.io.handyfinder.springweb.model.MessageAuthDto;
 import com.qwefgh90.io.handyfinder.springweb.model.CommandDto.COMMAND;
 import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler.IndexException;
 import com.qwefgh90.io.handyfinder.springweb.service.RootService;
@@ -61,7 +61,7 @@ public class RootController {
 		}
 	}
 
-	@RequestMapping(value = "/search", method = RequestMethod.POST)
+	@RequestMapping(value = "/search", method = RequestMethod.GET)
 	public ResponseEntity<List<DocumentDto>> search(@RequestParam String keyword) {
 		Optional<List<DocumentDto>> result = Optional.empty();
 		try {
@@ -78,22 +78,48 @@ public class RootController {
 
 	/**
 	 * 
-	 * @param command "start", "stop"
+	 * @param command
+	 *            "start", "stop"
 	 * @param accessor
 	 */
 	@MessageMapping("/command/index/{command}")
 	public void command1(@DestinationVariable String command, SimpMessageHeaderAccessor accessor) {
 		if (command == null)
 			return;
-		CommandDto dto = new CommandDto();
+		COMMAND dto;
 		if (command.equals("start"))
-			dto.setCommand(CommandDto.COMMAND.START_INDEXING);
+			dto = CommandDto.COMMAND.START_INDEXING;
 		else if (command.equals("stop"))
-			dto.setCommand(CommandDto.COMMAND.STOP_INDEXING);
+			dto = CommandDto.COMMAND.STOP_INDEXING;
 		else
 			return;
-		
+
 		rootService.handleCommand(dto);
+	}
+
+	/**
+	 * 
+	 * @param command
+	 *            "open"
+	 * @param accessor
+	 */
+	@MessageMapping("/command/gui/{command}")
+	public void commandGui(@Payload OpenCommand path, @DestinationVariable String command) {
+		if (command.equals("open"))
+			rootService.openDirectory(path.getPath());
+	}
+
+	private static class OpenCommand {
+		String path;
+
+		public String getPath() {
+			return path;
+		}
+
+		public void setPath(String path) {
+			this.path = path;
+		}
+
 	}
 
 	@MessageMapping("/hello")
