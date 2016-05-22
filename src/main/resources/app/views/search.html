@@ -3,9 +3,9 @@
 	<div class="row">
 		<div class="col-xs-12">
 			<div class="input-group">
-				<input class="form-control" type="search" focus-me="false" placeholder="EX) Java programming" ng-model="controller.searchString">
+				<input class="form-control" type="search" focus-me="false" placeholder="EX) Java programming" ng-model="searchModel.searchKeyword" ng-keydown="$event.which === 13 && search(searchModel.searchKeyword)" >
 				<span class="input-group-btn">
-					<input class="btn btn-default searchbt " type="submit" value="Search" ng-click="controller.go()">
+					<input class="btn btn-default searchbt " type="submit" value="Search" ng-click="search(searchModel.searchKeyword)">
 				</span>
 			</div>
 		</div>
@@ -27,67 +27,13 @@
 	<!-- result  -->
 	<div class="row">
 		<div class="col-xs-12 content-wrapper-outer">
-			<div class="content-wrapper container-fluid">
-				<span class="col-xs-12" style="padding-left:0px;"><a class="title" href="object.downloadlink">object.title</a></span>
-				<span class="col-xs-12" style="padding-left:0px;"> <a class="url text-warning" style="padding-left: 0px;" target="_blank" href="file:///home/choechangwon/다운로드/glyphicons_free/glyphicons/png/glyphicons-11-envelope.png">/home/</a>
-					<button class="btn-default btn btn-xs">
-						open folder
-					</button> </span>
+			<div class="content-wrapper container-fluid"  ng-repeat="object in searchModel.searchResult">
+				<span class="col-xs-12" style="padding-left:0px;"><a class="title" href>{{object.title}}</a></span>
+				<span class="col-xs-12" style="padding-left:0px;"> <a class="url text-warning" style="padding-left: 0px;" href ng-click='open(object.parentPathString)'>{{object.parentPathString}}</a>
+				</span>
 				<div class="col-xs-12 description " style="padding-left:0px;">
-					<small>object.date | date:'yyyy-MM-dd HH:mm:ss'</small>
-					<p style="max-height:5.1em;line-height:2em">
-						<label class="control-label">자바(200)</label>
-						<label class="control-label">C언어(20)</label>
-						<label class="control-label">언어(10)</label>
-						<label class="control-label">데이터베이스(5)</label>
-						<label class="control-label">java(3)</label>
-						<label class="control-label">static(1)</label>
-						<label class="control-label">int(1)</label>
-						<label class="control-label">클래스(1)</label>
-						<label class="control-label">비용(1)</label>
-					</p>
-				</div>
-			</div>
-
-			<div class="content-wrapper container-fluid ">
-				<span class="col-xs-12 title" style="padding-left:0px;"><a href="object.downloadlink">object.title</a></span>
-				<span class="col-xs-12" style="padding-left:0px;"> <a class="url text-warning" style="padding-left: 0px;" target="_blank" href="file:///home/choechangwon/다운로드/glyphicons_free/glyphicons/png/glyphicons-11-envelope.png">/home/</a>
-					<button class="btn-default btn  btn-xs">
-						open folder
-					</button> </span>
-				<div class="col-xs-12 description " style="padding-left:0px;">
-					<small>object.date | date:'yyyy-MM-dd HH:mm:ss'</small>
-					<p style="max-height:5.1em;line-height:2em">
-						<label class="control-label">자바(200)</label>
-						<label class="control-label">C언어(20)</label>
-						<label class="control-label">언어(10)</label>
-						<label class="control-label">데이터베이스(5)</label>
-						<label class="control-label">java(3)</label>
-						<label class="ccontrol-label">static(1)</label>
-						<label class="control-label">int(1)</label>
-						<label class="control-label">클래스(1)</label>
-						<label class="control-label">비용(1)</label>
-					</p>
-				</div>
-			</div>
-			<div class="content-wrapper container-fluid ">
-				<span class="col-xs-12 title" style="padding-left:0px;"><a href="object.downloadlink">object.title</a></span>
-				<span class="col-xs-12" style="padding-left:0px;"> <a class="url text-warning" style="padding-left: 0px;" target="_blank" href="file:///home/choechangwon/다운로드/glyphicons_free/glyphicons/png/glyphicons-11-envelope.png">/home/</a>
-					<button class="btn-default btn  btn-xs">
-						open folder
-					</button> </span>
-				<div class="col-xs-12 description " style="padding-left:0px;">
-					<small>object.date | date:'yyyy-MM-dd HH:mm:ss'</small>
-					<p style="max-height:5.1em;line-height:2em">
-						<label class="control-label">자바(200)</label>
-						<label class="control-label">C언어(20)</label>
-						<label class="control-label">언어(10)</label>
-						<label class="control-label">데이터베이스(5)</label>
-						<label class="control-label">java(3)</label>
-						<label class="ccontrol-label">static(1)</label>
-						<label class="control-label">int(1)</label>
-						<label class="control-label">클래스(1)</label>
-						<label class="control-label">비용(1)</label>
+					<small>{{object.modifiedTime | date:'yyyy-MM-dd HH:mm:ss'}}</small>
+					<p style="max-height:5.1em;line-height:2em" ng-bind-html="object.contents">
 					</p>
 				</div>
 			</div>

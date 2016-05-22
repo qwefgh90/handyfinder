@@ -35,17 +35,16 @@ import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 // ApplicationContext will be loaded from
 // "classpath:/com/example/OrderServiceTest-context.xml"
 @ContextConfiguration(classes = { ServletContextTest.class, RootContext.class })
-public class IndexWriterTest {
-	Log log = LogFactory.getLog(IndexWriterTest.class);
+public class LuceneHandlerTest {
+	Log log = LogFactory.getLog(LuceneHandlerTest.class);
 	@Autowired
 	CommandInvoker invoker;
 	
 	LuceneHandler handler;
 	LuceneHandler handler2;
-	Path indexStoredPath;
 	static {
 		try {
-			AppStartupConfig.initializeEnv(null);
+			AppStartupConfig.initializeEnv(new String[]{"--test-mode","--no-gui"});
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -54,9 +53,8 @@ public class IndexWriterTest {
 
 	@Before
 	public void setup() throws IOException {
-		indexStoredPath = Paths.get(new ClassPathResource("").getFile().getAbsolutePath()).resolve("index_");
-		handler = LuceneHandler.getInstance(indexStoredPath, invoker);
-		handler2 = LuceneHandler.getInstance(indexStoredPath, invoker);
+		handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invoker);
+		handler2 = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invoker);
 		assertTrue(handler == handler2);
 		handler.deleteAllIndexesFromFileSystem();
 	}
@@ -77,15 +75,15 @@ public class IndexWriterTest {
 	@Test
 	public void writeTest() throws IOException, org.apache.lucene.queryparser.classic.ParseException,
 			InvalidTokenOffsetsException, QueryNodeException, IndexException {
-		handler.indexDirectory(AppStartupConfig.pathForAppdata.resolve("index-test-files"), true);
+		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 
 		TopDocs docs = handler.search("고언어 자바");
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
 			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
 
-			String info = "[" + docs.scoreDocs[i].score + "]" + doc.get("pathString") + " : \n" + doc.get("contents")
-					.substring(0, doc.get("contents").length() > 100 ? 100 : doc.get("contents").length()) + "\n";
-			log.info(info);
+//			String info = "[" + docs.scoreDocs[i].score + "]" + doc.get("pathString") + " : \n" + doc.get("contents")
+//					.substring(0, doc.get("contents").length() > 100 ? 100 : doc.get("contents").length()) + "\n";
+//			log.info(info);
 
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "고언어 자바");
 			log.info(exp.toString());
@@ -98,9 +96,9 @@ public class IndexWriterTest {
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
 			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
 
-			String info = "[" + docs.scoreDocs[i].score + "]" + doc.get("pathString") + " : \n" + doc.get("contents")
-					.substring(0, doc.get("contents").length() > 100 ? 100 : doc.get("contents").length()) + "\n";
-			log.info(info);
+//			String info = "[" + docs.scoreDocs[i].score + "]" + doc.get("pathString") + " : \n" + doc.get("contents")
+//					.substring(0, doc.get("contents").length() > 100 ? 100 : doc.get("contents").length()) + "\n";
+//			log.info(info);
 
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "HTTP");
 			log.info(exp.toString());
@@ -129,15 +127,15 @@ public class IndexWriterTest {
 	@Test
 	public void fileURITest() throws IOException, org.apache.lucene.queryparser.classic.ParseException,
 			QueryNodeException, InvalidTokenOffsetsException, IndexException {
-		handler.indexDirectory(AppStartupConfig.pathForAppdata.resolve("index-test-files"), true);
+		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 
-		TopDocs docs = handler.search("/depth/ homec/choe");
+		TopDocs docs = handler.search("부트로더");
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
 			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
 
-			String info = "[" + docs.scoreDocs[i].score + "]" + doc.get("pathString") + " : \n" + doc.get("contents")
-					.substring(0, doc.get("contents").length() > 100 ? 100 : doc.get("contents").length()) + "\n";
-			log.info(info);
+//			String info = "[" + docs.scoreDocs[i].score + "]" + doc.get("pathString") + " : \n" + doc.get("contents")
+//					.substring(0, doc.get("contents").length() > 100 ? 100 : doc.get("contents").length()) + "\n";
+//			log.info(info);
 
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "/depth/ homec/choe");
 			log.info(exp.toString());

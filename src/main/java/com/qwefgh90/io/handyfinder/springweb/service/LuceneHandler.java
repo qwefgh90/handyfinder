@@ -28,6 +28,9 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.FieldType;
+import org.apache.lucene.document.LegacyIntField;
+import org.apache.lucene.document.LegacyLongField;
+import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexOptions;
@@ -38,7 +41,6 @@ import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
-import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
@@ -57,12 +59,11 @@ import org.apache.lucene.search.highlight.TextFragment;
 import org.apache.lucene.search.highlight.TokenSources;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
-import org.apache.poi.util.LongField;
 
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
-import com.qwefgh90.io.handyfinder.springweb.websocket.ProgressCommand;
 import com.qwefgh90.io.jsearch.JSearch;
+import com.qwefgh90.io.jsearch.JSearch.ParseException;
 
 /**
  * document indexing, search class based on Lucene
@@ -92,20 +93,21 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		PROGRESS, STOPPING, TERMINATE
 	}
 
-	private INDEX_WRITE_STATE writeState;	//current state
-	private int currentProgress = 0;		//indexed documents count
-	private int totalProcess = 0;			//total documents count to be indexed
-	private CommandInvoker invokerForCommand;	//for command to client
+	private INDEX_WRITE_STATE writeState; // current state
+	private int currentProgress = 0; // indexed documents count
+	private int totalProcess = 0; // total documents count to be indexed
+	private CommandInvoker invokerForCommand; // for command to client
 
 	/**
 	 * manage state private API
+	 * 
 	 * @param state
 	 */
 	private void updateHandlerState(INDEX_WRITE_STATE state) {
 		// progress
-		if(state == INDEX_WRITE_STATE.PROGRESS)
+		if (state == INDEX_WRITE_STATE.PROGRESS)
 			this.writeState = state;
-		
+
 		// terminate
 		if (state == INDEX_WRITE_STATE.TERMINATE) {
 			currentProgress = 0;
@@ -282,11 +284,24 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		type.setStoreTermVectors(true);
 		type.setStoreTermVectorOffsets(true);
 
-		String contents = JSearch.extractContentsFromFile(path.toFile());
+		String contents;
+		try {
+			contents = JSearch.extractContentsFromFile(path.toFile());
+			contents.replaceAll(" +", "");	//erase space
+		} catch (ParseException e) {
+			log.info(ExceptionUtils.getStackTrace(e));
+			return;
+		}
+		
+		BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
 
+		StringField title = new StringField("title", path.getFileName().toString(), Store.YES);
 		StringField pathStringField = new StringField("pathString", path.toAbsolutePath().toString(), Store.YES);
+		LegacyLongField createdTimeField = new LegacyLongField("createdTime", attr.creationTime().toMillis(), Store.YES);
 		Field contentsField = new Field("contents", contents, type);
-
+		
+		doc.add(createdTimeField);
+		doc.add(title);
 		doc.add(pathStringField);
 		doc.add(contentsField);
 		writer.updateDocument(new Term("pathString", path.toAbsolutePath().toString()), doc);
@@ -314,7 +329,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		checkDirectoryReader();
 		updateSearcher();
 		// Query query = parser.parse(addWildcardString(fullString));
-		// //pathString:자바* contents:자바*
+		// //pathString:�옄諛�* contents:�옄諛�*
 
 		Query q1 = parser.parse(addBiWildcardString(fullString), "pathString");
 		Query q2 = parser.parse(addWildcardString(fullString), "contents");

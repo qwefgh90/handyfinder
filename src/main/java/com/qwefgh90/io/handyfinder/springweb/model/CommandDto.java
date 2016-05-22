@@ -6,8 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class CommandDto {
 	public enum COMMAND{
 		START_INDEXING,
-		STOP_INDEXING,
-		DIRECTORY
+		STOP_INDEXING
 		
 	}
 	

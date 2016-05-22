@@ -24,7 +24,7 @@ public class RootWebSocketConfig extends AbstractWebSocketMessageBrokerConfigure
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry config) {
 		config.setApplicationDestinationPrefixes("/handyfinder");	//channel to sent from client 
-		config.enableSimpleBroker("/progress","/test","/gui");// sub/pub channel
+		config.enableSimpleBroker("/progress","/test","/gui");		// sub/pub channel
 	}
 
 	@Override
@@ -39,6 +39,7 @@ public class RootWebSocketConfig extends AbstractWebSocketMessageBrokerConfigure
 
 	@Override
 	public void configureClientOutboundChannel(ChannelRegistration registration) {
+		
 		registration.taskExecutor().corePoolSize(4).maxPoolSize(10);
 	}
 

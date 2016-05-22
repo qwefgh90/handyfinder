@@ -2,6 +2,7 @@ package com.qwefgh90.io.handyfinder.springweb.websocket;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,8 +29,8 @@ public class CommandInvoker {
 	synchronized public void startProgress(int totalProcessCount) {
 		progress = ProgressCommand.getInstance(receiver);
 		progress.setState(ProgressCommand.STATE.START);
-		progress.setProcessIndex(-1);
-		progress.setProcessPath(null);
+		progress.setProcessIndex(0);
+		progress.setProcessPath(Paths.get("Ready to Run"));
 		progress.setTotalProcessCount(totalProcessCount);
 		progress.execute();
 	}

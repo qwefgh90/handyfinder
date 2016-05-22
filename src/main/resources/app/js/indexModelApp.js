@@ -1,33 +1,105 @@
-var app = angular.module('indexModelApp', [])
-app.factory("Friend", function() {
-	// Define the constructor function.
-	function Friend(firstName, lastName) {
-		this.firstName = firstName;
-		this.lastName = lastName;
-	}
-
-	// Define the "instance" methods using the prototype
-	// and standard prototypal inheritance.
-	Friend.prototype = {
-		getFirstName : function() {
-			return (this.firstName );
+var app = angular.module('indexModelApp', []);
+app.factory("SearchModel",['$rootScope', function($rootScope){
+	var service = {
+		model : {
+			searchKeyword : '',
+			searchResult : []
 		},
-		getFullName : function() {
-			return (this.firstName + " " + this.lastName );
-		}
+
+        SaveState: function () {
+            sessionStorage.userService = angular.toJson(service.model);
+        },
+
+        RestoreState: function () {
+            service.model = angular.fromJson(sessionStorage.userService);
+        }
+
+        // $rootScope.$on("savestate", service.SaveState);
+        // $rootScope.$on("restorestate", service.RestoreState);
+
 	};
-	// Define the "class" / "static" methods. These are
-	// utility methods on the class itself; they do not
-	// have access to the "this" reference.
-	Friend.fromFullName = function(fullName) {
-		var parts = fullName.split(/\s+/gi);
-		return (new Friend(parts[0], parts.splice(0, 1) && parts.join(" "))
-		);
-	};
-	// Return constructor - this is what defines the actual
-	// injectable in the DI framework.
-	return (Friend );
-});
+	return service;
+}]);
+app.factory("IndexModel",['$rootScope', function($rootScope){
+	var service = {
+			model : {
+				pathList : [],
+				index_manager_status : {
+						open : true
+					},
+				index_option_status : {
+							open : true
+					},
+				index_progress_status : {
+							open : false,
+							progress : false,
+							progressItemCount : 0,
+							alerts : [{// 0
+								open : false,
+								type : 'success',
+								msg : 'Directories are stored on disk!'
+							}, {// 1
+								open : false,
+								type : 'danger',
+								msg : 'Storing directories is failed on disk!'
+							}, {// 2
+								open : false,
+								type : 'success',
+								msg : 'Directories are loaded on disk!'
+							}, {// 3
+								open : false,
+								type : 'danger',
+								msg : 'Loading directories is failed from disk!'
+							}, {// 4
+								open : false,
+								type : 'success',
+								msg : 'Ready to search your files!'
+							}],
+							alertQ : [],
+							addAlertQ : function(index) {
+								if (this.alertQ.indexOf(this.alerts[index]) != -1)
+									return;
+								this.alertQ.push(this.alerts[index]);
+								this.progressItemCount++;
+								this.refreshState();
+							},
+							removeAlertQ : function(index) {
+								this.alertQ.splice(index, 1);
+								this.progressItemCount--;
+								this.refreshState();
+							},
+							refreshState : function() {
+								if (this.progressItemCount > 0 || progressBarVisible == true) {
+									this.progress = true;
+									this.open = true;
+								} else {
+									this.progress = false;
+									this.open = false;
+								}
+							}
+					},
+				progressBarVisible : false,
+				processIndex : 0,
+				totalProcessCount : 100,
+				processPath : '',
+				state : 'TERMINATE'
+			},
+
+	        SaveState: function () {
+	            sessionStorage.userService = angular.toJson(service.model);
+	        },
+
+	        RestoreState: function () {
+	            service.model = angular.fromJson(sessionStorage.userService);
+	        }
+
+	        // $rootScope.$on("savestate", service.SaveState);
+	        // $rootScope.$on("restorestate", service.RestoreState);
+
+		};
+		return service;
+	
+}]);
 
 app.factory("Path", function() {
 	// Define the constructor function.
@@ -59,4 +131,33 @@ app.factory("Path", function() {
 	// Return constructor - this is what defines the actual
 	// injectable in the DI framework.
 	return (Path);
+}); 
+app.factory("Document", function() {
+	// Define the constructor function.
+	function Document(createdTime, modifiedTime, title, pathString, contents, parentPathString) {
+		/*
+		 * private long createdTime; private long modifiedTime; private String
+		 * title; private String pathString; private String contents;
+		 */
+		this.createdTime = createdTime;
+		this.modifiedTime = modifiedTime;
+		this.title = title;
+		this.pathString = pathString;
+		this.contents = contents;
+		this.parentPathString = parentPathString;
+	}
+
+	// Define the "instance" methods using the prototype
+	// and standard prototypal inheritance.
+	Document.prototype = {
+	};
+	// Define the "class" / "static" methods. These are
+	// utility methods on the class itself; they do not
+	// have access to the "this" reference.
+	// Path.createInstance = function(path) {
+	// return new Path(path, true, true);
+	// };
+	// Return constructor - this is what defines the actual
+	// injectable in the DI framework.
+	return (Document);
 }); 

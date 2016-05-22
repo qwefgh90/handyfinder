@@ -31,90 +31,70 @@ function($location, $scope, apiService) {
 	});
 }]);
 
-app.controller('searchController', ['$location', '$scope', 'apiService',
-function($location, $scope, apiService) {
-	$scope.tempvar2 = 1;
+app.controller('searchController', ['$location','$log', '$scope', 'apiService', 'Document','$sce', 'GUIService', 'SearchModel',
+function($location, $log, $scope, apiService, Document, $sce, GUIService, SearchModel) {
+	$scope.searchModel = SearchModel.model;
+//	$scope.searchKeyword = ''; 
+//	$scope.searchResult = [];
+	var searchFlag = true;
+	$scope.search = function(keyword){
+		if(searchFlag == false)
+			return;
+		var promise = apiService.search(keyword);
+		searchFlag = false;
+		promise.then(function(json){
+			$scope.searchModel.searchResult = [];
+			for(var i = 0 ; i < json.length ; i ++){
+				var data = json[i];
+				var document = new Document(data.createdTime, data.modifiedTime, data.title, data.pathString, $sce.trustAsHtml(data.contents), data.parentPathString)
+				$scope.searchModel.searchResult.push(document);
+			}
+			searchFlag = true;
+		},function(){searchFlag = true;$log.log('search failed')}
+		,function(){searchFlag = true;});
+	};
+
+	var promise = GUIService.connect();
+	promise.then(function(frame) {
+		$log.log('[handy]'+frame);
+		$scope.open = function(path){
+			GUIService.openDirectory(path);
+		}
+	}, function(error) {
+		$log.log('[handy]'+error);
+	}, function(noti) {
+		$log.log('[handy]'+noti);
+	});
 }]);
 
-app.controller('indexController', ['$q','$log', '$timeout', '$location', '$scope', 'apiService', 'Path', 'ProgressService',
-function($q, $log, $timeout, $location, $scope, apiService, Path, progressService) {
-	$scope.pathList = [];
+app.controller('indexController', ['$q','$log', '$timeout', '$location', '$scope', 'apiService', 'Path', 'ProgressService', 'IndexModel',
+function($q, $log, $timeout, $location, $scope, apiService, Path, progressService, IndexModel) {
+	$scope.indexModel = IndexModel.model;
 	var promise = apiService.getDirectories();
+	
 	promise.then(function(msg) {
-		$scope.pathList = msg;
-		$scope.index_progress_status.addAlertQ(2);
+		$scope.indexModel.pathList = msg;
+		$scope.indexModel.index_progress_status.addAlertQ(2);
 		$scope.startWatch();
 	}, function(msg) {
-		$scope.index_progress_status.addAlertQ(3);
+		$scope.indexModel.index_progress_status.addAlertQ(3);
 		$scope.startWatch();
 	}, function(msg) {
-		$scope.index_progress_status.addAlertQ(3);
+		$scope.indexModel.index_progress_status.addAlertQ(3);
 		$scope.startWatch();
 	});
-
-	$scope.index_manager_status = {
-		open : true
-	};
-	$scope.index_progress_status = {
-		open : false,
-		progress : false,
-		progressItemCount : 0,
-		alerts : [{//0
-			open : false,
-			type : 'success',
-			msg : 'Directories are stored on disk!'
-		}, {//1
-			open : false,
-			type : 'danger',
-			msg : 'Storing directories is failed on disk!'
-		}, {//2
-			open : false,
-			type : 'success',
-			msg : 'Directories are loaded on disk!'
-		}, {//3
-			open : false,
-			type : 'danger',
-			msg : 'Loading directories is failed from disk!'
-		}],
-		alertQ : [],
-		addAlertQ : function(index) {
-			if ($scope.index_progress_status.alertQ.indexOf($scope.index_progress_status.alerts[index]) != -1)
-				return;
-			$scope.index_progress_status.alertQ.push($scope.index_progress_status.alerts[index]);
-			$scope.index_progress_status.progressItemCount++;
-			$scope.index_progress_status.refreshState();
-		},
-		removeAlertQ : function(index) {
-			$scope.index_progress_status.alertQ.splice(index, 1);
-			$scope.index_progress_status.progressItemCount--;
-			$scope.index_progress_status.refreshState();
-		},
-		refreshState : function() {
-			if ($scope.index_progress_status.progressItemCount > 0 || $scope.progressBarVisible == true) {
-				$scope.index_progress_status.progress = true;
-				$scope.index_progress_status.open = true;
-			} else {
-				$scope.index_progress_status.progress = false;
-				$scope.index_progress_status.open = false;
-			}
-		}
-	};
-
-	$scope.index_option_status = {
-		open : true
-	};
-
+	
 	$scope.save = function() {
 		var deferred = $q.defer();
-		var promise = apiService.updateDirectories($scope.pathList);
+		var promise = apiService.updateDirectories($scope.indexModel.pathList);
 		promise.then(function() {
-			//$scope.index_progress_status.addAlertQ(0);
+			//$scope.indexModel.index_progress_status.addAlertQ(0);
 			deferred.resolve();
 		}, function() {
-			$scope.index_progress_status.addAlertQ(1);
+			$scope.indexModel.index_progress_status.addAlertQ(1);
 			deferred.reject();
 		}, function() {
-			$scope.index_progress_status.addAlertQ(1);
+			$scope.indexModel.index_progress_status.addAlertQ(1);
 			deferred.reject();
 		});
 		return deferred.promise;
@@ -128,8 +108,12 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 	};
 
 	$scope.selectDirectory = function() {
+		if(guiService == undefined){
+			$log.log('you can\'t javafx method in browser');
+			return '';
+		}
 		var path = guiService.openDialogAndSelectDirectory();
-		alert(path);
+		$log.log(path);
 		return path;
 	};
 
@@ -137,7 +121,7 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 		var returnedPath = $scope.selectDirectory();
 		if (returnedPath != '') {
 			var path = Path.createInstance(returnedPath);
-			$scope.pathList.push(path);
+			$scope.indexModel.pathList.push(path);
 			alert('pushed path');
 		}
 	};
@@ -156,9 +140,9 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 
 	$scope.remove = function(path) {
 		$timeout(function() {
-			var index = $scope.pathList.indexOf(path);
+			var index = $scope.indexModel.pathList.indexOf(path);
 			if (index > -1) {
-				$scope.pathList.splice(index, 1);
+				$scope.indexModel.pathList.splice(index, 1);
 			}
 		}, 100);
 	};
@@ -167,35 +151,32 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 		var promise = $scope.save();
 		promise.then(function(){progressService.sendStartIndex();},function(){},function(){});
 	};
-
-	$scope.processIndex = 0;
-	$scope.totalProcessCount = 100;
-	$scope.processPath = '';
-	$scope.state = 'TERMINATE';
-	$scope.progressBarVisible = false;
-
+	
 	var promise = progressService.connect();
 	promise.then(function(frame) {
-		$log.log(frame);
-		var progressPromise = progressService.subProgress();
+			$log.log('[handy]'+frame);
+			var progressPromise = progressService.subProgress();
 		progressPromise.then(function() {
-		}, function(msg) {
-			$log.log(msg);
-		}, function(progressObject) {
-			if (progressObject.state == 'START')
-				$scope.progressBarVisible = true;
-			else if (progressObject.state == 'TERMINATE')
-				$scope.progressBarVisible = false;
-
-			$scope.processIndex = progressObject.processIndex;
-			$scope.processPath = progressObject.processPath;
-			$scope.totalProcessCount = progressObject.totalProcessCount;
-			$scope.state = progressObject.state;
-			$scope.index_progress_status.refreshState();
-			$log.log(progressObject.processIndex + ", " + progressObject.totalProcessCount + ", " + progressObject.processPath + ", " + progressObject.state);
-		});
-	}, function() {
-	}, function() {
+			}, function(msg) {
+				$log.log(msg);
+			}, function(progressObject) {
+				if (progressObject.state == 'START')
+					$scope.indexModel.progressBarVisible = true;
+				else if (progressObject.state == 'TERMINATE'){
+					$scope.indexModel.progressBarVisible = false;
+					$scope.indexModel.index_progress_status.addAlertQ(4);
+				}
+				$scope.indexModel.processIndex = progressObject.processIndex;
+				$scope.indexModel.processPath = progressObject.processPath;
+				$scope.indexModel.totalProcessCount = progressObject.totalProcessCount;
+				$scope.indexModel.state = progressObject.state;
+				$scope.indexModel.index_progress_status.refreshState();
+				$log.log(progressObject.processIndex + ", " + progressObject.totalProcessCount + ", " + progressObject.processPath + ", " + progressObject.state);
+			});
+	}, function(error) {
+		$log.log('[handy]'+error);
+	}, function(noti) {
+		$log.log('[handy]'+noti);
 	});
 
 }]);
@@ -207,3 +188,45 @@ function($location, $scope, apiService) {
 	};
 
 }]);
+/*
+app.directive('focusMe', function($timeout, $parse) {
+	//http://stackoverflow.com/questions/14833326/how-to-set-focus-on-input-field
+	return {
+		//scope: true,   // optionally create a child scope
+		link : function(scope, element, attrs) {
+			var model = $parse(attrs.focusMe);
+			scope.$watch(model, function(value) {
+				console.log('value=', value);
+				if (value === true) {
+					$timeout(function() {
+						element[0].focus();
+					});
+				}
+			});
+			// to address @blesh's comment, set attribute value to 'false'
+			// on blur event:
+			element.bind('blur', function() {
+				console.log('blur');
+				scope.$apply(model.assign(scope, false));
+			});
+		}
+	};
+});*/
+app.directive("compileHtml", function($parse, $sce, $compile) {
+    return {
+        restrict: "A",
+        link: function (scope, element, attributes) {
+ 
+            var expression = $sce.parseAsHtml(attributes.compileHtml);
+ 
+            var getResult = function () {
+                return expression(scope);
+            };
+ 
+            scope.$watch(getResult, function (newValue) {
+                var linker = $compile(newValue);
+                element.append(linker(scope));
+            });
+        }
+    }
+});
