@@ -2,6 +2,7 @@ package handyfinder;
 
 import static org.junit.Assert.fail;
 
+import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URISyntaxException;
@@ -12,15 +13,17 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+
 import javax.servlet.ServletException;
+
 import org.apache.catalina.LifecycleException;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -38,6 +41,7 @@ import org.springframework.web.socket.sockjs.client.RestTemplateXhrTransport;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.Transport;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
+
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
@@ -46,8 +50,8 @@ import com.qwefgh90.io.handyfinder.springweb.websocket.ProgressCommand;
 import com.qwefgh90.io.handyfinder.springweb.websocket.ProgressCommand.STATE;
 
 public class WebsockTest {
-
-	private final static Log log = LogFactory.getLog(WebsockTest.class);
+	private final static Logger LOG = LoggerFactory.getLogger(WebsockTest.class);
+	
 	RootService rootService;
 	MetaRespository index;
 	List<Directory> list = new ArrayList<>();
@@ -64,6 +68,7 @@ public class WebsockTest {
 		dir.setUsed(true);
 		dir.setPathString(Paths.get(new ClassPathResource("").getFile().getAbsolutePath()).resolve("index-test-files")
 				.toAbsolutePath().toString());
+		LOG.trace("test directory to be indexed: "+dir.getPathString());
 		list.add(dir);
 		rootService.updateDirectories(list);
 
@@ -71,13 +76,14 @@ public class WebsockTest {
 
 	@After
 	public void clean() throws Exception {
+		rootService.closeAppLucene();
 		AppStartupConfig.terminateApp();
 	}
 
 	@Test
 	public void connect() throws InterruptedException, SQLException {
 		List<Directory> list = rootService.getDirectories();
-		log.info(list.size());
+		LOG.info(String.valueOf(list.size()));
 
 		final AtomicReference<Throwable> failure = new AtomicReference<>();
 		final CountDownLatch latch = new CountDownLatch(1);
@@ -126,7 +132,7 @@ public class WebsockTest {
 				session.send("/handyfinder/hello", "hello");
 				session.send("/handyfinder/command/index/start","");
 			} catch (Exception e) {
-				log.info(ExceptionUtils.getStackTrace(e));
+				LOG.info(ExceptionUtils.getStackTrace(e));
 			}
 
 		}
@@ -134,23 +140,6 @@ public class WebsockTest {
 		@Override
 		public void afterConnected(final StompSession session, StompHeaders connectedHeaders) {
 			this.session = session;
-			session.subscribe("/test/hi", new StompFrameHandler() {
-				@Override
-				public Type getPayloadType(StompHeaders headers) {
-					return String.class;
-				}
-
-				@Override
-				public void handleFrame(StompHeaders headers, Object payload) {
-					String json = (String) payload;
-					log.info("Got " + json);
-					try {
-					} catch (Throwable t) {
-						failure.set(t);
-					} finally {
-					}
-				}
-			});
 
 			session.subscribe("/progress/single", new StompFrameHandler() {
 				@Override
@@ -161,14 +150,14 @@ public class WebsockTest {
 				@Override
 				public void handleFrame(StompHeaders headers, Object payload) {
 					ProgressCommand json = (ProgressCommand) payload;
-					log.info("Got " + ToStringBuilder.reflectionToString(json));
+					LOG.info("Got " + ToStringBuilder.reflectionToString(json));
 					if (json.getState() == STATE.PROGRESS.TERMINATE) {
 
 						 session.disconnect();
 						 try {
 						 Thread.sleep(100);
 						 } catch (InterruptedException e) {
-						 log.info(ExceptionUtils.getStackTrace(e));
+						 LOG.info(ExceptionUtils.getStackTrace(e));
 						 }
 						 latch.countDown();
 					}
@@ -180,6 +169,25 @@ public class WebsockTest {
 					}
 				}
 			});
+			session.subscribe("/test/hi", new StompFrameHandler() {
+				@Override
+				public Type getPayloadType(StompHeaders headers) {
+					return String.class;
+				}
+
+				@Override
+				public void handleFrame(StompHeaders headers, Object payload) {
+					String json = (String) payload;
+					LOG.info("Got " + json);
+					assertTrue("hi".equals(json));
+					try {
+					} catch (Throwable t) {
+						failure.set(t);
+					} finally {
+					}
+				}
+			});
+
 
 			sendMsg();
 
@@ -196,19 +204,19 @@ public class WebsockTest {
 
 		@Override
 		public void handleFrame(StompHeaders headers, Object payload) {
-			log.error("STOMP ERROR frame: " + headers.toString());
+			LOG.error("STOMP ERROR frame: " + headers.toString());
 			this.failure.set(new Exception(headers.toString()));
 		}
 
 		@Override
 		public void handleException(StompSession s, StompCommand c, StompHeaders h, byte[] p, Throwable ex) {
-			log.error("Handler exception", ex);
+			LOG.error("Handler exception", ex);
 			this.failure.set(ex);
 		}
 
 		@Override
 		public void handleTransportError(StompSession session, Throwable ex) {
-			log.error("Transport failure", ex);
+			LOG.error("Transport failure", ex);
 			this.failure.set(ex);
 		}
 	}

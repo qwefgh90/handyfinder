@@ -19,6 +19,8 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,13 +36,13 @@ import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 @Service
 public class RootService {
 
+	private final static Logger LOG = LoggerFactory.getLogger(RootService.class);
 	@Autowired
 	CommandInvoker invokerForCommand;
 
 	@Autowired
 	MetaRespository indexProperty;
 
-	Log log = LogFactory.getLog(RootService.class);
 
 	/**
 	 * Get directories to be indexed.
@@ -62,6 +64,11 @@ public class RootService {
 		indexProperty.deleteDirectories();
 		indexProperty.save(list);
 	}
+	
+	public void closeAppLucene() throws IOException{
+		LuceneHandler handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invokerForCommand);
+		handler.close();
+	}
 
 	public Optional<List<DocumentDto>> search(String keyword) throws IndexException {
 		List<DocumentDto> list = new ArrayList<>();
@@ -75,10 +82,10 @@ public class RootService {
 				try {
 					highlightTag = handler.highlight(docs.scoreDocs[i].doc, keyword);
 				} catch (ParseException e) {
-					log.info(e.toString());
+					LOG.info(e.toString());
 					continue;
 				} catch (InvalidTokenOffsetsException e) {
-					log.info(e.toString());
+					LOG.info(e.toString());
 					continue;
 				}
 
@@ -94,9 +101,9 @@ public class RootService {
 			}
 			return Optional.of(list);
 		} catch (QueryNodeException e) {
-			log.info(ExceptionUtils.getStackTrace(e));
+			LOG.info(ExceptionUtils.getStackTrace(e));
 		} catch (IOException e) {
-			log.info(ExceptionUtils.getStackTrace(e));
+			LOG.info(ExceptionUtils.getStackTrace(e));
 		}
 		return Optional.empty();
 	}
@@ -111,13 +118,13 @@ public class RootService {
 				handler.startIndex(list);
 				return;
 			} catch (SQLException e) {
-				log.info(ExceptionUtils.getStackTrace(e));
+				LOG.info(ExceptionUtils.getStackTrace(e));
 				// terminate command
 			} catch (IOException e) {
-				log.info(ExceptionUtils.getStackTrace(e));
+				LOG.info(ExceptionUtils.getStackTrace(e));
 				// terminate command
 			} catch (IndexException e) {
-				log.info(ExceptionUtils.getStackTrace(e));
+				LOG.info(ExceptionUtils.getStackTrace(e));
 				// terminate command
 			}
 			break;
@@ -135,7 +142,7 @@ public class RootService {
 				try {
 					Desktop.getDesktop().open(path.toFile());
 				} catch (IOException e) {
-					log.info(e.toString());
+					LOG.info(e.toString());
 				}
 			}
 		}

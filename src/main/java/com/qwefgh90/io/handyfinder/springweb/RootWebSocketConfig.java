@@ -2,6 +2,8 @@ package com.qwefgh90.io.handyfinder.springweb;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -21,6 +23,7 @@ import org.springframework.web.socket.config.annotation.WebSocketTransportRegist
 @EnableWebSocketMessageBroker
 public class RootWebSocketConfig extends AbstractWebSocketMessageBrokerConfigurer {
 
+	private final static Logger LOG = LoggerFactory.getLogger(RootWebSocketConfig.class);
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry config) {
 		config.setApplicationDestinationPrefixes("/handyfinder");	//channel to sent from client 

@@ -18,10 +18,14 @@ import org.apache.commons.io.FileUtils;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.qwefgh90.io.handyfinder.springweb.websocket.ProgressCommand;
 
 public class DerbyTest {
-	
-	Log LOG = LogFactory.getLog(DerbyTest.class);
+
+	private final static Logger LOG = LoggerFactory.getLogger(DerbyTest.class);
 	
 	@Test
 	public void connection() throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException, URISyntaxException, IOException {

@@ -1,13 +1,14 @@
 package com.qwefgh90.io.handyfinder.springweb;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 import javax.sql.DataSource;
 
 import org.apache.derby.jdbc.EmbeddedDataSource;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -25,7 +26,7 @@ import com.qwefgh90.io.handyfinder.springweb.repository.Query;
 @ComponentScan(basePackages = {"com.qwefgh90.io.handyfinder.springweb","com.qwefgh90.io.handyfinder.springweb.service","com.qwefgh90.io.handyfinder.springweb.controller"})
 public class ServletContext extends WebMvcConfigurerAdapter {
 
-	Log LOG = LogFactory.getLog(ServletContext.class);
+	private final static Logger LOG = LoggerFactory.getLogger(ServletContext.class);
 	
 	@Override
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {

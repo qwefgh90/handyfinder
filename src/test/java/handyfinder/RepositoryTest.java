@@ -11,6 +11,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -28,6 +30,7 @@ import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
 // "classpath:/com/example/OrderServiceTest-context.xml"
 @ContextConfiguration(classes = { ServletContextTest.class, RootContext.class })
 public class RepositoryTest {
+	private final static Logger LOG = LoggerFactory.getLogger(RepositoryTest.class);
 	@Autowired
 	MetaRespository indexProperty;
 	Directory dir1;

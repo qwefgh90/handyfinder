@@ -2,10 +2,14 @@ package com.qwefgh90.io.handyfinder.gui;
 
 import java.io.File;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javafx.stage.DirectoryChooser;
 
 public class GUIService {
 
+	private final static Logger LOG = LoggerFactory.getLogger(GUIService.class);
 	public GUIService() {
 	}
 

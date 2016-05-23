@@ -20,6 +20,9 @@
 		<level value="debug" />
 	</logger>
 	<logger name="com.qwefgh90.io.handyfinder.gui">
+		<level value="debug" />
+	</logger>
+	<logger name="handyfinder">
 		<level value="trace" />
 	</logger>
 	

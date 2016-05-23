@@ -11,11 +11,14 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Repository;
 
+import com.qwefgh90.io.handyfinder.springweb.controller.RootController;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.repository.Query.TABLE_NAMES;
 
@@ -29,6 +32,7 @@ import com.qwefgh90.io.handyfinder.springweb.repository.Query.TABLE_NAMES;
 @DependsOn({ "dataSource" })
 public class MetaRespository {
 
+	private final static Logger LOG = LoggerFactory.getLogger(MetaRespository.class);
 	@Autowired
 	@Qualifier("dataSource")
 	DataSource dataSource;

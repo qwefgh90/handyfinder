@@ -5,6 +5,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
@@ -23,7 +26,8 @@ import netscape.javascript.JSObject;
  * 
  */
 public class Java2JavascriptUtils {
-	
+
+	private final static Logger LOG = LoggerFactory.getLogger(Java2JavascriptUtils.class);
 	private static Map<WebEngine, Map<String, Object>> 
 		backendObjects = new HashMap<>();
 	private static Set<WebEngine> 

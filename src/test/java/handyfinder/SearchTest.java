@@ -1,10 +1,16 @@
 package handyfinder;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import java.io.IOException;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
@@ -20,13 +26,11 @@ import com.qwefgh90.io.handyfinder.springweb.RootContext;
 import com.qwefgh90.io.handyfinder.springweb.ServletContextTest;
 import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = { ServletContextTest.class, RootContext.class })
 public class SearchTest {
+	private final static Logger LOG = LoggerFactory.getLogger(SearchTest.class);
 	@Autowired
 	WebApplicationContext wac;
 	MockMvc mvc;
@@ -50,6 +54,11 @@ public class SearchTest {
 		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 		
 		mvc = MockMvcBuilders.webAppContextSetup(wac).build();
+	}
+	
+	@After
+	public void clean() throws IOException{
+		handler.closeResources();
 	}
 	
 	@Test

@@ -8,6 +8,8 @@ import java.util.Optional;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +35,7 @@ import com.qwefgh90.io.handyfinder.springweb.service.RootService;
 @RestController
 public class RootController {
 
-	Log log = LogFactory.getLog(RootController.class);
+	private final static Logger LOG = LoggerFactory.getLogger(RootController.class);
 
 	@Autowired
 	RootService rootService;
@@ -45,7 +47,7 @@ public class RootController {
 		try {
 			return new ResponseEntity<List<Directory>>(rootService.getDirectories(), HttpStatus.OK);
 		} catch (SQLException e) {
-			log.error(ExceptionUtils.getStackTrace(e));
+			LOG.error(ExceptionUtils.getStackTrace(e));
 			return new ResponseEntity<List<Directory>>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -56,7 +58,7 @@ public class RootController {
 			rootService.updateDirectories(list);
 			return new ResponseEntity<String>(HttpStatus.OK);
 		} catch (SQLException e) {
-			log.error(ExceptionUtils.getStackTrace(e));
+			LOG.error(ExceptionUtils.getStackTrace(e));
 			return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}

@@ -17,6 +17,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.ContextConfiguration;
@@ -36,7 +38,7 @@ import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 // "classpath:/com/example/OrderServiceTest-context.xml"
 @ContextConfiguration(classes = { ServletContextTest.class, RootContext.class })
 public class LuceneHandlerTest {
-	Log log = LogFactory.getLog(LuceneHandlerTest.class);
+	private final static Logger LOG = LoggerFactory.getLogger(LuceneHandlerTest.class);
 	@Autowired
 	CommandInvoker invoker;
 	
@@ -86,9 +88,9 @@ public class LuceneHandlerTest {
 //			log.info(info);
 
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "고언어 자바");
-			log.info(exp.toString());
+			LOG.info(exp.toString());
 
-			log.info(handler.highlight(docs.scoreDocs[i].doc, "고언어 자바"));
+			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "고언어 자바"));
 		}
 		assertTrue(docs.scoreDocs.length == 7);
 
@@ -101,9 +103,9 @@ public class LuceneHandlerTest {
 //			log.info(info);
 
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "HTTP");
-			log.info(exp.toString());
+			LOG.info(exp.toString());
 
-			log.info(handler.highlight(docs.scoreDocs[i].doc, "HTTP"));
+			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "HTTP"));
 		}
 		assertTrue(docs.scoreDocs.length == 1);
 
@@ -113,12 +115,12 @@ public class LuceneHandlerTest {
 
 			String info = "[" + docs.scoreDocs[i].score + "]" + doc.get("pathString") + " : \n" + doc.get("contents")
 					.substring(0, doc.get("contents").length() > 100 ? 100 : doc.get("contents").length()) + "\n";
-			log.info(info);
+			LOG.info(info);
 
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "부트로더 Proto");
-			log.info(exp.toString());
+			LOG.info(exp.toString());
 
-			log.info(handler.highlight(docs.scoreDocs[i].doc, "부트로더 Proto"));
+			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "부트로더 Proto"));
 		}
 		assertTrue(docs.scoreDocs.length == 2);
 
@@ -138,9 +140,9 @@ public class LuceneHandlerTest {
 //			log.info(info);
 
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "/depth/ homec/choe");
-			log.info(exp.toString());
+			LOG.info(exp.toString());
 
-			log.info(handler.highlight(docs.scoreDocs[i].doc, "/depth/ homec/choe"));
+			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "/depth/ homec/choe"));
 		}
 		assertTrue(docs.scoreDocs.length > 0);
 	}

@@ -13,9 +13,11 @@ import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
@@ -34,8 +36,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
-import org.apache.log4j.spi.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -57,14 +59,13 @@ import javafx.stage.Stage;
  */
 public class AppStartupConfig extends Application {
 
-	private final static Logger LOG2 = org.slf4j.LoggerFactory.getLogger(AppStartupConfig.class);
 	private final static String TEST_URL = "http://127.0.0.1:8020/app/index.html#/index";
 
 	// initial variable
 	public final static String TEST_APP_DATA_DIR_NAME = "temp_appdata";
 	public static boolean TEST_MODE = false;
-	
-	//exchagable to TEST_APP_DATA_DIR_NAME
+
+	// exchagable to TEST_APP_DATA_DIR_NAME
 	public static String APP_DATA_DIR_NAME = "appdata";
 	public final static String DB_NAME = "handyfinderdb";
 	public final static String INDEX_DIR_NAME = "index";
@@ -86,7 +87,7 @@ public class AppStartupConfig extends Application {
 	public static Stage primaryStage;
 	public static boolean SERVER_ONLY = false;
 
-	private static final Log LOG = LogFactory.getLog(AppStartupConfig.class);
+	private final static Logger LOG = LoggerFactory.getLogger(AppStartupConfig.class);
 
 	/**
 	 * this method must be called in main() method
@@ -111,10 +112,10 @@ public class AppStartupConfig extends Application {
 					HelpFormatter formatter = new HelpFormatter();
 					formatter.printHelp("handyfinder", options);
 					return false;
-				} 
+				}
 				if (line.hasOption("no-gui")) {
 					SERVER_ONLY = true;
-				} 
+				}
 				if (line.hasOption("test-mode")) {
 					APP_DATA_DIR_NAME = TEST_APP_DATA_DIR_NAME;
 				}
@@ -144,8 +145,19 @@ public class AppStartupConfig extends Application {
 		address = "127.0.0.1";
 		port = findFreePort();
 
-		LOG.info("\nhandyfinder environment is initialized" + "\n" + "classpath: " + getCurrentBuildPath() + "\n"
-				+ "appdata: " + pathForAppdata.toString());
+		StringBuilder logBuilder = new StringBuilder();
+		logBuilder.append("\n").append("handyfinder environment is initialized")
+		.append("\n").append("current classpath: ").append(getCurrentBuildPath())
+		.append("\n").append("appdata: ").append(pathForAppdata.toString());
+
+		LOG.info(logBuilder.toString());
+		logBuilder.setLength(0);
+		String[] allPath = allClassPath();
+		for(int i = 0 ; i < allPath.length ; i++){
+			logBuilder.append("classpath: ").append("\n").append(String.valueOf(i+1)).append(") ").append(allPath[i]);
+		}
+		
+		LOG.debug(logBuilder.toString());
 		return true;
 	}
 
@@ -169,7 +181,7 @@ public class AppStartupConfig extends Application {
 				System.err.println("alertwb1: " + arg0.getData());
 			}
 		});
-		
+
 		// load index.html
 		// webView.getEngine().load(getClass().getResource(page).toExternalForm());
 		webView.getEngine().load(homeUrl);
@@ -201,9 +213,9 @@ public class AppStartupConfig extends Application {
 		tomcat.getConnector().setAttribute("port", port);
 		File pathForAppdataFile = pathForAppdata.toFile();
 
-		if (isJarStart()){
+		if (isJarStart()) {
 			copyDirectoryInJar(deployedPath.toString(), WEB_APP_DIRECTORY_NAME, pathForAppdataFile);
-		}else
+		} else
 			FileUtils.copyDirectory(new File(deployedPath.toString()), pathForAppdataFile);
 
 		Context context = tomcat.addWebapp("", pathForAppdataFile.getAbsolutePath());
@@ -218,7 +230,7 @@ public class AppStartupConfig extends Application {
 		} catch (TomcatInitFailException e) {
 			// handling
 
-			LOG.fatal(e.toString());
+			LOG.error(e.toString());
 			assert false; // dead "-ea" jvm option
 		}
 		LOG.info("tomcat started completely : " + homeUrl); // handyfinder app
@@ -253,7 +265,7 @@ public class AppStartupConfig extends Application {
 			urlConn.connect();
 
 			if (HttpURLConnection.HTTP_OK != urlConn.getResponseCode()) {
-				throw new TomcatInitFailException();
+				throw new TomcatInitFailException("tomcat initialization failed.");
 			}
 		} catch (MalformedURLException e) {
 			LOG.error(e.toString());
@@ -264,8 +276,26 @@ public class AppStartupConfig extends Application {
 		}
 	}
 
-	static class TomcatInitFailException extends Exception {
+	static class TomcatInitFailException extends IllegalStateException {
+		public TomcatInitFailException() {
+			super();
+			// TODO Auto-generated constructor stub
+		}
 
+		public TomcatInitFailException(String message, Throwable cause) {
+			super(message, cause);
+			// TODO Auto-generated constructor stub
+		}
+
+		public TomcatInitFailException(String s) {
+			super(s);
+			// TODO Auto-generated constructor stub
+		}
+
+		public TomcatInitFailException(Throwable cause) {
+			super(cause);
+			// TODO Auto-generated constructor stub
+		}
 	}
 
 	/**
@@ -304,6 +334,19 @@ public class AppStartupConfig extends Application {
 		}
 	}
 
+	public static String[] allClassPath() {
+		ArrayList<String> arr = new ArrayList<String>();
+		ClassLoader cl = ClassLoader.getSystemClassLoader();
+
+		URL[] urls = ((URLClassLoader) cl).getURLs();
+
+		for (URL url : urls) {
+			arr.add(url.getFile());
+		}
+		
+		return arr.toArray(new String[arr.size()]);
+	}
+
 	public static boolean isJarStart() {
 		return getCurrentBuildPath().toString().endsWith(".jar");
 	}
@@ -336,8 +379,9 @@ public class AppStartupConfig extends Application {
 
 	/**
 	 * jar files and Copy to destination. If a file exists, overwrite it.<br>
-	 * relative reference - http://cs.dvc.edu/HowTo_ReadJars.html
-	 * jar resource use forward slash (/)
+	 * relative reference - http://cs.dvc.edu/HowTo_ReadJars.html jar resource
+	 * use forward slash (/)
+	 * 
 	 * @param jarPath
 	 * @param resourceDirInJar
 	 *            - "/config" or "/config/" or "config" or ""
@@ -360,26 +404,24 @@ public class AppStartupConfig extends Application {
 																												// seperator
 			resourceDirInJar = resourceDirInJar + "/";
 
-		LOG2.trace("extract info : "
-				+ "\nFile.separator : " + File.separator
-				+ "\nresourceDirInJar : " + resourceDirInJar + 
-				"\njarPath : " + jarPath + 
-				"\ndestinationRoot" + destinationRoot);
-		
+		LOG.trace("extract info : " + "\nFile.separator : " + File.separator + "\nresourceDirInJar : "
+				+ resourceDirInJar + "\njarPath : " + jarPath + "\ndestinationRoot" + destinationRoot);
+
 		FileInputStream fis = new FileInputStream(jarPath);
 		JarInputStream jis = new JarInputStream(fis);
 		JarEntry entry = jis.getNextJarEntry();
 		// loop entry
 		while (entry != null) {
-			LOG2.trace("extract from java : "+entry.getName());
+			LOG.trace("extract from java : " + entry.getName());
 			if (entry.getName().startsWith(resourceDirInJar) // Directory in jar
 					&& entry.getName().endsWith("/")) {
-				LOG2.trace("create start : "+entry.getName());
+				LOG.trace("create start : " + entry.getName());
 				Files.createDirectories(new File(destinationRoot, entry.getName()).toPath());
-			} else if (entry.getName().startsWith(resourceDirInJar) // File in jar
+			} else if (entry.getName().startsWith(resourceDirInJar) // File in
+																	// jar
 					&& !entry.getName().endsWith("/")) {
 
-				LOG2.trace("copy start : "+entry.getName());
+				LOG.trace("copy start : " + entry.getName());
 				File tempFile = extractTempFile(getResourceInputstream(entry.getName()));
 				FileUtils.copyFile(tempFile, new File(destinationRoot.getAbsolutePath(), entry.getName())); // copy
 				tempFile.delete();

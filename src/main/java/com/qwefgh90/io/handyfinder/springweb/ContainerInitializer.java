@@ -1,13 +1,17 @@
 package com.qwefgh90.io.handyfinder.springweb;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
+import com.qwefgh90.io.handyfinder.gui.Java2JavascriptUtils;
 
 public class ContainerInitializer extends
 		AbstractAnnotationConfigDispatcherServletInitializer {
 
+	private final static Logger LOG = LoggerFactory.getLogger(ContainerInitializer.class);
 	@Override
 	protected Class<?>[] getRootConfigClasses() {
 		//root-context.xml

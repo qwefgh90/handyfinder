@@ -2,7 +2,11 @@ package com.qwefgh90.io.handyfinder.springweb.websocket;
 
 import java.nio.file.Path;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class GUICommand implements ICommand{
+	private final static Logger LOG = LoggerFactory.getLogger(GUICommand.class);
 	public enum COMMAND{
 		OPEN_DIRECTORY
 	}

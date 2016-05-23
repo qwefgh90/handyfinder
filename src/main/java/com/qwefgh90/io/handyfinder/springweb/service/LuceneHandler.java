@@ -59,8 +59,11 @@ import org.apache.lucene.search.highlight.TextFragment;
 import org.apache.lucene.search.highlight.TokenSources;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
+import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 import com.qwefgh90.io.jsearch.JSearch;
 import com.qwefgh90.io.jsearch.JSearch.ParseException;
@@ -74,7 +77,7 @@ import com.qwefgh90.io.jsearch.JSearch.ParseException;
  */
 public class LuceneHandler implements Cloneable, AutoCloseable {
 
-	private static Log log = LogFactory.getLog(LuceneHandler.class);
+	private final static Logger LOG = LoggerFactory.getLogger(LuceneHandler.class);
 
 	// writer
 	private Path indexWriterPath;
@@ -289,7 +292,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			contents = JSearch.extractContentsFromFile(path.toFile());
 			contents.replaceAll(" +", "");	//erase space
 		} catch (ParseException e) {
-			log.info(ExceptionUtils.getStackTrace(e));
+			LOG.info(ExceptionUtils.getStackTrace(e));
 			return;
 		}
 		
@@ -305,7 +308,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		doc.add(pathStringField);
 		doc.add(contentsField);
 		writer.updateDocument(new Term("pathString", path.toAbsolutePath().toString()), doc);
-		log.info("indexing complete : " + path);
+		LOG.info("indexing complete : " + path);
 		writer.commit(); // commit() is important for real-time search
 	}
 
