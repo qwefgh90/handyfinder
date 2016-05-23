@@ -29,18 +29,34 @@ public class Query {
 		return "SELECT TABLENAME FROM SYS.SYSTABLES WHERE TABLETYPE='T' AND TABLENAME = ?";
 	}
 	
+	/**
+	 * DIRECTORY
+	 * @return
+	 */
 	public final static String insertDirectory(){
 		return "INSERT INTO DIRECTORY VALUES(?,?,?)";
 	}
-	
+
+	/**
+	 * DIRECTORY
+	 * @return
+	 */
 	public final static String deleteDirectoryWhere(){
 		return "DELETE FROM DIRECTORY WHERE pathString=?";
 	}
-	
+
+	/**
+	 * DIRECTORY
+	 * @return
+	 */
 	public final static String deleteDirectories(){
 		return "DELETE FROM DIRECTORY";
 	}
-	
+
+	/**
+	 * DIRECTORY
+	 * @return
+	 */
 	public final static String selectDirectory(){
 		return "SELECT pathString, used, recursively FROM DIRECTORY"; 
 	}

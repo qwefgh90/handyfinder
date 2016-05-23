@@ -42,6 +42,7 @@ function($location, $log, $scope, apiService, Document, $sce, GUIService, Search
 			return;
 		var promise = apiService.search(keyword);
 		searchFlag = false;
+		$scope.searchModel.searchCount = $scope.searchModel.searchCount + 1;
 		promise.then(function(json){
 			$scope.searchModel.searchResult = [];
 			for(var i = 0 ; i < json.length ; i ++){
@@ -59,6 +60,9 @@ function($location, $log, $scope, apiService, Document, $sce, GUIService, Search
 		$log.log('[handy]'+frame);
 		$scope.open = function(path){
 			GUIService.openDirectory(path);
+		};
+		$scope.open_file = function(path){
+			GUIService.openFile(path);
 		}
 	}, function(error) {
 		$log.log('[handy]'+error);

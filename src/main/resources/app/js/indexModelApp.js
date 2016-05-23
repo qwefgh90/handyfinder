@@ -3,7 +3,8 @@ app.factory("SearchModel",['$rootScope', function($rootScope){
 	var service = {
 		model : {
 			searchKeyword : '',
-			searchResult : []
+			searchResult : [],
+			searchCount : 0,
 		},
 
         SaveState: function () {
@@ -37,23 +38,28 @@ app.factory("IndexModel",['$rootScope', function($rootScope){
 							alerts : [{// 0
 								open : false,
 								type : 'success',
-								msg : 'Directories are stored on disk!'
+								msg : 'Directories are stored on disk!',
+								timeout : 4000
 							}, {// 1
 								open : false,
 								type : 'danger',
-								msg : 'Storing directories is failed on disk!'
+								msg : 'Storing directories is failed on disk!',
+								timeout : 4000
 							}, {// 2
 								open : false,
 								type : 'success',
-								msg : 'Directories are loaded on disk!'
+								msg : 'Directories are loaded on disk!',
+								timeout : 4000
 							}, {// 3
 								open : false,
 								type : 'danger',
-								msg : 'Loading directories is failed from disk!'
+								msg : 'Loading directories is failed from disk!',
+								timeout : 4000
 							}, {// 4
 								open : false,
 								type : 'success',
-								msg : 'Ready to search your files!'
+								msg : 'Ready to search your files!',
+								timeout : 4000
 							}],
 							alertQ : [],
 							addAlertQ : function(index) {

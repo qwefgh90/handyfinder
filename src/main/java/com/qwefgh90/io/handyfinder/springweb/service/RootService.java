@@ -19,6 +19,7 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
+import org.apache.tika.mime.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,9 @@ import com.qwefgh90.io.handyfinder.springweb.model.DocumentDto;
 import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
 import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler.IndexException;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
+import com.qwefgh90.io.jsearch.FileExtension;
+import com.qwefgh90.io.jsearch.JSearch;
+import com.qwefgh90.io.jsearch.extractor.TikaTextExtractor;
 
 @Service
 public class RootService {
@@ -142,9 +146,29 @@ public class RootService {
 				try {
 					Desktop.getDesktop().open(path.toFile());
 				} catch (IOException e) {
-					LOG.info(e.toString());
+					LOG.warn(e.toString());
 				}
 			}
+		}
+	}
+	
+	public void openFile(String pathStr){
+		Path path = Paths.get(pathStr);
+		if (Files.exists(path) && Files.isRegularFile(path)) {
+			try {
+				MediaType mime = FileExtension.getContentType(path.toFile(), path.getFileName().toString());
+				//if ok
+				if (Desktop.isDesktopSupported()) {
+					try {
+						Desktop.getDesktop().open(path.toFile());
+					} catch (IOException e) {
+						LOG.warn(e.toString());
+					}
+				}
+			} catch (IOException e) {
+				LOG.warn(ExceptionUtils.getStackTrace(e));
+			}
+			
 		}
 	}
 }

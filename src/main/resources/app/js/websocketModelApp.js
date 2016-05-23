@@ -105,6 +105,10 @@ function(StompClient, $q, $log) {
 		openDirectory : function(path) {
 			stompClient.send("/handyfinder/command/gui/open", {}, JSON.stringify({path:path}));
 		}
+		,
+		openFile : function(path) {
+			stompClient.send("/handyfinder/command/gui/open-file", {}, JSON.stringify({path:path}));
+		}
 	};
 
 }]);

@@ -11,19 +11,19 @@
 	</appender>
 	
 	<logger name="org.springframework.messaging">
-		<level value="debug" />
+		<level value="info" />
 	</logger>
 	<logger name="org.springframework.web">
 		<level value="info" />
 	</logger>
 	<logger name="org.springframework.web.socket">
-		<level value="debug" />
+		<level value="info" />
 	</logger>
 	<logger name="com.qwefgh90.io.handyfinder.gui">
-		<level value="debug" />
+		<level value="info" />
 	</logger>
 	<logger name="handyfinder">
-		<level value="trace" />
+		<level value="info" />
 	</logger>
 	
 

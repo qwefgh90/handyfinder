@@ -331,8 +331,6 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			throw new IndexException("now indexing");
 		checkDirectoryReader();
 		updateSearcher();
-		// Query query = parser.parse(addWildcardString(fullString));
-		// //pathString:�옄諛�* contents:�옄諛�*
 
 		Query q1 = parser.parse(addBiWildcardString(fullString), "pathString");
 		Query q2 = parser.parse(addWildcardString(fullString), "contents");

@@ -34,6 +34,8 @@ public class UtilTest {
 			try {
 				URL url = getClass().getResource("/");
 				Desktop.getDesktop().open(new File(url.toURI()));
+				URL url2 = getClass().getResource("/index-test-files/text.txt");
+				Desktop.getDesktop().open(new File(url2.toURI()));
 			} catch (IOException e) {
 				System.out.println(e.toString());
 			}

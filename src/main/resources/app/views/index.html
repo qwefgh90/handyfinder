@@ -10,6 +10,7 @@
 					  <uib-alert 
 					  ng-repeat="alert in indexModel.index_progress_status.alertQ"
 					  type="{{alert.type}}" 
+					  dismiss-on-timeout="{{alert.timeout}}"
 					  close="indexModel.index_progress_status.removeAlertQ($index);">{{alert.msg}}</uib-alert>
 					  <div ng-show="indexModel.progressBarVisible">
 					   <h3>Indexing</h3>

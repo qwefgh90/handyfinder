@@ -109,6 +109,8 @@ public class RootController {
 	public void commandGui(@Payload OpenCommand path, @DestinationVariable String command) {
 		if (command.equals("open"))
 			rootService.openDirectory(path.getPath());
+		if (command.equals("open-file"))
+			rootService.openFile(path.getPath());
 	}
 
 	private static class OpenCommand {
