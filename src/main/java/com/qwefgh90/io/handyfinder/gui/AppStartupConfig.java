@@ -34,6 +34,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+import org.apache.log4j.spi.LoggerFactory;
+import org.slf4j.Logger;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -55,6 +57,7 @@ import javafx.stage.Stage;
  */
 public class AppStartupConfig extends Application {
 
+	private final static Logger LOG2 = org.slf4j.LoggerFactory.getLogger(AppStartupConfig.class);
 	private final static String TEST_URL = "http://127.0.0.1:8020/app/index.html#/index";
 
 	// initial variable
@@ -198,9 +201,9 @@ public class AppStartupConfig extends Application {
 		tomcat.getConnector().setAttribute("port", port);
 		File pathForAppdataFile = pathForAppdata.toFile();
 
-		if (isJarStart())
+		if (isJarStart()){
 			copyDirectoryInJar(deployedPath.toString(), WEB_APP_DIRECTORY_NAME, pathForAppdataFile);
-		else
+		}else
 			FileUtils.copyDirectory(new File(deployedPath.toString()), pathForAppdataFile);
 
 		Context context = tomcat.addWebapp("", pathForAppdataFile.getAbsolutePath());
@@ -334,7 +337,7 @@ public class AppStartupConfig extends Application {
 	/**
 	 * jar files and Copy to destination. If a file exists, overwrite it.<br>
 	 * relative reference - http://cs.dvc.edu/HowTo_ReadJars.html
-	 * 
+	 * jar resource use forward slash (/)
 	 * @param jarPath
 	 * @param resourceDirInJar
 	 *            - "/config" or "/config/" or "config" or ""
@@ -355,28 +358,30 @@ public class AppStartupConfig extends Application {
 				&& resourceDirInJar.getBytes()[resourceDirInJar.length() - 1] != File.separator.getBytes()[0]) // add
 																												// rightmost
 																												// seperator
-			resourceDirInJar = resourceDirInJar + File.separator;
+			resourceDirInJar = resourceDirInJar + "/";
 
+		LOG2.trace("extract info : "
+				+ "\nFile.separator : " + File.separator
+				+ "\nresourceDirInJar : " + resourceDirInJar + 
+				"\njarPath : " + jarPath + 
+				"\ndestinationRoot" + destinationRoot);
+		
 		FileInputStream fis = new FileInputStream(jarPath);
 		JarInputStream jis = new JarInputStream(fis);
 		JarEntry entry = jis.getNextJarEntry();
 		// loop entry
 		while (entry != null) {
-
+			LOG2.trace("extract from java : "+entry.getName());
 			if (entry.getName().startsWith(resourceDirInJar) // Directory in jar
-					&& entry.getName().getBytes()[entry.getName().length() - 1] == File.separator.getBytes()[0]) {
+					&& entry.getName().endsWith("/")) {
+				LOG2.trace("create start : "+entry.getName());
 				Files.createDirectories(new File(destinationRoot, entry.getName()).toPath());
-			} else if (entry.getName().startsWith(resourceDirInJar) // File in
-																	// jar
-					&& entry.getName().getBytes()[entry.getName().length() - 1] != File.separator.getBytes()[0]) {
+			} else if (entry.getName().startsWith(resourceDirInJar) // File in jar
+					&& !entry.getName().endsWith("/")) {
+
+				LOG2.trace("copy start : "+entry.getName());
 				File tempFile = extractTempFile(getResourceInputstream(entry.getName()));
 				FileUtils.copyFile(tempFile, new File(destinationRoot.getAbsolutePath(), entry.getName())); // copy
-																											// from
-																											// source
-																											// file
-																											// to
-																											// destination
-																											// file
 				tempFile.delete();
 			}
 			entry = jis.getNextJarEntry();

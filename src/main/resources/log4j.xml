@@ -19,6 +19,10 @@
 	<logger name="org.springframework.web.socket">
 		<level value="debug" />
 	</logger>
+	<logger name="com.qwefgh90.io.handyfinder.gui">
+		<level value="trace" />
+	</logger>
+	
 
     <root>
 		<priority value="warn" />
