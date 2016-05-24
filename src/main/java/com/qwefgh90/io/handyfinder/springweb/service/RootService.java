@@ -91,6 +91,9 @@ public class RootService {
 				} catch (InvalidTokenOffsetsException e) {
 					LOG.info(e.toString());
 					continue;
+				} catch (com.qwefgh90.io.jsearch.JSearch.ParseException e) {
+					LOG.info(e.toString());
+					continue;
 				}
 
 				dto.setCreatedTime(document.getField("createdTime").numericValue().longValue());

@@ -31,6 +31,7 @@ import com.qwefgh90.io.handyfinder.springweb.ServletContextTest;
 import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler;
 import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler.IndexException;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
+import com.qwefgh90.io.jsearch.JSearch.ParseException;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -76,10 +77,10 @@ public class LuceneHandlerTest {
 
 	@Test
 	public void writeTest() throws IOException, org.apache.lucene.queryparser.classic.ParseException,
-			InvalidTokenOffsetsException, QueryNodeException, IndexException {
+			InvalidTokenOffsetsException, QueryNodeException, IndexException, ParseException {
 		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 
-		TopDocs docs = handler.search("고언어 자바");
+		TopDocs docs = handler.search("자바 고언어");
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
 			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
 
@@ -87,10 +88,10 @@ public class LuceneHandlerTest {
 //					.substring(0, doc.get("contents").length() > 100 ? 100 : doc.get("contents").length()) + "\n";
 //			log.info(info);
 
-			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "고언어 자바");
+			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "자바");
 			LOG.info(exp.toString());
 
-			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "고언어 자바"));
+			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "자바 고언어"));
 		}
 		assertTrue(docs.scoreDocs.length == 7);
 
@@ -113,8 +114,7 @@ public class LuceneHandlerTest {
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
 			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
 
-			String info = "[" + docs.scoreDocs[i].score + "]" + doc.get("pathString") + " : \n" + doc.get("contents")
-					.substring(0, doc.get("contents").length() > 100 ? 100 : doc.get("contents").length()) + "\n";
+			String info = "[" + docs.scoreDocs[i].score + "]" + doc.get("pathString") + " : \n" + doc.get("contents") + "\n";
 			LOG.info(info);
 
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "부트로더 Proto");
@@ -128,7 +128,7 @@ public class LuceneHandlerTest {
 
 	@Test
 	public void fileURITest() throws IOException, org.apache.lucene.queryparser.classic.ParseException,
-			QueryNodeException, InvalidTokenOffsetsException, IndexException {
+			QueryNodeException, InvalidTokenOffsetsException, IndexException, ParseException {
 		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 
 		TopDocs docs = handler.search("부트로더");

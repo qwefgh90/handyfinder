@@ -283,7 +283,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 
 		FieldType type = new FieldType();
 		type.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
-		type.setStored(true);
+		//type.setStored(true);
 		type.setStoreTermVectors(true);
 		type.setStoreTermVectorOffsets(true);
 
@@ -404,13 +404,15 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @throws QueryNodeException
 	 */
 	public String highlight(int docid, String queryString) throws org.apache.lucene.queryparser.classic.ParseException,
-			IOException, InvalidTokenOffsetsException, QueryNodeException {
+			IOException, InvalidTokenOffsetsException, QueryNodeException, ParseException {
 		StringBuilder sb = new StringBuilder();
 		Document doc = searcher.doc(docid);
 		Query query = getBooleanQuery(queryString);
 		SimpleHTMLFormatter htmlFormatter = new SimpleHTMLFormatter();
 		Highlighter highlighter = new Highlighter(htmlFormatter, new QueryScorer(query));
-		String contents = doc.get("contents");
+		String pathString = doc.get("pathString");
+		String contents = JSearch.extractContentsFromFile(pathString);
+		//String contents = "자바";
 		try (@SuppressWarnings("deprecation")
 		TokenStream tokenStream = TokenSources.getAnyTokenStream(indexReader, docid, "contents", analyzer)) {
 			TextFragment[] frag = highlighter.getBestTextFragments(tokenStream, contents, false, 2);// highlighter.getBestFragments(tokenStream,
@@ -424,7 +426,6 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		if (sb.length() != 0) {
 			return sb.toString();
 		} else {
-			String pathString = doc.get("pathString");
 			try (@SuppressWarnings("deprecation")
 			TokenStream tokenStream = TokenSources.getAnyTokenStream(indexReader, docid, "pathString", analyzer)) {
 				TextFragment[] frag = highlighter.getBestTextFragments(tokenStream, pathString, false, 2);// highlighter.getBestFragments(tokenStream,
