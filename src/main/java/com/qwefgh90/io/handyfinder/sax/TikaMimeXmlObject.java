@@ -1,0 +1,186 @@
+package com.qwefgh90.io.handyfinder.sax;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
+
+import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
+
+/**
+ * instance is created by <b>TikaMimeXmlObjectFactory</b>
+ * 
+ * @author choechangwon
+ *
+ */
+public final class TikaMimeXmlObject {
+	private final static Logger LOG = LoggerFactory.getLogger(TikaMimeXmlObject.class);
+
+	private TikaMimeXmlObject() {
+	}
+
+	private Map<String, Set<String>> mimeToGlobListMap = new HashMap<>();
+	private Map<String, Boolean> globMap = new HashMap<>();
+
+	public Iterator<String> getMimeIterator() {
+		return mimeToGlobListMap.keySet().iterator();
+	}
+
+	public Iterator<String> getGlobIterator(String globKey) {
+		Set<String> str = mimeToGlobListMap.get(globKey);
+		return str.iterator();
+	}
+
+	public Iterator<String> getGlobIterator() {
+		return globMap.keySet().iterator();
+	}
+
+	public void addGlobType(String mimetype, String glob) {
+		globMap.put(glob, Boolean.TRUE);
+
+		if (!mimeToGlobListMap.keySet().contains(mimetype)) {
+			Set<String> values = new TreeSet<String>();
+			values.add(glob);
+			mimeToGlobListMap.put(mimetype, values);
+		} else {
+			mimeToGlobListMap.get(mimetype).add(glob);
+		}
+		try {
+			updateGlobPropertiesFile();
+		} catch (IOException e) {
+			LOG.error(ExceptionUtils.getStackTrace(e));
+		}
+	}
+
+	public void setGlob(String glob, boolean b) {
+		Boolean value = Boolean.valueOf(b);
+		globMap.put(glob, value);
+		try {
+			updateGlobPropertiesFile();
+		} catch (IOException e) {
+			LOG.error(ExceptionUtils.getStackTrace(e));
+		}
+	}
+
+	public Boolean getGlobUsing(String glob) {
+		return globMap.get(glob);
+	}
+
+	public int getCountofGlob() {
+		return globMap.size();
+	}
+
+	/**
+	 * get mimetype count from glob
+	 * 
+	 * @param glob
+	 * @return -1 if not exist.
+	 */
+	public int getCountofGlob(String mime) {
+		if (!mimeToGlobListMap.keySet().contains(mime)) {
+			return -1;
+		} else {
+			return mimeToGlobListMap.get(mime).size();
+		}
+	}
+
+	/**
+	 * update <b>glob properties file</b> in file system.
+	 * 
+	 * @throws IOException
+	 * @throws FileNotFoundException
+	 */
+	private void updateGlobPropertiesFile() throws FileNotFoundException, IOException {
+		Properties properties = new Properties();
+		Iterator<String> iter = getGlobIterator();
+		while (iter.hasNext()) {
+			String glob = iter.next();
+			Boolean b = globMap.get(glob);
+			properties.setProperty(glob, Boolean.toString(b.booleanValue()));
+		}
+		Path propertiesPath = AppStartupConfig.propertiesPath;
+		if (Files.exists(propertiesPath)) {
+			Files.delete(propertiesPath);
+		}
+
+		try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(propertiesPath.toFile()))) {
+			properties.store(bos, String.valueOf(System.currentTimeMillis()));
+		}
+	}
+
+	/**
+	 * factory class of <b>TikaMimeXmlObject</b>
+	 * 
+	 * @author choechangwon
+	 *
+	 */
+	public static class TikaMimeXmlObjectFactory {
+		private static Map<String, TikaMimeXmlObject> container = new HashMap<String, TikaMimeXmlObject>();
+
+		private TikaMimeXmlObjectFactory() {
+
+		}
+
+		public static TikaMimeXmlObject createInstanceFromXml(String xmlPath)
+				throws ParserConfigurationException, SAXException, IOException {
+			if (container.keySet().contains(xmlPath)) {
+				return container.get(xmlPath);
+			}
+			/*
+			Properties p = new Properties();
+			if (Files.exists(AppStartupConfig.propertiesPath)) {
+				try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(AppStartupConfig.propertiesPath.toFile())))
+				{
+					p.load(bis);
+				} catch (IOException e) {
+					
+				}
+			}*/
+			SAXParserFactory factory = SAXParserFactory.newInstance();
+			SAXParser saxParser = factory.newSAXParser();
+			TikaMimeXmlObject obj = new TikaMimeXmlObject();
+			container.put(xmlPath, obj);
+
+			saxParser.parse(xmlPath, new TikaMimeTypesSaxHandler(obj));
+			addCustomMimeAndGlob(obj);
+			return obj;
+		}
+
+		private static void addCustomMimeAndGlob(TikaMimeXmlObject obj) {
+			try {
+				Properties p = new Properties();
+				InputStream is = new FileInputStream(AppStartupConfig.customTikaPropertiesPath.toFile());
+				p.load(is);
+				for (Map.Entry<Object, Object> entry : p.entrySet()) {
+					obj.addGlobType((String) entry.getKey(), (String) entry.getValue());
+				}
+			} catch (FileNotFoundException e) {
+				LOG.info(e.toString());
+			} catch (IOException e) {
+				LOG.info(e.toString());
+			}
+
+		}
+
+	}
+}

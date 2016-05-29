@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.io.IOException;
 
+import org.apache.commons.cli.ParseException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,8 +42,11 @@ public class SearchTest {
 	LuceneHandler handler;
 	static {
 		try {
-			AppStartupConfig.initializeEnv(new String[]{"--test-mode","--no-gui"});
+			AppStartupConfig.initializeEnv(new String[]{"--no-gui"});
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

@@ -20,6 +20,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.ServletException;
 
@@ -34,13 +36,12 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
+import org.apache.james.mime4j.codec.EncoderUtil.Usage;
+import org.apache.tika.mime.MimeTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;
 
 import javafx.application.Application;
@@ -57,12 +58,10 @@ import javafx.stage.Stage;
  * 
  * @author choechangwon
  */
+@SuppressWarnings("restriction")
 public class AppStartupConfig extends Application {
 
-	private final static String TEST_URL = "http://127.0.0.1:8020/app/index.html#/index";
-
 	// initial variable
-	public final static String TEST_APP_DATA_DIR_NAME = "temp_appdata";
 	public static boolean TEST_MODE = false;
 
 	// exchagable to TEST_APP_DATA_DIR_NAME
@@ -77,6 +76,9 @@ public class AppStartupConfig extends Application {
 	public static Path pathForIndex;
 	public static Path tomatLoggingFilePath;
 	public static Path appLoggingFilePath;
+	public static Path tikaXmlFilePath;
+	public static Path customTikaPropertiesPath;
+	public static Path propertiesPath;
 	public static String address;
 	public static int port;
 	public static String homeUrl;
@@ -93,34 +95,27 @@ public class AppStartupConfig extends Application {
 	 * this method must be called in main() method
 	 * 
 	 * @throws IOException
+	 * @throws ParseException 
 	 */
-	public static boolean initializeEnv(String[] args) throws IOException {
+	public static boolean initializeEnv(String[] args) throws IOException, ParseException {
 		// create the command line parser
 		CommandLineParser parser = new DefaultParser();
 
 		// create the Options
 		Options options = new Options();
 		options.addOption("n", "no-gui", false, "execute server only without GUI (User Interface)");
-		options.addOption("t", "test-mode", false, "execute server on test mode (diffrent path)");
 		options.addOption("h", "help", false, "print help text");
 
 		if (args != null) {
 			// parse the command line arguments
-			try {
-				CommandLine line = parser.parse(options, args);
-				if (line.hasOption("help")) {
-					HelpFormatter formatter = new HelpFormatter();
-					formatter.printHelp("handyfinder", options);
-					return false;
-				}
-				if (line.hasOption("no-gui")) {
-					SERVER_ONLY = true;
-				}
-				if (line.hasOption("test-mode")) {
-					APP_DATA_DIR_NAME = TEST_APP_DATA_DIR_NAME;
-				}
-			} catch (ParseException e) {
-				LOG.info(ExceptionUtils.getStackTrace(e));
+			CommandLine line = parser.parse(options, args);
+			if (line.hasOption("help")) {
+				HelpFormatter formatter = new HelpFormatter();
+				formatter.printHelp("handyfinder", options);
+				return false;
+			}
+			if (line.hasOption("no-gui")) {
+				SERVER_ONLY = true;
 			}
 		}
 
@@ -132,6 +127,9 @@ public class AppStartupConfig extends Application {
 		pathForIndex = pathForAppdata.resolve(INDEX_DIR_NAME);
 		tomatLoggingFilePath = pathForAppdata.resolve("catalina.out");
 		appLoggingFilePath = pathForAppdata.resolve("handyfinder.log");
+		tikaXmlFilePath = pathForAppdata.resolve("tika-mimetypes.xml");
+		propertiesPath = pathForAppdata.resolve("glob-used.properties");
+		customTikaPropertiesPath = pathForAppdata.resolve("custom-tika-mimetypes.properties");
 
 		if (!Files.isWritable(parentOfClassPath)) {
 			LOG.error("can't write resource");
@@ -146,19 +144,97 @@ public class AppStartupConfig extends Application {
 		port = findFreePort();
 
 		StringBuilder logBuilder = new StringBuilder();
-		logBuilder.append("\n").append("handyfinder environment is initialized")
-		.append("\n").append("current classpath: ").append(getCurrentBuildPath())
-		.append("\n").append("appdata: ").append(pathForAppdata.toString());
+		logBuilder.append("\n").append("handyfinder environment is initialized").append("\n")
+				.append("current classpath: ").append(getCurrentBuildPath()).append("\n").append("appdata: ")
+				.append(pathForAppdata.toString());
 
 		LOG.info(logBuilder.toString());
 		logBuilder.setLength(0);
 		String[] allPath = allClassPath();
-		for(int i = 0 ; i < allPath.length ; i++){
-			logBuilder.append("classpath: ").append("\n").append(String.valueOf(i+1)).append(") ").append(allPath[i]);
+		for (int i = 0; i < allPath.length; i++) {
+			logBuilder.append("classpath: ").append("\n").append(String.valueOf(i + 1)).append(") ").append(allPath[i]);
 		}
-		
+
 		LOG.debug(logBuilder.toString());
 		return true;
+	}
+
+	public static void main(String[] args)
+			throws LifecycleException, ServletException, IOException, URISyntaxException, ParseException {
+		if (false == initializeEnv(args))
+			return;
+		// System.setProperty("prism.lcdtext", "false"); // enhance fonts
+		// local server
+		Tomcat tomcat = new Tomcat();
+		AppStartupConfig.tomcat = tomcat;
+		tomcat.getConnector().setAttribute("address", address);
+		tomcat.getConnector().setAttribute("port", port);
+		File pathForAppdataFile = pathForAppdata.toFile();
+		File pathForclassPathFile = parentOfClassPath.toFile();
+
+		if (isJarStart()) {
+			// resources which is in jar copy to appdata deployed.
+			if(!Files.exists(pathForAppdata))
+				copyDirectoryInJar(deployedPath.toString(), APP_DATA_DIR_NAME, pathForclassPathFile);
+		} else {
+			// all files copied in classpath
+			if(!Files.exists(pathForAppdata))
+				FileUtils.copyDirectory(deployedPath.toFile(), parentOfClassPath.toFile());
+		}
+
+		// tika-mimetypes.xml copy to appdata
+		copyTikaXml();
+
+		Context context = tomcat.addWebapp("", pathForAppdataFile.getAbsolutePath());
+		// https://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/catalina/startup/Tomcat.html#addWebapp(org.apache.catalina.Host,%20java.lang.String,%20java.lang.String)
+
+		context.addWelcomeFile(REDIRECT_PAGE);
+		tomcat.init();
+		tomcat.start();
+		homeUrl = "http://" + address + ":" + port;
+		try {
+			healthCheck();
+		} catch (TomcatInitFailException e) {
+			// handling
+
+			LOG.error(e.toString());
+			assert false; // dead "-ea" jvm option
+		}
+		LOG.info("tomcat started completely : " + homeUrl); // handyfinder app
+															// data
+		if (SERVER_ONLY == false) {
+			launch(args); // sync function // can't bean in spring container.
+			tomcat.stop();
+		}
+	}
+
+	private static void copyTikaXml() throws URISyntaxException, IOException {
+		String metaXmlUrl = MimeTypes.class.getResource("tika-mimetypes.xml").toURI().toString();
+		if (metaXmlUrl.startsWith("jar")) {
+			Pattern pat = Pattern.compile("jar:file:(.+)!(.+)");
+			Matcher matcher = pat.matcher(metaXmlUrl);
+			String jarPath = null;
+			String resourceName = null;
+			if (matcher.matches()) {
+				jarPath = matcher.group(1);
+				resourceName = matcher.group(2);
+				AppStartupConfig.copyFileInJar(jarPath, resourceName, tikaXmlFilePath.getParent().toFile(), true);
+			}
+		}
+		// if (!Files.exists(tikaXmlFilePath))
+		// throw new IOException("fail to extract tika-mimetypes.xml");
+		//
+		// if(!Files.exists(customTikaPropertiesPath)){
+		// metaXmlUrl = getResourcePath("custom-tika-mimetypes.properties");
+		// if(isJarStart())
+		// AppStartupConfig.copyFileInJar(getCurrentBuildPath().toAbsolutePath().toString(),
+		// metaXmlUrl, customTikaPropertiesPath.getParent().toFile(), true);
+		// else{
+		// FileUtils.copyFile(new File(metaXmlUrl),
+		// customTikaPropertiesPath.toFile());
+		//
+		// }
+		// }
 	}
 
 	@Override
@@ -196,49 +272,8 @@ public class AppStartupConfig extends Application {
 		primaryStage.setTitle("Your Assistant");
 		primaryStage.show();
 
-		LOG.info("\nhandyfinder started completely " + "\n" + "Webengine load: "
-				+ getClass().getResource(page).toExternalForm().toString()); // handyfinder
+		LOG.info("\nhandyfinder started completely " + "\n" + "Webengine load: " + page); // handyfinder
 		// app data
-	}
-
-	public static void main(String[] args)
-			throws LifecycleException, ServletException, IOException, URISyntaxException {
-		if (false == initializeEnv(args))
-			return;
-		// System.setProperty("prism.lcdtext", "false"); // enhance fonts
-		// local server
-		Tomcat tomcat = new Tomcat();
-		AppStartupConfig.tomcat = tomcat;
-		tomcat.getConnector().setAttribute("address", address);
-		tomcat.getConnector().setAttribute("port", port);
-		File pathForAppdataFile = pathForAppdata.toFile();
-
-		if (isJarStart()) {
-			copyDirectoryInJar(deployedPath.toString(), WEB_APP_DIRECTORY_NAME, pathForAppdataFile);
-		} else
-			FileUtils.copyDirectory(new File(deployedPath.toString()), pathForAppdataFile);
-
-		Context context = tomcat.addWebapp("", pathForAppdataFile.getAbsolutePath());
-		// https://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/catalina/startup/Tomcat.html#addWebapp(org.apache.catalina.Host,%20java.lang.String,%20java.lang.String)
-
-		context.addWelcomeFile(REDIRECT_PAGE);
-		tomcat.init();
-		tomcat.start();
-		homeUrl = "http://" + address + ":" + port;
-		try {
-			healthCheck();
-		} catch (TomcatInitFailException e) {
-			// handling
-
-			LOG.error(e.toString());
-			assert false; // dead "-ea" jvm option
-		}
-		LOG.info("tomcat started completely : " + homeUrl); // handyfinder app
-															// data
-		if (SERVER_ONLY == false) {
-			launch(args); // sync function // can't bean in spring container.
-			tomcat.stop();
-		}
 	}
 
 	/**
@@ -277,6 +312,11 @@ public class AppStartupConfig extends Application {
 	}
 
 	static class TomcatInitFailException extends IllegalStateException {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
 		public TomcatInitFailException() {
 			super();
 			// TODO Auto-generated constructor stub
@@ -343,7 +383,7 @@ public class AppStartupConfig extends Application {
 		for (URL url : urls) {
 			arr.add(url.getFile());
 		}
-		
+
 		return arr.toArray(new String[arr.size()]);
 	}
 
@@ -363,18 +403,6 @@ public class AppStartupConfig extends Application {
 		} catch (IOException e) {
 			return null;
 		}
-	}
-
-	private static File createBaseDirectory() throws IOException {
-		final File base = File.createTempFile("tmp-", "");
-		if (!base.delete()) {
-			throw new IOException("Cannot (re)create base folder: " + base.getAbsolutePath());
-
-		}
-		if (!base.mkdir()) {
-			throw new IOException("Cannot create base folder: " + base.getAbsolutePath());
-		}
-		return base;
 	}
 
 	/**
@@ -431,8 +459,8 @@ public class AppStartupConfig extends Application {
 		jis.close();
 	}
 
-	public static void copyFileInJar(String jarPath, String resourcePathInJar, File destinationRootDir)
-			throws URISyntaxException, IOException {
+	public static void copyFileInJar(String jarPath, String resourcePathInJar, File destinationRootDir,
+			boolean ignoreHierarchyOfResource) throws URISyntaxException, IOException {
 		if (resourcePathInJar.startsWith(File.separator)) { // replace to jar
 															// entry style which
 															// is not start with
@@ -448,13 +476,17 @@ public class AppStartupConfig extends Application {
 			if (entry.getName().startsWith(resourcePathInJar) // File in jar
 					&& entry.getName().getBytes()[entry.getName().length() - 1] != File.separator.getBytes()[0]) {
 				File tempFile = extractTempFile(getResourceInputstream(entry.getName()));
-				FileUtils.copyFile(tempFile, new File(destinationRootDir.getAbsolutePath(), entry.getName())); // copy
-																												// from
-																												// source
-																												// file
-																												// to
-																												// destination
-																												// file
+				if (ignoreHierarchyOfResource)
+					FileUtils.copyFile(tempFile, new File(destinationRootDir.getAbsolutePath(),
+							entry.getName().substring(entry.getName().lastIndexOf("/"))));
+				else
+					FileUtils.copyFile(tempFile, new File(destinationRootDir.getAbsolutePath(), entry.getName())); // copy
+																													// from
+																													// source
+																													// file
+																													// to
+																													// destination
+																													// file
 				tempFile.delete();
 			}
 			entry = jis.getNextJarEntry();

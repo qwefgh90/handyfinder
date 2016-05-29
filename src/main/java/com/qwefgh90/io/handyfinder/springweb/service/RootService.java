@@ -157,10 +157,11 @@ public class RootService {
 	
 	public void openFile(String pathStr){
 		Path path = Paths.get(pathStr);
-		if (Files.exists(path) && Files.isRegularFile(path)) {
+		if (Files.exists(path) && Files.isRegularFile(path) && !Files.isExecutable(path)) {
 			try {
 				MediaType mime = FileExtension.getContentType(path.toFile(), path.getFileName().toString());
-				//if ok
+				
+				//if ok, run program
 				if (Desktop.isDesktopSupported()) {
 					try {
 						Desktop.getDesktop().open(path.toFile());

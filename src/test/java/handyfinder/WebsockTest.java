@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.servlet.ServletException;
 
 import org.apache.catalina.LifecycleException;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.junit.After;
@@ -57,8 +58,8 @@ public class WebsockTest {
 	List<Directory> list = new ArrayList<>();
 
 	@Before
-	public void setup() throws LifecycleException, ServletException, IOException, URISyntaxException, SQLException {
-		AppStartupConfig.main(new String[] { "--no-gui", "--test-mode" });
+	public void setup() throws LifecycleException, ServletException, IOException, URISyntaxException, SQLException, ParseException {
+		AppStartupConfig.main(new String[] { "--no-gui"});
 
 		rootService = AppStartupConfig.getBean(RootService.class);
 		index = AppStartupConfig.getBean(MetaRespository.class);

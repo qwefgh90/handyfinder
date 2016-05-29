@@ -63,7 +63,7 @@ function($location, $log, $scope, apiService, Document, $sce, GUIService, Search
 		};
 		$scope.open_file = function(path){
 			GUIService.openFile(path);
-		}
+		};
 	}, function(error) {
 		$log.log('[handy]'+error);
 	}, function(noti) {

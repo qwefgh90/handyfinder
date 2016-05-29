@@ -19,8 +19,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.activity.InvalidActivityException;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -28,9 +26,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.FieldType;
-import org.apache.lucene.document.LegacyIntField;
 import org.apache.lucene.document.LegacyLongField;
-import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexOptions;
@@ -38,6 +34,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
@@ -58,12 +55,12 @@ import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
 import org.apache.lucene.search.highlight.TextFragment;
 import org.apache.lucene.search.highlight.TokenSources;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.BytesRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
-import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 import com.qwefgh90.io.jsearch.JSearch;
 import com.qwefgh90.io.jsearch.JSearch.ParseException;
@@ -283,26 +280,28 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 
 		FieldType type = new FieldType();
 		type.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
-		//type.setStored(true);
+		// type.setStored(true);
 		type.setStoreTermVectors(true);
 		type.setStoreTermVectorOffsets(true);
 
 		String contents;
 		try {
 			contents = JSearch.extractContentsFromFile(path.toFile());
-			contents.replaceAll(" +", "");	//erase space
+			contents.replaceAll(" +", ""); // erase space
 		} catch (ParseException e) {
 			LOG.info(ExceptionUtils.getStackTrace(e));
 			return;
 		}
-		
+
 		BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
 
 		StringField title = new StringField("title", path.getFileName().toString(), Store.YES);
 		StringField pathStringField = new StringField("pathString", path.toAbsolutePath().toString(), Store.YES);
-		LegacyLongField createdTimeField = new LegacyLongField("createdTime", attr.creationTime().toMillis(), Store.YES);
+		LegacyLongField createdTimeField = new LegacyLongField("createdTime", attr.creationTime().toMillis(),
+				Store.YES);
+
 		Field contentsField = new Field("contents", contents, type);
-		
+
 		doc.add(createdTimeField);
 		doc.add(title);
 		doc.add(pathStringField);
@@ -330,7 +329,6 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		if (INDEX_WRITE_STATE.PROGRESS == writeState)
 			throw new IndexException("now indexing");
 		checkDirectoryReader();
-		updateSearcher();
 
 		Query q1 = parser.parse(addBiWildcardString(fullString), "pathString");
 		Query q2 = parser.parse(addWildcardString(fullString), "contents");
@@ -371,6 +369,36 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		return explanation;
 	}
 
+	public int getDocumentCount() {
+		checkDirectoryReader();
+		return indexReader.numDocs();
+	}
+
+	/**
+	 * remove documents, if not exist
+	 */
+	public void cleanGarbageIndex() {
+		checkDirectoryReader();
+		int maxDocId = indexReader.maxDoc();
+		for (int i = 0; i < maxDocId; i++) {
+			try {
+				Bits liveDocs = MultiFields.getLiveDocs(indexReader);
+				if (liveDocs == null || liveDocs.get(i)) {
+					Document doc = indexReader.document(i);
+					String pathString = doc.get("pathString");
+					if (!Files.exists(Paths.get(pathString))) { // remove
+																// document if
+																// not exist
+						writer.deleteDocuments(new Term("pathString", pathString));
+						writer.commit();
+					}
+				}
+			} catch (IOException e) {
+				LOG.warn(e.toString());
+			}
+		}
+	}
+
 	/**
 	 * if there is no matched Field, return null.
 	 * 
@@ -405,16 +433,24 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 */
 	public String highlight(int docid, String queryString) throws org.apache.lucene.queryparser.classic.ParseException,
 			IOException, InvalidTokenOffsetsException, QueryNodeException, ParseException {
+		checkDirectoryReader();
 		StringBuilder sb = new StringBuilder();
 		Document doc = searcher.doc(docid);
 		Query query = getBooleanQuery(queryString);
 		SimpleHTMLFormatter htmlFormatter = new SimpleHTMLFormatter();
 		Highlighter highlighter = new Highlighter(htmlFormatter, new QueryScorer(query));
 		String pathString = doc.get("pathString");
+		
 		String contents = JSearch.extractContentsFromFile(pathString);
-		//String contents = "자바";
+		Document tempDocument = new Document();
+		FieldType type = new FieldType();
+		type.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
+		type.setStored(true);
+		Field contentsField = new Field("contents", contents, type);
+		tempDocument.add(contentsField);
+		
 		try (@SuppressWarnings("deprecation")
-		TokenStream tokenStream = TokenSources.getAnyTokenStream(indexReader, docid, "contents", analyzer)) {
+		TokenStream tokenStream = TokenSources.getAnyTokenStream(indexReader, docid, "contents", tempDocument, analyzer)) {
 			TextFragment[] frag = highlighter.getBestTextFragments(tokenStream, contents, false, 2);// highlighter.getBestFragments(tokenStream,
 			for (int j = 0; j < frag.length; j++) {
 				if ((frag[j] != null) && (frag[j].getScore() > 0)) {
@@ -465,12 +501,11 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	}
 
 	private void updateSearcher() throws IOException {
-		checkDirectoryReader();
 		DirectoryReader temp = DirectoryReader.openIfChanged(indexReader);
-		if (temp != null)
+		if (temp != null) {
 			indexReader = temp;
-
-		searcher = new IndexSearcher(indexReader);
+			searcher = new IndexSearcher(indexReader);
+		}
 	}
 
 	private String addWildcardString(String fullString) {
@@ -524,7 +559,11 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			throw new RuntimeException(
 					"invalid state. After LuceneHandler.closeResources() or close(), you can't search.");
 		}
-
+		try {
+			updateSearcher();
+		} catch (IOException e) {
+			LOG.error(ExceptionUtils.getStackTrace(e));
+		}
 	}
 
 	/**
