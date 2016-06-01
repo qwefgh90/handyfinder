@@ -55,8 +55,15 @@ public final class TikaMimeXmlObject {
 		return globMap.keySet().iterator();
 	}
 
+	/**
+	 * if already exist, no change in globMap
+	 * 
+	 * @param mimetype
+	 * @param glob
+	 */
 	public void addGlobType(String mimetype, String glob) {
-		globMap.put(glob, Boolean.TRUE);
+		if (!globMap.containsKey(glob))
+			globMap.put(glob, Boolean.TRUE);
 
 		if (!mimeToGlobListMap.keySet().contains(mimetype)) {
 			Set<String> values = new TreeSet<String>();
@@ -65,21 +72,15 @@ public final class TikaMimeXmlObject {
 		} else {
 			mimeToGlobListMap.get(mimetype).add(glob);
 		}
-		try {
-			updateGlobPropertiesFile();
-		} catch (IOException e) {
-			LOG.error(ExceptionUtils.getStackTrace(e));
-		}
 	}
 
 	public void setGlob(String glob, boolean b) {
+		if (!globMap.containsKey(glob)) {
+			LOG.warn("key(glob) is not exists.");
+			return;
+		}
 		Boolean value = Boolean.valueOf(b);
 		globMap.put(glob, value);
-		try {
-			updateGlobPropertiesFile();
-		} catch (IOException e) {
-			LOG.error(ExceptionUtils.getStackTrace(e));
-		}
 	}
 
 	public Boolean getGlobUsing(String glob) {
@@ -110,7 +111,7 @@ public final class TikaMimeXmlObject {
 	 * @throws IOException
 	 * @throws FileNotFoundException
 	 */
-	private void updateGlobPropertiesFile() throws FileNotFoundException, IOException {
+	public void updateGlobPropertiesFile() throws FileNotFoundException, IOException {
 		Properties properties = new Properties();
 		Iterator<String> iter = getGlobIterator();
 		while (iter.hasNext()) {
@@ -146,19 +147,27 @@ public final class TikaMimeXmlObject {
 			if (container.keySet().contains(xmlPath)) {
 				return container.get(xmlPath);
 			}
-			/*
+			TikaMimeXmlObject obj = new TikaMimeXmlObject();
+
 			Properties p = new Properties();
+			// load glob to boolean
 			if (Files.exists(AppStartupConfig.propertiesPath)) {
-				try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(AppStartupConfig.propertiesPath.toFile())))
-				{
+				try (BufferedInputStream bis = new BufferedInputStream(
+						new FileInputStream(AppStartupConfig.propertiesPath.toFile()))) {
 					p.load(bis);
+					Iterator<Object> iter = p.keySet().iterator();
+					while (iter.hasNext()) {
+						String key = (String) iter.next();
+						obj.globMap.put(key, Boolean.valueOf(p.getProperty(key)));
+					}
 				} catch (IOException e) {
-					
+					LOG.info(e.toString());
 				}
-			}*/
+			}
+
+			// after load default add... if exist not update
 			SAXParserFactory factory = SAXParserFactory.newInstance();
 			SAXParser saxParser = factory.newSAXParser();
-			TikaMimeXmlObject obj = new TikaMimeXmlObject();
 			container.put(xmlPath, obj);
 
 			saxParser.parse(xmlPath, new TikaMimeTypesSaxHandler(obj));

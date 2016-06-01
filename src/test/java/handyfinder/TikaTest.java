@@ -40,9 +40,9 @@ public class TikaTest {
 	String resourceName;
 	URL afterUrl;
 
-	static{
+	static {
 		try {
-			AppStartupConfig.initializeEnv(new String[]{});
+			AppStartupConfig.initializeEnv(new String[] {});
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -51,9 +51,9 @@ public class TikaTest {
 			e.printStackTrace();
 		}
 	}
-	
+
 	@Before
-	public void setup() throws URISyntaxException, IOException {
+	public void setup() throws URISyntaxException, IOException, ParserConfigurationException, SAXException {
 		// Patterns
 		url = MimeTypes.class.getResource("tika-mimetypes.xml");
 		urlStr = url.toString();
@@ -70,44 +70,34 @@ public class TikaTest {
 			AppStartupConfig.copyFileInJar(jarPath, resourceName, new File(getClass().getResource("/").toURI()), true);
 			LOG.info(getClass().getResource("/tika-mimetypes.xml").toString());
 		}
-		afterUrl  = MimeTypes.class.getResource("/tika-mimetypes.xml");
+		afterUrl = MimeTypes.class.getResource("/tika-mimetypes.xml");
+		obj = TikaMimeXmlObjectFactory.createInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString());
+		LOG.info("*.hwp:" + obj.getGlobUsing("*.hwp"));
+		LOG.info("*.xml:" + obj.getGlobUsing("*.xml"));
+		obj.setGlob("*.hwp", false);
+		obj.setGlob("*.xml", false);
 	}
 
+	TikaMimeXmlObject obj;
+
 	@Test
-	public void parseTest() throws ParserConfigurationException, SAXException, IOException, URISyntaxException{
-		TikaMimeXmlObject obj = TikaMimeXmlObjectFactory.createInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString());
+	public void parseTest() throws ParserConfigurationException, SAXException, IOException, URISyntaxException {
 
 		LOG.info(String.valueOf(obj.getCountofGlob("application/vnd.ms-excel")));
 		assertTrue(obj.getGlobIterator().hasNext());
-		assertTrue(obj.getCountofGlob("application/vnd.ms-excel")==8);
+		assertTrue(obj.getCountofGlob("application/vnd.ms-excel") == 8);
 		LOG.info(String.valueOf(obj.getCountofGlob()));
 		LOG.info(String.valueOf(obj.getGlobIterator("application/vnd.ms-excel").next().toString()));
-		TikaMimeXmlObject obj2 = TikaMimeXmlObjectFactory.createInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString());
+		TikaMimeXmlObject obj2 = TikaMimeXmlObjectFactory
+				.createInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString());
 		assertTrue(obj == obj2);
-		obj.setGlob("*.xml", false);
-		
+		obj.updateGlobPropertiesFile();
 	}
-	
+
 	@After
-	public void clean() throws URISyntaxException{
+	public void clean() throws URISyntaxException {
 		File f = new File(afterUrl.toURI());
 		f.delete();
 	}
 
-	@Test
-	public void test() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException,
-			URISyntaxException, IOException {
-		LOG.info(afterUrl.toString());
-		assertTrue(afterUrl.toString().startsWith("file:"));
-
-		Set<MediaType> s = MimeTypes.getDefaultMimeTypes().getMediaTypeRegistry().getTypes();
-		LOG.info("size: " + s.size());
-		assertTrue(s.size() > 0);
-		Iterator<MediaType> iter = s.iterator();
-		while (iter.hasNext()) {
-			MediaType mt = iter.next();
-
-		//	LOG.info(ToStringBuilder.reflectionToString(mt) + ":" + mt.getParameters().values().toString());
-		}
-	}
 }
