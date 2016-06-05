@@ -1,4 +1,4 @@
-var app = angular.module('indexModelApp', []);
+var app = angular.module('indexModelApp', ['frapontillo.bootstrap-switch']);
 app.factory("SearchModel",['$rootScope', function($rootScope){
 	var service = {
 		model : {
@@ -24,6 +24,10 @@ app.factory("SearchModel",['$rootScope', function($rootScope){
 app.factory("IndexModel",['$rootScope', function($rootScope){
 	var service = {
 			model : {
+				auto_update_index : false,
+				auto_clean_files : false,
+				maximum_size : 5,
+				supportTypes : [{type:'*.xlsx', used:true}, {type:'*.pptx', used:false}, {type:'*.pptx', used:false}, {type:'*.pptx', used:false}, {type:'*.pptx', used:false}, {type:'*.pptx', used:false}],
 				pathList : [],
 				index_manager_status : {
 						open : true
@@ -63,13 +67,15 @@ app.factory("IndexModel",['$rootScope', function($rootScope){
 							}],
 							alertQ : [],
 							addAlertQ : function(index) {
-								if (this.alertQ.indexOf(this.alerts[index]) != -1)
+								if (this.alertQ.indexOf(this.alerts[index]) != -1)	//already added
 									return;
 								this.alertQ.push(this.alerts[index]);
 								this.progressItemCount++;
 								this.refreshState();
 							},
 							removeAlertQ : function(index) {
+								if (this.alertQ.indexOf(this.alerts[index]) == -1)	//already removed
+									return;
 								this.alertQ.splice(index, 1);
 								this.progressItemCount--;
 								this.refreshState();

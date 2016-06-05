@@ -21,6 +21,8 @@
     "angular-route": "^1.5.5",
     "ng-contextmenu": "^0.4.1",
     "sockjs-client": "^1.1.0",
-    "stomp-websocket": "^2.3.4"
+    "stomp-websocket": "^2.3.4",
+    "angular-bootstrap-switch": "^0.5.0",
+    "jquery": "^2.2.4"
   }
 }

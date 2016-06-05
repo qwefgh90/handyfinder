@@ -150,7 +150,7 @@ public final class TikaMimeXmlObject {
 			TikaMimeXmlObject obj = new TikaMimeXmlObject();
 
 			Properties p = new Properties();
-			// load glob to boolean
+			// load from property file
 			if (Files.exists(AppStartupConfig.propertiesPath)) {
 				try (BufferedInputStream bis = new BufferedInputStream(
 						new FileInputStream(AppStartupConfig.propertiesPath.toFile()))) {

@@ -156,6 +156,12 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 		promise.then(function(){progressService.sendStartIndex();},function(){},function(){});
 	};
 	
+	$scope.updateType = function(obj) {
+		$log.log(obj.type + ':' + obj.used);
+		//var promise = $scope.save();
+		//promise.then(function(){progressService.sendStartIndex();},function(){},function(){});
+	};
+	
 	var promise = progressService.connect();
 	promise.then(function(frame) {
 			$log.log('[handy]'+frame);

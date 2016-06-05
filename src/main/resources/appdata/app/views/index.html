@@ -7,15 +7,19 @@
 					<uib-accordion-heading>
 						Progress {{indexModel.index_progress_status.progress == true ? '('+indexModel.index_progress_status.progressItemCount+')' : ''}} <i class="pull-right glyphicon" ng-class="{'glyphicon-chevron-down': indexModel.index_progress_status.open, 'glyphicon-chevron-right': !indexModel.index_progress_status.open}"></i>
 					</uib-accordion-heading>
-					  <uib-alert 
-					  ng-repeat="alert in indexModel.index_progress_status.alertQ"
-					  type="{{alert.type}}" 
-					  dismiss-on-timeout="{{alert.timeout}}"
-					  close="indexModel.index_progress_status.removeAlertQ($index);">{{alert.msg}}</uib-alert>
-					  <div ng-show="indexModel.progressBarVisible">
-					   <h3>Indexing</h3>
-					   <uib-progressbar max="indexModel.totalProcessCount" value="indexModel.processIndex"><span style="color:black; white-space:nowrap;">{{indexModel.processPath}} ({{indexModel.processIndex}}/{{indexModel.totalProcessCount}})</span></uib-progressbar>
-					    </div>
+					<uib-alert
+					ng-repeat="alert in indexModel.index_progress_status.alertQ"
+					type="{{alert.type}}"
+					dismiss-on-timeout="{{alert.timeout}}"
+					close="indexModel.index_progress_status.removeAlertQ($index);">
+						{{alert.msg}}
+					</uib-alert>
+					<div ng-show="indexModel.progressBarVisible">
+						<h3>Indexing</h3>
+						<uib-progressbar max="indexModel.totalProcessCount" value="indexModel.processIndex">
+							<span style="color:black; white-space:nowrap;">{{indexModel.processPath}} ({{indexModel.processIndex}}/{{indexModel.totalProcessCount}})</span>
+						</uib-progressbar>
+					</div>
 					<strong ng-if="indexModel.index_progress_status.progress==false">We currently do not running.</strong>
 				</uib-accordion-group>
 				<uib-accordion-group is-open="indexModel.index_manager_status.open">
@@ -23,20 +27,40 @@
 						Directories <i class="pull-right glyphicon" ng-class="{'glyphicon-chevron-down': indexModel.index_manager_status.open, 'glyphicon-chevron-right': !indexModel.index_manager_status.open}"></i>
 					</uib-accordion-heading>
 					<div class="list-group" style="margin-bottom: 10px">
-						<a data-context-menu="views/context-menu/index-contextmenu.html" href class="list-group-item" ng-repeat="path in indexModel.pathList">
-							<span ng-style="path.used == false ? {'opacity': 0.3} : {}" ng-class="path.used == false ? 'glyphicon glyphicon-ok' : 'glyphicon glyphicon-ok'" aria-hidden="true">
-							</span> 
-							<span ng-style="path.recursively == false ? {'opacity': 0.3} : {}" ng-class="path.recursively == false ? 'glyphicon glyphicon-repeat' : 'glyphicon glyphicon-repeat'" aria-hidden="true">
-							</span> 
-							<span style="font-size:16px">{{path.pathString}}</span> </a>
+						<a data-context-menu="views/context-menu/index-contextmenu.html" href class="list-group-item" ng-repeat="path in indexModel.pathList"> <span ng-style="path.used == false ? {'opacity': 0.3} : {}" ng-class="path.used == false ? 'glyphicon glyphicon-ok' : 'glyphicon glyphicon-ok'" aria-hidden="true"> </span> <span ng-style="path.recursively == false ? {'opacity': 0.3} : {}" ng-class="path.recursively == false ? 'glyphicon glyphicon-repeat' : 'glyphicon glyphicon-repeat'" aria-hidden="true"> </span> <span style="font-size:16px">{{path.pathString}}</span> </a>
 						<button type="button" class="list-group-item btn btn-default" ng-click="addDirectory()" style="text-align:center" aria-label="Left Align">
 							<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>New Directory
 						</button>
 					</div>
 					<div style="text-align: center">
 						<button class="btn btn-default" ng-click="run()">
-							Run
+							Run<!--automatically update indexes. automatically clean deleted files.-->
 						</button>
+					</div>
+				</uib-accordion-group>
+
+				<uib-accordion-group is-open="indexModel.index_option_status.open">
+					<uib-accordion-heading>
+						Index Options <i class="pull-right glyphicon" ng-class="{'glyphicon-chevron-down': indexModel.index_option_status.open, 'glyphicon-chevron-right': !indexModel.index_option_status.open}"></i>
+					</uib-accordion-heading>
+					<div style="margin-top: 10px;" class="row">
+						<div class="col-xs-4" style="">
+							<div class="boxes">
+								File Types
+								<div class="checkbox" ng-repeat="typeObj in indexModel.supportTypes">
+									<label>
+										<input type="checkbox" ng-model="typeObj.used" ng-change="updateType(typeObj)">
+										{{typeObj.type}}</label>
+								</div>
+							</div>
+						</div>
+						<div class="col-xs-8 " style="">
+							<p class="properties-boxes">
+								Options
+								<br>
+								Maximum Document Size <input type="number" style="width:40px" ng-value="indexModel.maximum_size"/> MB
+							</p>
+						</div>
 					</div>
 				</uib-accordion-group>
 			</uib-accordion>
