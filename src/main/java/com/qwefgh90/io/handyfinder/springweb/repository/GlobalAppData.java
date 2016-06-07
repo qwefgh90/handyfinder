@@ -105,9 +105,9 @@ public class GlobalAppData {
 	}
 
 	public static class GlobalAppDataView {
-		private static GlobalAppData app;
+		private GlobalAppData app;
 
-		static {
+		public GlobalAppDataView(){
 			try {
 				app = GlobalAppData.getInstance();
 			} catch (IOException e) {
@@ -116,24 +116,24 @@ public class GlobalAppData {
 			}
 		}
 
-		public static int limitOfSearch() {
+		public int limitOfSearch() {
 			return app.getLimitOfSearch();
 		}
 
-		public static Iterator<Directory> directoryList() {
+		public Iterator<Directory> directoryList() {
 			return app.getDirectoryList().iterator();
 		}
 
-		public static void addDirectory(Directory d) {
+		public void addDirectory(Directory d) {
 			app.getDirectoryList().add(d);
 		}
 
-		public static void setDirectory(Directory d) {
+		public void setDirectory(Directory d) {
 			remoteDirectory(d);
 			app.getDirectoryList().add(d);
 		}
 
-		public static void remoteDirectory(Directory d) {
+		public void remoteDirectory(Directory d) {
 			Directory removeTarget = null;
 			Iterator<Directory> iter = app.getDirectoryList().iterator();
 			while (iter.hasNext()) {
@@ -145,11 +145,11 @@ public class GlobalAppData {
 			}
 		}
 
-		public static void updateAppDataFile() {
+		public void updateAppDataFile() {
 			app.updateAppDataFile();
 		}
 
-		public static void clearAppDataFile() throws IOException {
+		public void clearAppDataFile() throws IOException {
 			app.clearAppData();
 		}
 	}

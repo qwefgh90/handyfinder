@@ -21,7 +21,7 @@ public class ContainerInitializer extends
 	@Override
 	protected Class<?>[] getServletConfigClasses() {
 		//myservlet-context.xml
-		return new Class<?>[]{ServletContext.class, RootWebSocketConfig.class};
+		return new Class<?>[]{ServletContext.class, RootWebSocketConfig.class, AppDataConfig.class};
 	}
 
 	@Override
