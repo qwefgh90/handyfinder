@@ -1,4 +1,4 @@
-var app = angular.module('handyfinderwebapp', ['ngRoute', 'ngAnimate', 'ui.bootstrap', 'apiServiceApp', 'ngContextMenu', 'indexModelApp', 'websocketModelApp']);
+var app = angular.module('handyfinderwebapp', ['ngRoute', 'ngSanitize', 'ngAnimate', 'ui.bootstrap', 'apiServiceApp', 'ngContextMenu', 'indexModelApp', 'websocketModelApp']);
 
 app.config(function($routeProvider) {
 	//Module의 config API를 사용하면 서비스 제공자provider에 접근할 수 있다. 여기선 $route 서비스 제공자를 인자로 받아온다.
@@ -47,11 +47,11 @@ function($location, $log, $scope, apiService, Document, $sce, GUIService, Search
 			$scope.searchModel.searchResult = [];
 			for(var i = 0 ; i < json.length ; i ++){
 				var data = json[i];
-				var document = new Document(data.createdTime, data.modifiedTime, data.title, data.pathString, $sce.trustAsHtml(data.contents), data.parentPathString)
+				var document = new Document(data.createdTime, data.modifiedTime, data.title, data.pathString, data.contents, data.parentPathString);
 				$scope.searchModel.searchResult.push(document);
 			}
 			searchFlag = true;
-		},function(){searchFlag = true;$log.log('search failed')}
+		},function(){searchFlag = true;$log.log('search failed');}
 		,function(){searchFlag = true;});
 	};
 

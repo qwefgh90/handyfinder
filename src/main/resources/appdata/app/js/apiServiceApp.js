@@ -90,8 +90,7 @@ app.factory('apiService', ['$http', '$q', function($http, $q){
 		});
 		return deferred.promise;
 		
-		
-	}
+	};
 
 	return {getDirectories : getDirectories
 			,updateDirectories : updateDirectories

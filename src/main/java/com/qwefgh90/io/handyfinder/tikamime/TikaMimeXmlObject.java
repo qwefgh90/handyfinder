@@ -1,4 +1,4 @@
-package com.qwefgh90.io.handyfinder.sax;
+package com.qwefgh90.io.handyfinder.tikamime;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

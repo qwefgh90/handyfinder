@@ -26,12 +26,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
+import com.qwefgh90.io.handyfinder.lucene.LuceneHandler;
+import com.qwefgh90.io.handyfinder.lucene.LuceneHandler.IndexException;
 import com.qwefgh90.io.handyfinder.springweb.model.CommandDto;
 import com.qwefgh90.io.handyfinder.springweb.model.CommandDto.COMMAND;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.model.DocumentDto;
 import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
-import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler.IndexException;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 import com.qwefgh90.io.jsearch.FileExtension;
 import com.qwefgh90.io.jsearch.JSearch;
@@ -47,6 +48,8 @@ public class RootService {
 	@Autowired
 	MetaRespository indexProperty;
 
+	@Autowired
+	LuceneHandler handler;
 
 	/**
 	 * Get directories to be indexed.
@@ -65,18 +68,15 @@ public class RootService {
 	 * @throws SQLException
 	 */
 	public void updateDirectories(List<Directory> list) throws SQLException {
-		indexProperty.deleteDirectories();
 		indexProperty.save(list);
 	}
 	
 	public void closeAppLucene() throws IOException{
-		LuceneHandler handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invokerForCommand);
 		handler.close();
 	}
 
-	public Optional<List<DocumentDto>> search(String keyword) throws IndexException {
+	public Optional<List<DocumentDto>> search(String keyword) {
 		List<DocumentDto> list = new ArrayList<>();
-		LuceneHandler handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invokerForCommand);
 		try {
 			TopDocs docs = handler.search(keyword);
 			for (int i = 0; i < docs.scoreDocs.length; i++) {
@@ -93,6 +93,9 @@ public class RootService {
 					continue;
 				} catch (com.qwefgh90.io.jsearch.JSearch.ParseException e) {
 					LOG.info(e.toString());
+					continue;
+				} catch (Exception e){
+					LOG.warn(ExceptionUtils.getStackTrace(e));
 					continue;
 				}
 
@@ -121,7 +124,6 @@ public class RootService {
 		case START_INDEXING: {
 			try {
 				List<Directory> list = indexProperty.selectDirectory();
-				LuceneHandler handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invokerForCommand);
 				handler.startIndex(list);
 				return;
 			} catch (SQLException e) {

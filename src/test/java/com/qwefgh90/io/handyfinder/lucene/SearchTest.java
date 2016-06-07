@@ -1,4 +1,4 @@
-package handyfinder;
+package com.qwefgh90.io.handyfinder.lucene;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -23,9 +23,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
+import com.qwefgh90.io.handyfinder.lucene.LuceneHandler;
 import com.qwefgh90.io.handyfinder.springweb.RootContext;
 import com.qwefgh90.io.handyfinder.springweb.ServletContextTest;
-import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration

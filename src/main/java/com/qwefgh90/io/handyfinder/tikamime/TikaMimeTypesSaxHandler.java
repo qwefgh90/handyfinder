@@ -1,4 +1,4 @@
-package com.qwefgh90.io.handyfinder.sax;
+package com.qwefgh90.io.handyfinder.tikamime;
 
 import java.util.ArrayList;
 import java.util.List;

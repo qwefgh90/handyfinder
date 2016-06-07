@@ -27,11 +27,11 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
-import com.qwefgh90.io.handyfinder.sax.TikaMimeXmlObject;
-import com.qwefgh90.io.handyfinder.sax.TikaMimeXmlObject.TikaMimeXmlObjectFactory;
+import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject;
+import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject.TikaMimeXmlObjectFactory;
 
-public class TikaTest {
-	private final static Logger LOG = LoggerFactory.getLogger(TikaTest.class);
+public class TikamimeTest {
+	private final static Logger LOG = LoggerFactory.getLogger(TikamimeTest.class);
 	URL url;
 	String urlStr;
 	Pattern pat;

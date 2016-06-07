@@ -1,4 +1,4 @@
-package com.qwefgh90.io.handyfinder.springweb.service;
+package com.qwefgh90.io.handyfinder.lucene;
 
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
@@ -228,7 +228,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @param recursively
 	 * @throws IOException
 	 */
-	public void indexDirectory(Path path, boolean recursively) throws IOException {
+	void indexDirectory(Path path, boolean recursively) throws IOException {
 		checkIndexWriter();
 
 		if (Files.isDirectory(path)) {
@@ -275,7 +275,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @throws IOException
 	 * @throws ParseException
 	 */
-	public void index(Path path) throws IOException {
+	void index(Path path) throws IOException {
 		Document doc = new Document();
 
 		FieldType type = new FieldType();
@@ -325,9 +325,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @throws IOException
 	 * @throws IndexException
 	 */
-	public TopDocs search(String fullString) throws QueryNodeException, IOException, IndexException {
-		if (INDEX_WRITE_STATE.PROGRESS == writeState)
-			throw new IndexException("now indexing");
+	public TopDocs search(String fullString) throws QueryNodeException, IOException {
+		//if (INDEX_WRITE_STATE.PROGRESS == writeState)
+		//	throw new IndexException("now indexing");
 		checkDirectoryReader();
 
 		Query q1 = parser.parse(addBiWildcardString(fullString), "pathString");
@@ -497,6 +497,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		Query q2 = parser.parse(addWildcardString(fullString), "contents");
 
 		BooleanQuery query = new BooleanQuery.Builder().add(q1, Occur.SHOULD).add(q2, Occur.SHOULD).build();
+		query.setMaxClauseCount(Integer.MAX_VALUE);
 		return query;
 	}
 
@@ -515,19 +516,21 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		for (String element : partialQuery) {
 			if (sb.length() != 0)
 				sb.append(' '); // space added for OR SEARHCHING
-			sb.append(QueryParser.escape(element) + "*");
+			sb.append(QueryParser.escape(element));
+			sb.append("*");
 		}
 		return sb.toString();
 	}
 
 	private String addBiWildcardString(String fullString) {
-
 		String[] partialQuery = fullString.split(" ");
 		StringBuilder sb = new StringBuilder();
 		for (String element : partialQuery) {
 			if (sb.length() != 0)
 				sb.append(' '); // space added for OR SEARHCHING
-			sb.append("*" + QueryParser.escape(element) + "*");
+			sb.append("*");
+			sb.append(QueryParser.escape(element));
+			sb.append("*");
 		}
 		return sb.toString();
 	}
@@ -572,7 +575,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @param list
 	 * @throws IOException
 	 */
-	public int sizeOfindexDirectories(List<Directory> list) throws IOException {
+	int sizeOfindexDirectories(List<Directory> list) throws IOException {
 		Size size = new Size();
 		for (Directory dir : list) {
 			Path tmp = Paths.get(dir.getPathString());
@@ -608,7 +611,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @param recursively
 	 * @throws IOException
 	 */
-	public Size sizeOfindexDirectory(Path path, boolean recursively) throws IOException {
+	Size sizeOfindexDirectory(Path path, boolean recursively) throws IOException {
 		Size size = new Size();
 		if (Files.isDirectory(path)) {
 			Path rootDirectory = path;
@@ -670,6 +673,11 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	}
 
 	public class IndexException extends Exception {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
 		public IndexException() {
 			super();
 			// TODO Auto-generated constructor stub
