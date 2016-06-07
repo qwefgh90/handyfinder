@@ -42,7 +42,7 @@ public class SearchTest {
 	LuceneHandler handler;
 	static {
 		try {
-			AppStartupConfig.initializeEnv(new String[]{"--no-gui"});
+			AppStartupConfig.parseArguments(new String[]{"--no-gui"});
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

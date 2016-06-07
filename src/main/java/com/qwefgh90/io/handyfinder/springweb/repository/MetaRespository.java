@@ -18,7 +18,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Repository;
 
-import com.qwefgh90.io.handyfinder.springweb.controller.RootController;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.repository.Query.TABLE_NAMES;
 
@@ -37,7 +37,6 @@ public class MetaRespository {
 	@Qualifier("dataSource")
 	DataSource dataSource;
 
-	
 	/**
 	 * table create
 	 * 

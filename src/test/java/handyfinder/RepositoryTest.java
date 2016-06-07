@@ -40,7 +40,7 @@ public class RepositoryTest {
 
 	static {
 		try {
-			AppStartupConfig.initializeEnv(null);
+			AppStartupConfig.parseArguments(null);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

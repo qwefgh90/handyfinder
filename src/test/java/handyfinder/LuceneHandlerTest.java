@@ -50,7 +50,7 @@ public class LuceneHandlerTest {
 	LuceneHandler handler2;
 	static {
 		try {
-			AppStartupConfig.initializeEnv(new String[] { "--no-gui" });
+			AppStartupConfig.parseArguments(new String[] { "--no-gui" });
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

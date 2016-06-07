@@ -42,7 +42,7 @@ public class TikaTest {
 
 	static {
 		try {
-			AppStartupConfig.initializeEnv(new String[] {});
+			AppStartupConfig.parseArguments(new String[] {});
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

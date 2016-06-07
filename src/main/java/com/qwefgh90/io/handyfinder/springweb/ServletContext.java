@@ -18,6 +18,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
 import com.qwefgh90.io.handyfinder.springweb.repository.Query;
 
@@ -50,6 +51,12 @@ public class ServletContext extends WebMvcConfigurerAdapter {
 		ds.setCreateDatabase("create");
 		LOG.info(ds.toString());
 		return ds;
+	}
+	
+	@Bean(name="objectMapper")
+	public ObjectMapper opjectMapper(){
+		ObjectMapper om = new ObjectMapper();
+		return om;
 	}
 	
 	
