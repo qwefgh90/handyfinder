@@ -3,9 +3,9 @@
 	<div class="row">
 		<div class="col-xs-12">
 			<div class="input-group">
-				<input class="form-control" type="search" focus-me="false" placeholder="EX) Java programming" ng-model="searchModel.searchKeyword" ng-keydown="$event.which === 13 && search(searchModel.searchKeyword)" >
+				<input class="form-control" type="search" focus-me="false" placeholder="Java C++" ng-model="searchModel.searchKeyword" ng-keydown="$event.which === 13 && search(searchModel.searchKeyword)" >
 				<span class="input-group-btn">
-					<input class="btn btn-default searchbt " type="submit" value="Search" ng-click="search(searchModel.searchKeyword)">
+					<input class="btn btn-default searchbt " value="Search" type="submit" ng-click="search(searchModel.searchKeyword)">
 				</span>
 			</div>
 		</div>
@@ -13,7 +13,7 @@
 	<!-- summary  -->
 	<div class="row">
 		<div class="col-xs-12" style="padding-top: 5px; padding-bottom: 5px">
-			<p ng-show="searchModel.searchCount > 0">
+			<p ng-show="searchModel.searchResult.length > 0">
 				{{searchModel.searchResult.length}} result found, accuracy order
 			</p>
 			<!-- 
@@ -27,17 +27,22 @@
 
 	<!-- result  -->
 	<div class="row">
+		
 		<div class="col-xs-12 content-wrapper-outer">
-			<div class="content-wrapper container-fluid"  ng-repeat="object in searchModel.searchResult">
-				<span class="col-xs-12" style="padding-left:0px;"><a class="title" href ng-click='open_file(object.pathString)'>{{object.title}}</a></span>
+			<div class="content-wrapper container-fluid" ng-repeat="object in searchModel.searchResult">
+				
+				<span class="col-xs-12" style="padding-left:0px;"><a class="title" href ng-click='open_file(object.pathString)'>{{object.title}}</a></span> 
 				<span class="col-xs-12" style="padding-left:0px;"> <a class="url text-warning" style="padding-left: 0px;" href ng-click='open(object.parentPathString)'>{{object.parentPathString}}</a>
 				</span>
+				
 				<div class="col-xs-12 description " style="padding-left:0px;">
 					<small>{{object.modifiedTime | date:'yyyy-MM-dd HH:mm:ss'}}</small>
 					<p style="max-height:5.1em;line-height:2em" ng-bind-html="object.contents">
 					</p>
 				</div>
+				
 			</div>
 		</div>
+		
 	</div>
 </div>

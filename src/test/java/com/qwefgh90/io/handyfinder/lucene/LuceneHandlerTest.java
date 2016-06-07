@@ -1,4 +1,4 @@
-package handyfinder;
+package com.qwefgh90.io.handyfinder.lucene;
 
 import static org.junit.Assert.assertTrue;
 
@@ -29,10 +29,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
+import com.qwefgh90.io.handyfinder.lucene.LuceneHandler;
+import com.qwefgh90.io.handyfinder.lucene.LuceneHandler.IndexException;
 import com.qwefgh90.io.handyfinder.springweb.RootContext;
 import com.qwefgh90.io.handyfinder.springweb.ServletContextTest;
-import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler;
-import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler.IndexException;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 import com.qwefgh90.io.jsearch.JSearch.ParseException;
 
@@ -59,15 +59,16 @@ public class LuceneHandlerTest {
 			e.printStackTrace();
 		}
 	}
-	Path testpath ;
+	Path testpath;
 	Path testpath2;
+
 	@Before
 	public void setup() throws IOException {
 		handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invoker);
 		handler2 = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invoker);
 		assertTrue(handler == handler2);
 		handler.deleteAllIndexesFromFileSystem();
-		
+
 		testpath = AppStartupConfig.deployedPath.resolve("index-test-files");
 
 		testpath2 = testpath.resolve("temp2.txt");
@@ -106,7 +107,7 @@ public class LuceneHandlerTest {
 
 	@Test
 	public void writeTest() throws IOException, org.apache.lucene.queryparser.classic.ParseException,
-			InvalidTokenOffsetsException, QueryNodeException, IndexException, ParseException {
+			InvalidTokenOffsetsException, QueryNodeException, ParseException {
 		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 
 		TopDocs docs = handler.search("자바 고언어");
@@ -147,8 +148,8 @@ public class LuceneHandlerTest {
 	}
 
 	@Test
-	public void fileURITest() throws IOException, org.apache.lucene.queryparser.classic.ParseException,
-			QueryNodeException, InvalidTokenOffsetsException, IndexException, ParseException {
+	public void fileURITest() throws org.apache.lucene.queryparser.classic.ParseException, QueryNodeException,
+			InvalidTokenOffsetsException, ParseException, IOException {
 		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 
 		TopDocs docs = handler.search("부트로더");

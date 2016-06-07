@@ -78,6 +78,7 @@ public class WebsockTest {
 	@After
 	public void clean() throws Exception {
 		rootService.closeAppLucene();
+		index.deleteDirectories();
 		AppStartupConfig.terminateApp();
 	}
 

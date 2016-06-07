@@ -16,7 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,11 +24,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.qwefgh90.io.handyfinder.lucene.LuceneHandler.IndexException;
 import com.qwefgh90.io.handyfinder.springweb.model.CommandDto;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.model.DocumentDto;
 import com.qwefgh90.io.handyfinder.springweb.model.CommandDto.COMMAND;
-import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler.IndexException;
 import com.qwefgh90.io.handyfinder.springweb.service.RootService;
 
 @RestController
@@ -66,11 +65,7 @@ public class RootController {
 	@RequestMapping(value = "/search", method = RequestMethod.GET)
 	public ResponseEntity<List<DocumentDto>> search(@RequestParam String keyword) {
 		Optional<List<DocumentDto>> result = Optional.empty();
-		try {
-			result = rootService.search(keyword);
-		} catch (IndexException e) {
-			return new ResponseEntity<List<DocumentDto>>(HttpStatus.SERVICE_UNAVAILABLE);
-		}
+		result = rootService.search(keyword);
 		if (result.isPresent()) {
 			return new ResponseEntity<List<DocumentDto>>(result.get(), HttpStatus.OK);
 		} else {
@@ -79,7 +74,6 @@ public class RootController {
 	}
 
 	/**
-	 * 
 	 * @param command
 	 *            "start", "stop"
 	 * @param accessor

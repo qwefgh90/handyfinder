@@ -9,11 +9,11 @@ import org.springframework.context.annotation.Configuration;
 import org.xml.sax.SAXException;
 
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
-import com.qwefgh90.io.handyfinder.sax.TikaMimeXmlObject;
-import com.qwefgh90.io.handyfinder.sax.TikaMimeXmlObject.TikaMimeXmlObjectFactory;
-import com.qwefgh90.io.handyfinder.springweb.repository.GlobalAppData.GlobalAppDataView;
-import com.qwefgh90.io.handyfinder.springweb.service.LuceneHandler;
+import com.qwefgh90.io.handyfinder.gui.GlobalAppDataView;
+import com.qwefgh90.io.handyfinder.lucene.LuceneHandler;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
+import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject;
+import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject.TikaMimeXmlObjectFactory;
 
 @Configuration
 public class AppDataConfig {
@@ -26,7 +26,7 @@ public class AppDataConfig {
 
 	@Bean
 	public GlobalAppDataView globalAppDataView() {
-		GlobalAppDataView view = new GlobalAppDataView();
+		GlobalAppDataView view =  GlobalAppDataView.getInstance();
 		return view;
 	}
 

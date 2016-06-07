@@ -52,15 +52,12 @@ public class RepositoryTest {
 	
 	@Before
 	public void setup() throws SQLException, IOException {
-		indexProperty.dropDirectoryTable();
-		indexProperty.createDirectoryTable();
-
 		dir1 = new Directory();
-		dir1.setPathString("path");
+		dir1.setPathString("path1");
 		dir1.setUsed(true);
 		dir1.setRecursively(false);
 		dir2 = new Directory();
-		dir2.setPathString("path");
+		dir2.setPathString("path2");
 		dir2.setUsed(true);
 		dir2.setRecursively(false);
 		list.add(dir1);
@@ -69,14 +66,14 @@ public class RepositoryTest {
 	
 	@After
 	public void clean() throws SQLException{
-		indexProperty.dropDirectoryTable();
+		indexProperty.deleteDirectories();
 		
 	}
 
 	@Test
 	public void directoryTest1() throws SQLException {
 		Directory dir = new Directory();
-		dir.setPathString("path");
+		dir.setPathString("path0");
 		dir.setUsed(true);
 		dir.setRecursively(false);
 		indexProperty.saveOne(dir);
@@ -89,25 +86,7 @@ public class RepositoryTest {
 		indexProperty.saveOne(dir);
 		indexProperty.saveOne(dir);
 		indexProperty.saveOne(dir);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
-		assertTrue(indexProperty.selectDirectory().size() == 10);
+		assertTrue(indexProperty.selectDirectory().size() == 1);
 		indexProperty.deleteDirectories();
 		assertTrue(indexProperty.selectDirectory().size() == 0);
 	}

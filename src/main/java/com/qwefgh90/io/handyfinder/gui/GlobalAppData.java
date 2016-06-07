@@ -1,4 +1,4 @@
-package com.qwefgh90.io.handyfinder.springweb.repository;
+package com.qwefgh90.io.handyfinder.gui;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,11 +16,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 
 @JsonIgnoreProperties(value = { "singleton", "om", "LOG" })
-public class GlobalAppData {
+class GlobalAppData {
 	private final static Logger LOG = LoggerFactory
 			.getLogger(GlobalAppData.class);
 
@@ -36,6 +35,7 @@ public class GlobalAppData {
 		this.limitOfSearch = 100;
 	}
 
+	//for Object to JSON public visibility
 	public List<Directory> getDirectoryList() {
 		return directoryList;
 	}
@@ -52,7 +52,7 @@ public class GlobalAppData {
 		this.limitOfSearch = limitOfSearch;
 	}
 
-	private void updateAppDataFile() {
+	void writeAppDataToDisk() {
 		Path path = AppStartupConfig.appDataJsonPath;
 		try {
 			om.writeValue(path.toFile(), this);
@@ -69,7 +69,7 @@ public class GlobalAppData {
 	 * @throws JsonMappingException
 	 * @throws IOException
 	 */
-	private GlobalAppData loadAppDataFile() throws JsonParseException,
+	GlobalAppData loadAppDataFromDisk() throws JsonParseException,
 			JsonMappingException, IOException {
 		Path path = AppStartupConfig.appDataJsonPath;
 		if (!Files.exists(path))
@@ -78,9 +78,10 @@ public class GlobalAppData {
 		return app;
 	}
 
-	private void clearAppData() throws IOException {
+	void deleteAppDataFromDisk() throws IOException {
 		Path path = AppStartupConfig.appDataJsonPath;
-		Files.delete(path);
+		if(Files.exists(path))
+			Files.delete(path);
 	}
 
 	/**
@@ -90,11 +91,11 @@ public class GlobalAppData {
 	 * @throws JsonMappingException
 	 * @throws IOException
 	 */
-	private static GlobalAppData getInstance() throws JsonParseException,
+	static GlobalAppData getInstance() throws JsonParseException,
 			JsonMappingException, IOException {
 		if (singleton == null) {
 			singleton = new GlobalAppData();
-			GlobalAppData appData = singleton.loadAppDataFile();
+			GlobalAppData appData = singleton.loadAppDataFromDisk();
 			if (appData == null) {
 			} else {
 				singleton.directoryList = appData.directoryList;
@@ -102,55 +103,5 @@ public class GlobalAppData {
 			}
 		}
 		return singleton;
-	}
-
-	public static class GlobalAppDataView {
-		private GlobalAppData app;
-
-		public GlobalAppDataView(){
-			try {
-				app = GlobalAppData.getInstance();
-			} catch (IOException e) {
-				LOG.error(ExceptionUtils.getStackTrace(e));
-				throw new RuntimeException(e.toString());
-			}
-		}
-
-		public int limitOfSearch() {
-			return app.getLimitOfSearch();
-		}
-
-		public Iterator<Directory> directoryList() {
-			return app.getDirectoryList().iterator();
-		}
-
-		public void addDirectory(Directory d) {
-			app.getDirectoryList().add(d);
-		}
-
-		public void setDirectory(Directory d) {
-			remoteDirectory(d);
-			app.getDirectoryList().add(d);
-		}
-
-		public void remoteDirectory(Directory d) {
-			Directory removeTarget = null;
-			Iterator<Directory> iter = app.getDirectoryList().iterator();
-			while (iter.hasNext()) {
-				Directory dir = iter.next();
-				if (dir.getPathString().equals(d.getPathString())) {
-					iter.remove();
-					break;
-				}
-			}
-		}
-
-		public void updateAppDataFile() {
-			app.updateAppDataFile();
-		}
-
-		public void clearAppDataFile() throws IOException {
-			app.clearAppData();
-		}
 	}
 }

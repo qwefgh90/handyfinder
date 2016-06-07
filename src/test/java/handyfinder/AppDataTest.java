@@ -15,16 +15,14 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
+import com.qwefgh90.io.handyfinder.gui.GlobalAppDataView;
 import com.qwefgh90.io.handyfinder.springweb.AppDataConfig;
 import com.qwefgh90.io.handyfinder.springweb.RootContext;
 import com.qwefgh90.io.handyfinder.springweb.ServletContextTest;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
-import com.qwefgh90.io.handyfinder.springweb.repository.GlobalAppData.GlobalAppDataView;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-// ApplicationContext will be loaded from
-// "classpath:/com/example/OrderServiceTest-context.xml"
 @ContextConfiguration(classes = { ServletContextTest.class, RootContext.class,
 		AppDataConfig.class })
 public class AppDataTest {
@@ -44,14 +42,15 @@ public class AppDataTest {
 
 	@After
 	public void clean() throws IOException {
-		globalAppDataView.clearAppDataFile();
+		globalAppDataView.deleteAppDataFromDisk();
+		globalAppDataView.deleteDirectories();
 	}
 
 	@Test
 	public void test() {
 		globalAppDataView.addDirectory(d);
-		assertTrue(globalAppDataView.limitOfSearch() == 100);
-		Iterator<Directory> iter = globalAppDataView.directoryList();
+		assertTrue(globalAppDataView.getLimitOfSearch() == 100);
+		Iterator<Directory> iter = globalAppDataView.getDirectoryList().iterator();
 		Directory tmp = iter.next();
 		assertTrue(tmp.getPathString().equals("hello path"));
 		assertTrue(false == tmp.isUsed());
@@ -59,12 +58,12 @@ public class AppDataTest {
 
 		d.setUsed(true);
 		globalAppDataView.setDirectory(d);
-		iter = globalAppDataView.directoryList();
+		iter = globalAppDataView.getDirectoryList().iterator();
 		tmp = iter.next();
 		assertTrue(true == tmp.isUsed());
 		assertFalse(iter.hasNext());
 
-		globalAppDataView.updateAppDataFile();
+		globalAppDataView.writeAppDataToDisk();
 
 	}
 }
