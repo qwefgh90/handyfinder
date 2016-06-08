@@ -11,7 +11,7 @@
 	</appender>
 	
 	<logger name="org.springframework.messaging">
-		<level value="info" />
+		<level value="trace" />
 	</logger>
 	<logger name="org.springframework.web">
 		<level value="info" />
@@ -23,7 +23,7 @@
 		<level value="info" />
 	</logger>
 	<logger name="handyfinder">
-		<level value="info" />
+		<level value="trace" />
 	</logger>
 	<logger name="com.qwefgh90.io.handyfinder.springweb.service">
 		<level value="info" />

@@ -1,4 +1,4 @@
-package handyfinder;
+package intergration.websocket.test;
 
 import static org.junit.Assert.fail;
 
@@ -54,7 +54,7 @@ public class WebsockTest {
 	private final static Logger LOG = LoggerFactory.getLogger(WebsockTest.class);
 	
 	RootService rootService;
-	MetaRespository index;
+	MetaRespository metaRepo;
 	List<Directory> list = new ArrayList<>();
 
 	@Before
@@ -62,30 +62,29 @@ public class WebsockTest {
 		AppStartupConfig.main(new String[] { "--no-gui"});
 
 		rootService = AppStartupConfig.getBean(RootService.class);
-		index = AppStartupConfig.getBean(MetaRespository.class);
+		metaRepo = AppStartupConfig.getBean(MetaRespository.class);
 
 		Directory dir = new Directory();
 		dir.setRecursively(true);
 		dir.setUsed(true);
 		dir.setPathString(Paths.get(new ClassPathResource("").getFile().getAbsolutePath()).resolve("index-test-files")
 				.toAbsolutePath().toString());
-		LOG.trace("test directory to be indexed: "+dir.getPathString());
 		list.add(dir);
 		rootService.updateDirectories(list);
-
+		LOG.trace("test directory to be updated: "+dir.getPathString());
 	}
 
 	@After
 	public void clean() throws Exception {
 		rootService.closeAppLucene();
-		index.deleteDirectories();
+		metaRepo.deleteDirectories();
 		AppStartupConfig.terminateApp();
 	}
 
 	@Test
 	public void connect() throws InterruptedException, SQLException {
 		List<Directory> list = rootService.getDirectories();
-		LOG.info(String.valueOf(list.size()));
+		LOG.info("list size : " + String.valueOf(list.size()));
 
 		final AtomicReference<Throwable> failure = new AtomicReference<>();
 		final CountDownLatch latch = new CountDownLatch(1);
@@ -113,7 +112,7 @@ public class WebsockTest {
 			throw new AssertionError("", failure.get());
 		}
 
-		if (!latch.await(60, TimeUnit.SECONDS)) {
+		if (!latch.await(120, TimeUnit.SECONDS)) {
 			fail("not received");
 		}
 	}
@@ -136,7 +135,6 @@ public class WebsockTest {
 			} catch (Exception e) {
 				LOG.info(ExceptionUtils.getStackTrace(e));
 			}
-
 		}
 
 		@Override
@@ -189,10 +187,8 @@ public class WebsockTest {
 					}
 				}
 			});
-
-
-			sendMsg();
-
+			
+			sendMsg();//send test msg
 		}
 	};
 
