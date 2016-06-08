@@ -32,6 +32,6 @@ public class AppDataConfig {
 
 	@Bean
 	public TikaMimeXmlObject tikaMimeXmlObject() throws ParserConfigurationException, SAXException, IOException {
-		return TikaMimeXmlObjectFactory.createInstanceFromXml(AppStartupConfig.tikaXmlFilePath.toAbsolutePath().toString());
+		return TikaMimeXmlObjectFactory.getInstanceFromXml(AppStartupConfig.tikaXmlFilePath.toAbsolutePath().toString());
 	}
 }

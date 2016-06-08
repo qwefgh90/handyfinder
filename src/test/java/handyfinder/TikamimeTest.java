@@ -71,7 +71,7 @@ public class TikamimeTest {
 			LOG.info(getClass().getResource("/tika-mimetypes.xml").toString());
 		}
 		afterUrl = MimeTypes.class.getResource("/tika-mimetypes.xml");
-		obj = TikaMimeXmlObjectFactory.createInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString());
+		obj = TikaMimeXmlObjectFactory.getInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString());
 		LOG.info("*.hwp:" + obj.getGlobUsing("*.hwp"));
 		LOG.info("*.xml:" + obj.getGlobUsing("*.xml"));
 		obj.setGlob("*.hwp", false);
@@ -89,7 +89,7 @@ public class TikamimeTest {
 		LOG.info(String.valueOf(obj.getCountofGlob()));
 		LOG.info(String.valueOf(obj.getGlobIterator("application/vnd.ms-excel").next().toString()));
 		TikaMimeXmlObject obj2 = TikaMimeXmlObjectFactory
-				.createInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString());
+				.getInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString());
 		assertTrue(obj == obj2);
 		obj.updateGlobPropertiesFile();
 	}

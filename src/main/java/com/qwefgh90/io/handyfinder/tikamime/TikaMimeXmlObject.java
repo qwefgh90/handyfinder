@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -54,6 +55,10 @@ public final class TikaMimeXmlObject {
 	public Iterator<String> getGlobIterator() {
 		return globMap.keySet().iterator();
 	}
+	
+	public Map<String, Boolean> getGlobMap(){
+		return Collections.unmodifiableMap(globMap);
+	}
 
 	/**
 	 * if already exist, no change in globMap
@@ -63,7 +68,7 @@ public final class TikaMimeXmlObject {
 	 */
 	public void addGlobType(String mimetype, String glob) {
 		if (!globMap.containsKey(glob))
-			globMap.put(glob, Boolean.TRUE);
+			globMap.put(glob, Boolean.TRUE);	//if not exist, put True into map
 
 		if (!mimeToGlobListMap.keySet().contains(mimetype)) {
 			Set<String> values = new TreeSet<String>();
@@ -142,7 +147,7 @@ public final class TikaMimeXmlObject {
 
 		}
 
-		public static TikaMimeXmlObject createInstanceFromXml(String xmlPath)
+		public static TikaMimeXmlObject getInstanceFromXml(String xmlPath)
 				throws ParserConfigurationException, SAXException, IOException {
 			if (container.keySet().contains(xmlPath)) {
 				return container.get(xmlPath);
@@ -169,8 +174,9 @@ public final class TikaMimeXmlObject {
 			SAXParserFactory factory = SAXParserFactory.newInstance();
 			SAXParser saxParser = factory.newSAXParser();
 			container.put(xmlPath, obj);
-
 			saxParser.parse(xmlPath, new TikaMimeTypesSaxHandler(obj));
+			
+			// after load default, add custom
 			addCustomMimeAndGlob(obj);
 			return obj;
 		}

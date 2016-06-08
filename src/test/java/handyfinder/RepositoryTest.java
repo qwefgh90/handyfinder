@@ -67,7 +67,6 @@ public class RepositoryTest {
 	@After
 	public void clean() throws SQLException{
 		indexProperty.deleteDirectories();
-		
 	}
 
 	@Test

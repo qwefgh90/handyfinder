@@ -1,6 +1,6 @@
 package com.qwefgh90.io.handyfinder.springweb.model;
 
-public class UpdateIndexSupportTypeDto {
+public class SupportTypeDto {
 	private String type;
 	private boolean used;
 	public String getType() {

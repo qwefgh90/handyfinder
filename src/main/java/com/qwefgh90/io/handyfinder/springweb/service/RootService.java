@@ -8,7 +8,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -28,7 +31,7 @@ import com.qwefgh90.io.handyfinder.lucene.LuceneHandler.IndexException;
 import com.qwefgh90.io.handyfinder.springweb.model.CommandDto.COMMAND;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.model.DocumentDto;
-import com.qwefgh90.io.handyfinder.springweb.model.UpdateIndexSupportTypeDto;
+import com.qwefgh90.io.handyfinder.springweb.model.SupportTypeDto;
 import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject;
@@ -70,14 +73,32 @@ public class RootService {
 	}
 	
 	/**
-	 * update support type
+	 * update support type and save to disk
 	 * @param item
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	public void updateIndexSupportType(UpdateIndexSupportTypeDto item) throws FileNotFoundException, IOException{
+	public void updateSupportType(SupportTypeDto item) throws FileNotFoundException, IOException{
 		tikaMimeObject.setGlob(item.getType(), item.isUsed());
 		tikaMimeObject.updateGlobPropertiesFile();
+	}
+	
+	/**
+	 * 
+	 * @return list of support type
+	 */
+	public List<SupportTypeDto> getSupportType(){
+		Map<String, Boolean> map = tikaMimeObject.getGlobMap();
+		List<SupportTypeDto> result = new ArrayList<>();
+		Iterator<Entry<String, Boolean>> iter = map.entrySet().iterator();
+		while(iter.hasNext()){
+			Entry<String, Boolean> entry = iter.next();
+			SupportTypeDto dto = new SupportTypeDto();
+			dto.setType(entry.getKey());
+			dto.setUsed(entry.getValue());
+			result.add(dto);
+		}
+		return result;
 	}
 	
 	public void closeAppLucene() throws IOException{
