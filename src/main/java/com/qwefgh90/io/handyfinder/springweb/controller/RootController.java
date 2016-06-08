@@ -1,13 +1,12 @@
 package com.qwefgh90.io.handyfinder.springweb.controller;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,17 +23,18 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.qwefgh90.io.handyfinder.lucene.LuceneHandler.IndexException;
 import com.qwefgh90.io.handyfinder.springweb.model.CommandDto;
+import com.qwefgh90.io.handyfinder.springweb.model.CommandDto.COMMAND;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.model.DocumentDto;
-import com.qwefgh90.io.handyfinder.springweb.model.CommandDto.COMMAND;
+import com.qwefgh90.io.handyfinder.springweb.model.UpdateIndexSupportTypeDto;
 import com.qwefgh90.io.handyfinder.springweb.service.RootService;
 
 @RestController
 public class RootController {
 
-	private final static Logger LOG = LoggerFactory.getLogger(RootController.class);
+	private final static Logger LOG = LoggerFactory
+			.getLogger(RootController.class);
 
 	@Autowired
 	RootService rootService;
@@ -44,15 +44,18 @@ public class RootController {
 	@RequestMapping(value = "/getDirectories", method = RequestMethod.GET)
 	public ResponseEntity<List<Directory>> getDirectories() {
 		try {
-			return new ResponseEntity<List<Directory>>(rootService.getDirectories(), HttpStatus.OK);
+			return new ResponseEntity<List<Directory>>(
+					rootService.getDirectories(), HttpStatus.OK);
 		} catch (SQLException e) {
 			LOG.error(ExceptionUtils.getStackTrace(e));
-			return new ResponseEntity<List<Directory>>(HttpStatus.INTERNAL_SERVER_ERROR);
+			return new ResponseEntity<List<Directory>>(
+					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
 	@RequestMapping(value = "/updateDirectories", method = RequestMethod.POST)
-	public ResponseEntity<String> updateDirectories(@RequestBody ArrayList<Directory> list) {
+	public ResponseEntity<String> updateDirectories(
+			@RequestBody ArrayList<Directory> list) {
 		try {
 			rootService.updateDirectories(list);
 			return new ResponseEntity<String>(HttpStatus.OK);
@@ -67,9 +70,24 @@ public class RootController {
 		Optional<List<DocumentDto>> result = Optional.empty();
 		result = rootService.search(keyword);
 		if (result.isPresent()) {
-			return new ResponseEntity<List<DocumentDto>>(result.get(), HttpStatus.OK);
+			return new ResponseEntity<List<DocumentDto>>(result.get(),
+					HttpStatus.OK);
 		} else {
-			return new ResponseEntity<List<DocumentDto>>(HttpStatus.INTERNAL_SERVER_ERROR);
+			return new ResponseEntity<List<DocumentDto>>(
+					HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@RequestMapping(value = "/updateIndexType", method = RequestMethod.POST)
+	public ResponseEntity<String> updateIndexType(
+			@RequestBody UpdateIndexSupportTypeDto item) {
+		try {
+			rootService.updateIndexSupportType(item);
+			return new ResponseEntity<String>(HttpStatus.OK);
+		} catch (IOException e) {
+			LOG.warn(ExceptionUtils.getStackTrace(e));
+			return new ResponseEntity<String>(
+					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -79,7 +97,8 @@ public class RootController {
 	 * @param accessor
 	 */
 	@MessageMapping("/command/index/{command}")
-	public void command1(@DestinationVariable String command, SimpMessageHeaderAccessor accessor) {
+	public void command1(@DestinationVariable String command,
+			SimpMessageHeaderAccessor accessor) {
 		if (command == null)
 			return;
 		COMMAND dto;
@@ -100,7 +119,8 @@ public class RootController {
 	 * @param accessor
 	 */
 	@MessageMapping("/command/gui/{command}")
-	public void commandGui(@Payload OpenCommand path, @DestinationVariable String command) {
+	public void commandGui(@Payload OpenCommand path,
+			@DestinationVariable String command) {
 		if (command.equals("open"))
 			rootService.openDirectory(path.getPath());
 		if (command.equals("open-file"))

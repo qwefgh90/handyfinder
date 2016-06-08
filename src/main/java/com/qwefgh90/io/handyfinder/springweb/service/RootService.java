@@ -1,7 +1,7 @@
 package com.qwefgh90.io.handyfinder.springweb.service;
 
 import java.awt.Desktop;
-import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
@@ -25,18 +23,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
 import com.qwefgh90.io.handyfinder.lucene.LuceneHandler;
 import com.qwefgh90.io.handyfinder.lucene.LuceneHandler.IndexException;
-import com.qwefgh90.io.handyfinder.springweb.model.CommandDto;
 import com.qwefgh90.io.handyfinder.springweb.model.CommandDto.COMMAND;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.model.DocumentDto;
+import com.qwefgh90.io.handyfinder.springweb.model.UpdateIndexSupportTypeDto;
 import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
+import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject;
 import com.qwefgh90.io.jsearch.FileExtension;
-import com.qwefgh90.io.jsearch.JSearch;
-import com.qwefgh90.io.jsearch.extractor.TikaTextExtractor;
 
 @Service
 public class RootService {
@@ -51,6 +47,9 @@ public class RootService {
 	@Autowired
 	LuceneHandler handler;
 
+	@Autowired
+	TikaMimeXmlObject tikaMimeObject;
+	
 	/**
 	 * Get directories to be indexed.
 	 * 
@@ -62,13 +61,23 @@ public class RootService {
 	}
 
 	/**
-	 * no transaction, no required.
 	 * 
 	 * @param list
 	 * @throws SQLException
 	 */
 	public void updateDirectories(List<Directory> list) throws SQLException {
 		indexProperty.save(list);
+	}
+	
+	/**
+	 * update support type
+	 * @param item
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	public void updateIndexSupportType(UpdateIndexSupportTypeDto item) throws FileNotFoundException, IOException{
+		tikaMimeObject.setGlob(item.getType(), item.isUsed());
+		tikaMimeObject.updateGlobPropertiesFile();
 	}
 	
 	public void closeAppLucene() throws IOException{
