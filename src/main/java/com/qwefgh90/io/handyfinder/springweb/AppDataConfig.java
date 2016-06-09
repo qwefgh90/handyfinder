@@ -19,9 +19,9 @@ import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject.TikaMimeXmlObjectF
 public class AppDataConfig {
 
 	@Bean
-	public LuceneHandler luceneHandler(CommandInvoker invoker) {
+	public LuceneHandler luceneHandler(CommandInvoker invoker, TikaMimeXmlObject types) {
 		return LuceneHandler
-				.getInstance(AppStartupConfig.pathForIndex, invoker);
+				.getInstance(AppStartupConfig.pathForIndex, invoker, types);
 	}
 
 	@Bean

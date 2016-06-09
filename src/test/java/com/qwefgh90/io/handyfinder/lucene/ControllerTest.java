@@ -70,8 +70,8 @@ public class ControllerTest {
 	public void searchTest() throws Exception{
 		mvc.perform(get("/search").contentType(MediaType.APPLICATION_JSON_UTF8).param("keyword", "자바 고언어 파이썬"))
 		.andExpect(status().isOk()).andDo(MockMvcResultHandlers.print());
-		
 	}
+	
 	@Test
 	public void supportTypeTest() throws Exception{
 

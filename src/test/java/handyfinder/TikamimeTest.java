@@ -1,6 +1,7 @@
 package handyfinder;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import org.xml.sax.SAXException;
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
 import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject;
 import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject.TikaMimeXmlObjectFactory;
+import com.qwefgh90.io.jsearch.FileExtension;
 
 public class TikamimeTest {
 	private final static Logger LOG = LoggerFactory.getLogger(TikamimeTest.class);
@@ -76,6 +78,10 @@ public class TikamimeTest {
 		LOG.info("*.xml:" + obj.getGlobUsing("*.xml"));
 		obj.setGlob("*.hwp", false);
 		obj.setGlob("*.xml", false);
+		
+		assertFalse(obj.isAllowMime("application/x-hwp"));
+		MediaType mt = FileExtension.getContentType(new File(afterUrl.toURI()), "tika-mimetypes.xml");
+		LOG.info(mt.toString());
 	}
 
 	TikaMimeXmlObject obj;

@@ -27,7 +27,7 @@ app.factory("IndexModel",['$rootScope', function($rootScope){
 				auto_update_index : false,
 				auto_clean_files : false,
 				maximum_size : 5,
-				supportTypes : [{type:'*.xlsx', used:true}, {type:'*.pptx', used:false}, {type:'*.pptx', used:false}, {type:'*.pptx', used:false}, {type:'*.pptx', used:false}, {type:'*.pptx', used:false}],
+				supportTypes : [],
 				pathList : [],
 				index_manager_status : {
 						open : true

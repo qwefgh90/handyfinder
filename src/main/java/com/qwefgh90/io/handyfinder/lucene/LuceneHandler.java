@@ -57,11 +57,15 @@ import org.apache.lucene.search.highlight.TokenSources;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.BytesRef;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
+import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject;
+import com.qwefgh90.io.jsearch.FileExtension;
 import com.qwefgh90.io.jsearch.JSearch;
 import com.qwefgh90.io.jsearch.JSearch.ParseException;
 
@@ -97,6 +101,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	private int currentProgress = 0; // indexed documents count
 	private int totalProcess = 0; // total documents count to be indexed
 	private CommandInvoker invokerForCommand; // for command to client
+	private TikaMimeXmlObject mimeTypes;
 
 	/**
 	 * manage state private API
@@ -141,13 +146,14 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 *            : path where index stored
 	 * @return object identified by path
 	 */
-	public static LuceneHandler getInstance(Path indexWriterPath, CommandInvoker invoker) {
+	public static LuceneHandler getInstance(Path indexWriterPath, CommandInvoker invoker, TikaMimeXmlObject mimeTypes) {
 		if (Files.isDirectory(indexWriterPath.getParent()) && Files.isWritable(indexWriterPath.getParent())) {
 			String pathString = indexWriterPath.toAbsolutePath().toString();
 			if (!map.containsKey(pathString)) {
 				LuceneHandler newInstance = new LuceneHandler();
 				newInstance.writerInit(indexWriterPath);
 				newInstance.invokerForCommand = invoker;
+				newInstance.mimeTypes = mimeTypes;
 				map.put(pathString, newInstance);
 			}
 			return map.get(pathString);
@@ -276,6 +282,10 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @throws ParseException
 	 */
 	void index(Path path) throws IOException {
+		MediaType mimeType = FileExtension.getContentType(path.toFile(), path.getFileName().toString());
+		if (!mimeTypes.isAllowMime(mimeType.toString()))
+			return;
+
 		Document doc = new Document();
 
 		FieldType type = new FieldType();
@@ -285,6 +295,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		type.setStoreTermVectorOffsets(true);
 
 		String contents;
+
 		try {
 			contents = JSearch.extractContentsFromFile(path.toFile());
 			contents.replaceAll(" +", ""); // erase space
@@ -326,8 +337,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @throws IndexException
 	 */
 	public TopDocs search(String fullString) throws QueryNodeException, IOException {
-		//if (INDEX_WRITE_STATE.PROGRESS == writeState)
-		//	throw new IndexException("now indexing");
+		// if (INDEX_WRITE_STATE.PROGRESS == writeState)
+		// throw new IndexException("now indexing");
 		checkDirectoryReader();
 
 		Query q1 = parser.parse(addBiWildcardString(fullString), "pathString");
@@ -440,7 +451,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		SimpleHTMLFormatter htmlFormatter = new SimpleHTMLFormatter();
 		Highlighter highlighter = new Highlighter(htmlFormatter, new QueryScorer(query));
 		String pathString = doc.get("pathString");
-		
+
 		String contents = JSearch.extractContentsFromFile(pathString);
 		Document tempDocument = new Document();
 		FieldType type = new FieldType();
@@ -448,9 +459,10 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		type.setStored(true);
 		Field contentsField = new Field("contents", contents, type);
 		tempDocument.add(contentsField);
-		
+
 		try (@SuppressWarnings("deprecation")
-		TokenStream tokenStream = TokenSources.getAnyTokenStream(indexReader, docid, "contents", tempDocument, analyzer)) {
+		TokenStream tokenStream = TokenSources.getAnyTokenStream(indexReader, docid, "contents", tempDocument,
+				analyzer)) {
 			TextFragment[] frag = highlighter.getBestTextFragments(tokenStream, contents, false, 2);// highlighter.getBestFragments(tokenStream,
 			for (int j = 0; j < frag.length; j++) {
 				if ((frag[j] != null) && (frag[j].getScore() > 0)) {

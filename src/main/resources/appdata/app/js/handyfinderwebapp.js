@@ -88,6 +88,16 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 		$scope.startWatch();
 	});
 	
+	promise = apiService.getSupportTypes();
+	
+	promise.then(function(msg) {
+		$scope.indexModel.supportTypes = msg;
+		$log.log('supportTypes loaded : ' + msg.length);
+	}, function(msg) {
+		$log.log('supportTypes fail to load');
+	}, function(msg) {
+	});
+	
 	$scope.save = function() {
 		var deferred = $q.defer();
 		var promise = apiService.updateDirectories($scope.indexModel.pathList);
@@ -157,9 +167,11 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 	};
 	
 	$scope.updateType = function(obj) {
-		$log.log(obj.type + ':' + obj.used);
-		//var promise = $scope.save();
-		//promise.then(function(){progressService.sendStartIndex();},function(){},function(){});
+		var promise = apiService.updateSupportType(obj);
+		promise.then(function(){
+				$log.log('successful update '+obj.type + ':' + obj.used);
+			},function(){
+				$log.log('fail to update ');},function(){});
 	};
 	
 	var promise = progressService.connect();
