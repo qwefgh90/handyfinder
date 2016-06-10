@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.tika.mime.MediaType;
@@ -66,9 +67,11 @@ public class TikamimeTest {
 
 		if (matcher.matches()) {
 			jarPath = matcher.group(1);
+			if(SystemUtils.IS_OS_WINDOWS)
+				jarPath = jarPath.substring(1);
 			resourceName = matcher.group(2);
-			System.out.println(matcher.group(1));
-			System.out.println(matcher.group(2));
+			System.out.println(jarPath);
+			System.out.println(resourceName);
 			AppStartupConfig.copyFileInJar(jarPath, resourceName, new File(getClass().getResource("/").toURI()), true);
 			LOG.info(getClass().getResource("/tika-mimetypes.xml").toString());
 		}
