@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -41,7 +42,7 @@ public final class TikaMimeXmlObject {
 	}
 
 	private Map<String, Set<String>> mimeToGlobListMap = new HashMap<>();
-	private Map<String, Boolean> globMap = new HashMap<>();
+	private Map<String, Boolean> globMap = new TreeMap<>();
 
 	public Iterator<String> getMimeIterator() {
 		return mimeToGlobListMap.keySet().iterator();

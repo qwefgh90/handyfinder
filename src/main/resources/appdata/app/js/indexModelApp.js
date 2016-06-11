@@ -1,4 +1,4 @@
-var app = angular.module('indexModelApp', ['frapontillo.bootstrap-switch']);
+var app = angular.module('indexModelApp', []);
 app.factory("SearchModel",['$rootScope', function($rootScope){
 	var service = {
 		model : {

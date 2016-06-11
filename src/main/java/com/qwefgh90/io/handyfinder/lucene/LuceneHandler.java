@@ -58,7 +58,6 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.BytesRef;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MimeTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,6 +75,7 @@ import com.qwefgh90.io.jsearch.JSearch.ParseException;
  * @since 16/05/13
  *
  */
+@SuppressWarnings("deprecation")
 public class LuceneHandler implements Cloneable, AutoCloseable {
 
 	private final static Logger LOG = LoggerFactory.getLogger(LuceneHandler.class);
@@ -460,7 +460,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		Field contentsField = new Field("contents", contents, type);
 		tempDocument.add(contentsField);
 
-		try (@SuppressWarnings("deprecation")
+		try (
 		TokenStream tokenStream = TokenSources.getAnyTokenStream(indexReader, docid, "contents", tempDocument,
 				analyzer)) {
 			TextFragment[] frag = highlighter.getBestTextFragments(tokenStream, contents, false, 2);// highlighter.getBestFragments(tokenStream,
@@ -474,8 +474,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		if (sb.length() != 0) {
 			return sb.toString();
 		} else {
-			try (@SuppressWarnings("deprecation")
-			TokenStream tokenStream = TokenSources.getAnyTokenStream(indexReader, docid, "pathString", analyzer)) {
+			try (TokenStream tokenStream = TokenSources.getAnyTokenStream(indexReader, docid, "pathString", analyzer)) {
 				TextFragment[] frag = highlighter.getBestTextFragments(tokenStream, pathString, false, 2);// highlighter.getBestFragments(tokenStream,
 				for (int j = 0; j < frag.length; j++) {
 					if ((frag[j] != null) && (frag[j].getScore() > 0)) {
@@ -509,7 +508,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		Query q2 = parser.parse(addWildcardString(fullString), "contents");
 
 		BooleanQuery query = new BooleanQuery.Builder().add(q1, Occur.SHOULD).add(q2, Occur.SHOULD).build();
-		query.setMaxClauseCount(Integer.MAX_VALUE);
+		BooleanQuery.setMaxClauseCount(Integer.MAX_VALUE);
 		return query;
 	}
 

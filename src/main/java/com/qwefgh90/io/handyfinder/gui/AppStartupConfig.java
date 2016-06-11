@@ -135,7 +135,8 @@ public class AppStartupConfig extends Application {
 				copyDirectoryInJar(deployedPath.toString(), APP_DATA_DIR_NAME, parentOfClassPath.toFile());
 			} else { // no jar start
 				// all files copied in classpath
-				FileUtils.copyDirectory(deployedPath.toFile(), parentOfClassPath.toFile());
+				Path classsPath = deployedPath.getParent().resolve("classes");
+				FileUtils.copyDirectory(classsPath.toFile(), parentOfClassPath.toFile());
 			}
 			// tika-mimetypes.xml copy to appdata
 			copyTikaXml();
@@ -438,7 +439,7 @@ public class AppStartupConfig extends Application {
 																												// seperator
 			resourceDirInJar = resourceDirInJar + "/";
 
-		LOG.trace("extract info : " + "\nFile.separator : " + File.separator + "\nresourceDirInJar : "
+		LOG.trace("package extract info : " + "\nFile.separator : " + File.separator + "\nresourceDirInJar : "
 				+ resourceDirInJar + "\njarPath : " + jarPath + "\ndestinationRoot" + destinationRoot);
 
 		FileInputStream fis = new FileInputStream(jarPath);

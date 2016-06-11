@@ -34,8 +34,6 @@ function($location, $scope, apiService) {
 app.controller('searchController', ['$location','$log', '$scope', 'apiService', 'Document','$sce', 'GUIService', 'SearchModel',
 function($location, $log, $scope, apiService, Document, $sce, GUIService, SearchModel) {
 	$scope.searchModel = SearchModel.model;
-//	$scope.searchKeyword = ''; 
-//	$scope.searchResult = [];
 	var searchFlag = true;
 	$scope.search = function(keyword){
 		if(searchFlag == false)
@@ -55,27 +53,49 @@ function($location, $log, $scope, apiService, Document, $sce, GUIService, Search
 		,function(){searchFlag = true;});
 	};
 
-	var promise = GUIService.connect();
-	promise.then(function(frame) {
-		$log.log('[handy]'+frame);
-		$scope.open = function(path){
-			GUIService.openDirectory(path);
-		};
-		$scope.open_file = function(path){
-			GUIService.openFile(path);
-		};
-	}, function(error) {
-		$log.log('[handy]'+error);
-	}, function(noti) {
-		$log.log('[handy]'+noti);
-	});
+	if(GUIService.isConnected() == false){
+		var promise = GUIService.connect();
+		promise.then(function(frame) {
+			$log.log('[handy]'+frame);
+			$scope.open = function(path){
+				GUIService.openDirectory(path);
+			};
+			$scope.open_file = function(path){
+				GUIService.openFile(path);
+			};
+		}, function(error) {
+			$log.log('[handy]'+error);
+		}, function(noti) {
+			$log.log('[handy]'+noti);
+		});
+	}
 }]);
 
 app.controller('indexController', ['$q','$log', '$timeout', '$location', '$scope', 'apiService', 'Path', 'ProgressService', 'IndexModel',
 function($q, $log, $timeout, $location, $scope, apiService, Path, progressService, IndexModel) {
 	$scope.indexModel = IndexModel.model;
 	var promise = apiService.getDirectories();
-	
+	$scope.totalDisplayed = 0;
+	$scope.searchedKeyword = '';
+	$scope.searchedType = '';
+	$scope.changeSearchKeyword = function(searchedKeyword){
+		if(searchedKeyword == '')
+			return;
+		for(var i = 0; i < $scope.totalDisplayed; i++){
+//			$log.log($scope.indexModel.supportTypes[i].type);
+			if($scope.indexModel.supportTypes[i].type.indexOf(searchedKeyword) > -1){
+				$scope.searchedType = $scope.indexModel.supportTypes[i].type;
+				$log.log($scope.indexModel.supportTypes[i].type + ' is matched');
+				return;
+			}
+		}
+	};
+	$scope.loadMore = function(){
+		$scope.totalDisplayed = $scope.totalDisplayed + 100;
+		if($scope.indexModel.supportTypes.length < $scope.totalDisplayed){
+			$scope.totalDisplayed = $scope.indexModel.supportTypes.length;
+		}
+	}
 	promise.then(function(msg) {
 		$scope.indexModel.pathList = msg;
 		$scope.indexModel.index_progress_status.addAlertQ(2);
@@ -88,15 +108,17 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 		$scope.startWatch();
 	});
 	
-	promise = apiService.getSupportTypes();
-	
-	promise.then(function(msg) {
-		$scope.indexModel.supportTypes = msg;
-		$log.log('supportTypes loaded : ' + msg.length);
-	}, function(msg) {
-		$log.log('supportTypes fail to load');
-	}, function(msg) {
-	});
+	if($scope.indexModel.supportTypes.length == 0){
+		promise = apiService.getSupportTypes();
+		promise.then(function(msg) {
+			$scope.totalDisplayed = 100;
+			$scope.indexModel.supportTypes = msg;
+			$log.log('supportTypes loaded : ' + msg.length);
+		}, function(msg) {
+			$log.log('supportTypes fail to load');
+		}, function(msg) {
+		});
+	}
 	
 	$scope.save = function() {
 		var deferred = $q.defer();
@@ -174,32 +196,36 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 				$log.log('fail to update ');},function(){});
 	};
 	
-	var promise = progressService.connect();
-	promise.then(function(frame) {
-			$log.log('[handy]'+frame);
-			var progressPromise = progressService.subProgress();
-		progressPromise.then(function() {
-			}, function(msg) {
-				$log.log(msg);
-			}, function(progressObject) {
-				if (progressObject.state == 'START')
-					$scope.indexModel.progressBarVisible = true;
-				else if (progressObject.state == 'TERMINATE'){
-					$scope.indexModel.progressBarVisible = false;
-					$scope.indexModel.index_progress_status.addAlertQ(4);
-				}
-				$scope.indexModel.processIndex = progressObject.processIndex;
-				$scope.indexModel.processPath = progressObject.processPath;
-				$scope.indexModel.totalProcessCount = progressObject.totalProcessCount;
-				$scope.indexModel.state = progressObject.state;
-				$scope.indexModel.index_progress_status.refreshState();
-				$log.log(progressObject.processIndex + ", " + progressObject.totalProcessCount + ", " + progressObject.processPath + ", " + progressObject.state);
-			});
-	}, function(error) {
-		$log.log('[handy]'+error);
-	}, function(noti) {
-		$log.log('[handy]'+noti);
-	});
+	
+	
+	if(progressService.isConnected() == false){
+		var promise = progressService.connect();
+		promise.then(function(frame) {
+				$log.log('[handy]'+frame);
+				var progressPromise = progressService.subProgress();
+			progressPromise.then(function() {
+				}, function(msg) {
+					$log.log(msg);
+				}, function(progressObject) {
+					if (progressObject.state == 'START')
+						$scope.indexModel.progressBarVisible = true;
+					else if (progressObject.state == 'TERMINATE'){
+						$scope.indexModel.progressBarVisible = false;
+						$scope.indexModel.index_progress_status.addAlertQ(4);
+					}
+					$scope.indexModel.processIndex = progressObject.processIndex;
+					$scope.indexModel.processPath = progressObject.processPath;
+					$scope.indexModel.totalProcessCount = progressObject.totalProcessCount;
+					$scope.indexModel.state = progressObject.state;
+					$scope.indexModel.index_progress_status.refreshState();
+					$log.log(progressObject.processIndex + ", " + progressObject.totalProcessCount + ", " + progressObject.processPath + ", " + progressObject.state);
+				});
+		}, function(error) {
+			$log.log('[handy]'+error);
+		}, function(noti) {
+			$log.log('[handy]'+noti);
+		});
+	}
 
 }]);
 
@@ -250,5 +276,37 @@ app.directive("compileHtml", function($parse, $sce, $compile) {
                 element.append(linker(scope));
             });
         }
+    }
+});
+/*
+https://stackoverflow.com/questions/12790854/angular-directive-to-scroll-to-a-given-item/28369575#28369575
+written by Mat*/
+app.directive('scrollIf', function () {
+    var getScrollingParent = function(element) {
+        element = element.parentElement;
+        while (element) {
+            if (element.scrollHeight !== element.clientHeight) {
+                return element;
+            }
+            element = element.parentElement;
+        }
+        return null;
+    };
+    return function (scope, element, attrs) {
+        scope.$watch(attrs.scrollIf, function(value) {
+            if (value) {
+                var sp = getScrollingParent(element[0]);
+                var topMargin = parseInt(attrs.scrollMarginTop) || 0;
+                var bottomMargin = parseInt(attrs.scrollMarginBottom) || 0;
+                var elemOffset = element[0].offsetTop;
+                var elemHeight = element[0].clientHeight;
+
+                if (elemOffset - topMargin < sp.scrollTop) {
+                    sp.scrollTop = elemOffset - topMargin;
+                } else if (elemOffset + elemHeight + bottomMargin > sp.scrollTop + sp.clientHeight) {
+                    sp.scrollTop = elemOffset + elemHeight + bottomMargin - sp.clientHeight;
+                }
+            }
+        });
     }
 });
