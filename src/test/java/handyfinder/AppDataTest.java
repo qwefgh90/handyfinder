@@ -18,13 +18,14 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import com.qwefgh90.io.handyfinder.gui.GlobalAppDataView;
 import com.qwefgh90.io.handyfinder.springweb.AppDataConfig;
 import com.qwefgh90.io.handyfinder.springweb.RootContext;
+import com.qwefgh90.io.handyfinder.springweb.RootWebSocketConfig;
 import com.qwefgh90.io.handyfinder.springweb.ServletContextTest;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = { ServletContextTest.class, RootContext.class,
-		AppDataConfig.class })
+		AppDataConfig.class, RootWebSocketConfig.class})
 public class AppDataTest {
 	
 	@Autowired

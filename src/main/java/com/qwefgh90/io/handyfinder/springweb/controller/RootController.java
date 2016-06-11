@@ -41,7 +41,7 @@ public class RootController {
 	@Autowired
 	SimpMessagingTemplate messaging;
 
-	@RequestMapping(value = "/getDirectories", method = RequestMethod.GET)
+	@RequestMapping(value = "/directories", method = RequestMethod.GET)
 	public ResponseEntity<List<Directory>> getDirectories() {
 		try {
 			return new ResponseEntity<List<Directory>>(rootService.getDirectories(), HttpStatus.OK);
@@ -51,7 +51,7 @@ public class RootController {
 		}
 	}
 
-	@RequestMapping(value = "/updateDirectories", method = RequestMethod.POST)
+	@RequestMapping(value = "/directories", method = RequestMethod.POST)
 	public ResponseEntity<String> updateDirectories(@RequestBody ArrayList<Directory> list) {
 		try {
 			rootService.updateDirectories(list);
@@ -62,7 +62,7 @@ public class RootController {
 		}
 	}
 
-	@RequestMapping(value = "/search", method = RequestMethod.GET)
+	@RequestMapping(value = "/documents", method = RequestMethod.GET)
 	public ResponseEntity<List<DocumentDto>> search(@RequestParam String keyword) {
 		Optional<List<DocumentDto>> result = Optional.empty();
 		result = rootService.search(keyword);
@@ -73,7 +73,7 @@ public class RootController {
 		}
 	}
 
-	@RequestMapping(value = "/updateSupportType", method = RequestMethod.POST)
+	@RequestMapping(value = "/supportType", method = RequestMethod.POST)
 	public ResponseEntity<String> updateIndexType(@RequestBody SupportTypeDto supportType) {
 		try {
 			rootService.updateSupportType(supportType);
@@ -84,7 +84,7 @@ public class RootController {
 		}
 	}
 
-	@RequestMapping(value = "/getSupportTypes", method = RequestMethod.GET)
+	@RequestMapping(value = "/supportTypes", method = RequestMethod.GET)
 	public ResponseEntity<List<SupportTypeDto>> getSupportTypes() {
 		return new ResponseEntity<List<SupportTypeDto>>(rootService.getSupportType(), HttpStatus.OK);
 	}

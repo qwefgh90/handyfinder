@@ -1,8 +1,8 @@
 package intergration.websocket.test;
 
 import static org.junit.Assert.fail;
-
 import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URISyntaxException;
@@ -49,12 +49,14 @@ import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
 import com.qwefgh90.io.handyfinder.springweb.service.RootService;
 import com.qwefgh90.io.handyfinder.springweb.websocket.ProgressCommand;
 import com.qwefgh90.io.handyfinder.springweb.websocket.ProgressCommand.STATE;
+import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject;
 
 public class WebsockTest {
 	private final static Logger LOG = LoggerFactory.getLogger(WebsockTest.class);
 	
 	RootService rootService;
 	MetaRespository metaRepo;
+	TikaMimeXmlObject xmlObject;
 	List<Directory> list = new ArrayList<>();
 
 	@Before
@@ -63,7 +65,8 @@ public class WebsockTest {
 
 		rootService = AppStartupConfig.getBean(RootService.class);
 		metaRepo = AppStartupConfig.getBean(MetaRespository.class);
-
+		xmlObject = AppStartupConfig.getBean(TikaMimeXmlObject.class);
+		xmlObject.initGlobTrue();
 		Directory dir = new Directory();
 		dir.setRecursively(true);
 		dir.setUsed(true);
@@ -112,7 +115,7 @@ public class WebsockTest {
 			throw new AssertionError("", failure.get());
 		}
 
-		if (!latch.await(50, TimeUnit.SECONDS)) {
+		if (!latch.await(360, TimeUnit.SECONDS)) {
 			fail("not received");
 		}
 	}

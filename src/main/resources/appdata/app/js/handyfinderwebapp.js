@@ -91,7 +91,7 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 		}
 	};
 	$scope.loadMore = function(){
-		$scope.totalDisplayed = $scope.totalDisplayed + 100;
+		$scope.totalDisplayed = $scope.totalDisplayed + 100000;
 		if($scope.indexModel.supportTypes.length < $scope.totalDisplayed){
 			$scope.totalDisplayed = $scope.indexModel.supportTypes.length;
 		}
@@ -111,13 +111,15 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 	if($scope.indexModel.supportTypes.length == 0){
 		promise = apiService.getSupportTypes();
 		promise.then(function(msg) {
-			$scope.totalDisplayed = 100;
 			$scope.indexModel.supportTypes = msg;
+			$scope.totalDisplayed = 100;	//minimum > 1000 
 			$log.log('supportTypes loaded : ' + msg.length);
 		}, function(msg) {
 			$log.log('supportTypes fail to load');
 		}, function(msg) {
 		});
+	}else{
+		$scope.totalDisplayed = 100; //minimum > 1000 
 	}
 	
 	$scope.save = function() {
