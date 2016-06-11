@@ -31,20 +31,23 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
 import com.qwefgh90.io.handyfinder.lucene.LuceneHandler;
 import com.qwefgh90.io.handyfinder.lucene.LuceneHandler.IndexException;
+import com.qwefgh90.io.handyfinder.springweb.AppDataConfig;
 import com.qwefgh90.io.handyfinder.springweb.RootContext;
 import com.qwefgh90.io.handyfinder.springweb.ServletContextTest;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
+import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject;
 import com.qwefgh90.io.jsearch.JSearch.ParseException;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-// ApplicationContext will be loaded from
-// "classpath:/com/example/OrderServiceTest-context.xml"
-@ContextConfiguration(classes = { ServletContextTest.class, RootContext.class })
+@ContextConfiguration(classes = { ServletContextTest.class, RootContext.class, AppDataConfig.class })
 public class LuceneHandlerTest {
 	private final static Logger LOG = LoggerFactory.getLogger(LuceneHandlerTest.class);
 	@Autowired
 	CommandInvoker invoker;
+	
+	@Autowired
+	TikaMimeXmlObject types;
 
 	LuceneHandler handler;
 	LuceneHandler handler2;
@@ -64,8 +67,9 @@ public class LuceneHandlerTest {
 
 	@Before
 	public void setup() throws IOException {
-		handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invoker);
-		handler2 = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invoker);
+		types.initGlobTrue();
+		handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invoker, types);
+		handler2 = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invoker, types);
 		assertTrue(handler == handler2);
 		handler.deleteAllIndexesFromFileSystem();
 
@@ -106,6 +110,16 @@ public class LuceneHandlerTest {
 	}
 
 	@Test
+	public void mimeExceptTest() throws IOException {
+		types.setGlob("*.txt", false);
+		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
+		int count1 = handler.getDocumentCount();
+		assertTrue(count1 < 13);
+		LOG.info("mime except : "+ count1);
+		types.initGlobTrue();
+	}
+
+	@Test
 	public void writeTest() throws IOException, org.apache.lucene.queryparser.classic.ParseException,
 			InvalidTokenOffsetsException, QueryNodeException, ParseException {
 		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
@@ -114,9 +128,9 @@ public class LuceneHandlerTest {
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
 			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "자바");
-			LOG.info(exp.toString());
+//			LOG.info(exp.toString());
 
-			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "자바 고언어"));
+//			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "자바 고언어"));
 		}
 		assertTrue(docs.scoreDocs.length == 7);
 
@@ -124,9 +138,9 @@ public class LuceneHandlerTest {
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
 			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "HTTP");
-			LOG.info(exp.toString());
+//			LOG.info(exp.toString());
 
-			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "HTTP"));
+//			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "HTTP"));
 		}
 		assertTrue(docs.scoreDocs.length == 1);
 
@@ -136,12 +150,12 @@ public class LuceneHandlerTest {
 
 			String info = "[" + docs.scoreDocs[i].score + "]" + doc.get("pathString") + " : \n" + doc.get("contents")
 					+ "\n";
-			LOG.info(info);
+//			LOG.info(info);
 
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "부트로더 Proto");
-			LOG.info(exp.toString());
+//			LOG.info(exp.toString());
 
-			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "부트로더 Proto"));
+//			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "부트로더 Proto"));
 		}
 		assertTrue(docs.scoreDocs.length == 2);
 
@@ -163,9 +177,9 @@ public class LuceneHandlerTest {
 			// log.info(info);
 
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "/depth/ homec/choe");
-			LOG.info(exp.toString());
+//			LOG.info(exp.toString());
 
-			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "/depth/ homec/choe"));
+//			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "/depth/ homec/choe"));
 		}
 		assertTrue(docs.scoreDocs.length > 0);
 	}

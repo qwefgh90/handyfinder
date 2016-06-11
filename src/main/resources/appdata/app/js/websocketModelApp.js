@@ -1,12 +1,13 @@
 var app = angular.module('websocketModelApp', []);
 //app.constant('sockJsProtocols', ["xhr-streaming", "xhr-polling"]); // only allow XHR protocols
 app.constant('sockJsProtocols', []);
-app.factory("StompClient", ['sockJsProtocols', '$q',
-function(sockJsProtocols, $q) {
+app.factory("StompClient", ['sockJsProtocols', '$q', '$log',
+function(sockJsProtocols, $q, $log) {
 	function StompClient(){
 		this.stompClient = undefined;
+		this.connection = false;
 	};
-	
+
 	StompClient.prototype = {
 		init : function(url) {
 			if (sockJsProtocols.length > 0) {
@@ -23,8 +24,11 @@ function(sockJsProtocols, $q) {
 				reject("STOMP client not created");
 			} else {
 				this.stompClient.connect({}, function(frame) {
+					this.connection = true;
 					deferred.resolve(frame);
 				}, function(error) {
+					this.connection = false;
+					$log.log('suddenly stomp session is disconnected : ' + error);
 					deferred.reject("STOMP protocol error " + error);
 				});
 			}
@@ -53,6 +57,9 @@ function(sockJsProtocols, $q) {
 				deferred.resolve();
 			}
 			return deferred.promise;
+		},
+		isConnected : function(){
+			return this.stompClient == undefined ? false : this.stompClient.connected;
 		}
 	};
 	return (StompClient);
@@ -81,6 +88,9 @@ function(StompClient, $q, $log) {
 		sendStopIndex : function() {
 			return stompClient.send("/handyfinder/command/index/stop", {}, '');
 			//JSON.stringify(tradeOrder));
+		},
+		isConnected : function(){
+			return stompClient.isConnected();
 		}
 	};
 
@@ -108,6 +118,9 @@ function(StompClient, $q, $log) {
 		,
 		openFile : function(path) {
 			stompClient.send("/handyfinder/command/gui/open-file", {}, JSON.stringify({path:path}));
+		},
+		isConnected : function(){
+			return stompClient.isConnected();
 		}
 	};
 

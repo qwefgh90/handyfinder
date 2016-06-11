@@ -40,7 +40,6 @@ public class ServletContext extends WebMvcConfigurerAdapter {
 	}
 	
 	MappingJackson2HttpMessageConverter jsonMessageConverter() {
-
 		return new MappingJackson2HttpMessageConverter();
 	}
 	

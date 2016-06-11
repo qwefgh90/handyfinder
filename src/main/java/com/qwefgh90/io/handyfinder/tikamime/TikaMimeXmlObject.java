@@ -9,11 +9,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -40,19 +42,37 @@ public final class TikaMimeXmlObject {
 	}
 
 	private Map<String, Set<String>> mimeToGlobListMap = new HashMap<>();
-	private Map<String, Boolean> globMap = new HashMap<>();
+	private Map<String, Boolean> globMap = new TreeMap<>();
 
 	public Iterator<String> getMimeIterator() {
 		return mimeToGlobListMap.keySet().iterator();
 	}
 
-	public Iterator<String> getGlobIterator(String globKey) {
-		Set<String> str = mimeToGlobListMap.get(globKey);
+	public Iterator<String> getGlobIterator(String mime) {
+		Set<String> str = mimeToGlobListMap.get(mime);
+		if(str == null)
+			return null;
 		return str.iterator();
+	}
+
+	public boolean isAllowMime(String mime) {
+		Iterator<String> iter = getGlobIterator(mime);
+		if(iter == null)
+			return true;
+		while (iter.hasNext()) {
+			Boolean used = getGlobUsing(iter.next());
+			if (used == false)
+				return false;
+		}
+		return true;
 	}
 
 	public Iterator<String> getGlobIterator() {
 		return globMap.keySet().iterator();
+	}
+
+	public Map<String, Boolean> getGlobMap() {
+		return Collections.unmodifiableMap(globMap);
 	}
 
 	/**
@@ -63,7 +83,7 @@ public final class TikaMimeXmlObject {
 	 */
 	public void addGlobType(String mimetype, String glob) {
 		if (!globMap.containsKey(glob))
-			globMap.put(glob, Boolean.TRUE);
+			globMap.put(glob, Boolean.TRUE); // if not exist, put True into map
 
 		if (!mimeToGlobListMap.keySet().contains(mimetype)) {
 			Set<String> values = new TreeSet<String>();
@@ -105,6 +125,13 @@ public final class TikaMimeXmlObject {
 		}
 	}
 
+	public void initGlobTrue(){
+		Iterator<String> iter = globMap.keySet().iterator();
+		while(iter.hasNext()){
+			globMap.put(iter.next(), Boolean.TRUE);
+		}
+	}
+	
 	/**
 	 * update <b>glob properties file</b> in file system.
 	 * 
@@ -142,7 +169,7 @@ public final class TikaMimeXmlObject {
 
 		}
 
-		public static TikaMimeXmlObject createInstanceFromXml(String xmlPath)
+		public static TikaMimeXmlObject getInstanceFromXml(String xmlPath)
 				throws ParserConfigurationException, SAXException, IOException {
 			if (container.keySet().contains(xmlPath)) {
 				return container.get(xmlPath);
@@ -169,8 +196,9 @@ public final class TikaMimeXmlObject {
 			SAXParserFactory factory = SAXParserFactory.newInstance();
 			SAXParser saxParser = factory.newSAXParser();
 			container.put(xmlPath, obj);
-
 			saxParser.parse(xmlPath, new TikaMimeTypesSaxHandler(obj));
+
+			// after load default, add custom
 			addCustomMimeAndGlob(obj);
 			return obj;
 		}

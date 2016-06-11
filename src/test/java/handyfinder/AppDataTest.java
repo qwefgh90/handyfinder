@@ -33,7 +33,9 @@ public class AppDataTest {
 	Directory d;
 
 	@Before
-	public void setup() {
+	public void setup() throws IOException {
+		globalAppDataView.deleteAppDataFromDisk();
+		globalAppDataView.deleteDirectories();
 		d = new Directory();
 		d.setPathString("hello path");
 		d.setRecursively(false);
