@@ -68,14 +68,14 @@ public class ControllerTest {
 	ObjectMapper om = new ObjectMapper();
 	@Test
 	public void searchTest() throws Exception{
-		mvc.perform(get("/search").contentType(MediaType.APPLICATION_JSON_UTF8).param("keyword", "자바 고언어 파이썬"))
+		mvc.perform(get("/documents").contentType(MediaType.APPLICATION_JSON_UTF8).param("keyword", "자바 고언어 파이썬"))
 		.andExpect(status().isOk()).andDo(MockMvcResultHandlers.print());
 	}
 	
 	@Test
 	public void supportTypeTest() throws Exception{
 
-		MvcResult result = mvc.perform(get("/getSupportTypes")
+		MvcResult result = mvc.perform(get("/supportTypes")
 		.contentType(MediaType.APPLICATION_JSON_UTF8))
 		.andExpect(status().isOk())
 		.andDo(MockMvcResultHandlers.print())
@@ -94,11 +94,11 @@ public class ControllerTest {
 		String json = om.writeValueAsString(dto);
 		
 		//update type -> true
-		mvc.perform(post("/updateSupportType").contentType(MediaType.APPLICATION_JSON_UTF8).content(json))
+		mvc.perform(post("/supportType").contentType(MediaType.APPLICATION_JSON_UTF8).content(json))
 		.andExpect(status().isOk());
 
 		//check -> true
-		mvc.perform(get("/getSupportTypes")
+		mvc.perform(get("/supportTypes")
 		.contentType(MediaType.APPLICATION_JSON_UTF8))
 		.andExpect(status().isOk())
 		.andDo(MockMvcResultHandlers.print())
@@ -108,11 +108,11 @@ public class ControllerTest {
 		dto.setUsed(false);
 		json = om.writeValueAsString(dto);
 		//update type -> false
-		mvc.perform(post("/updateSupportType").contentType(MediaType.APPLICATION_JSON_UTF8).content(json))
+		mvc.perform(post("/supportType").contentType(MediaType.APPLICATION_JSON_UTF8).content(json))
 		.andExpect(status().isOk());
 
 		//final check -> false
-		mvc.perform(get("/getSupportTypes")
+		mvc.perform(get("/supportTypes")
 		.contentType(MediaType.APPLICATION_JSON_UTF8))
 		.andExpect(status().isOk())
 		.andDo(MockMvcResultHandlers.print())

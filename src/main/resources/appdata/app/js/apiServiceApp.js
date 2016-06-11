@@ -17,7 +17,7 @@ app.factory('apiService', ['$http', '$q', function($http, $q){
 			'headers' : headers
 		};
 
-		$http.get(url = '/getDirectories', config).then(function(response) {
+		$http.get(url = '/directories', config).then(function(response) {
 			if (response.status == 200) {
 				deferred.resolve(response.data);
 			} else {
@@ -47,7 +47,7 @@ app.factory('apiService', ['$http', '$q', function($http, $q){
 			'headers' : headers
 		};
 
-		$http.get(url = '/getSupportTypes', config).then(function(response) {
+		$http.get(url = '/supportTypes', config).then(function(response) {
 			if (response.status == 200) {
 				deferred.resolve(response.data);
 			} else {
@@ -77,7 +77,7 @@ app.factory('apiService', ['$http', '$q', function($http, $q){
 		};
 		var data = JSON.stringify(supportTypeDto);
 
-		$http.post(url = '/updateSupportType', data, config).then(function(response) {
+		$http.post(url = '/supportType', data, config).then(function(response) {
 			if (response.status == 200) {
 				deferred.resolve();
 			} else {
@@ -107,7 +107,7 @@ app.factory('apiService', ['$http', '$q', function($http, $q){
 		};
 		var data = JSON.stringify(pathList);
 
-		$http.post(url = '/updateDirectories', data, config).then(function(response) {
+		$http.post(url = '/directories', data, config).then(function(response) {
 			if (response.status == 200) {
 				deferred.resolve();
 			} else {
@@ -137,7 +137,7 @@ app.factory('apiService', ['$http', '$q', function($http, $q){
 			headers : headers
 		};
 
-		$http.get(url = '/search', config).then(function(response) {
+		$http.get(url = '/documents', config).then(function(response) {
 			if (response.status == 200) {
 				deferred.resolve(response.data);
 			} else {
