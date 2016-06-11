@@ -160,6 +160,7 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 		if (returnedPath != '') {
 			var path = Path.createInstance(returnedPath);
 			$scope.indexModel.pathList.push(path);
+			$scope.save();
 			alert('pushed path');
 		}
 	};
@@ -210,9 +211,9 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 					$log.log(msg);
 				}, function(progressObject) {
 					if (progressObject.state == 'START')
-						$scope.indexModel.progressBarVisible = true;
+						$scope.indexModel.index_progress_status.progressBarVisible = true;
 					else if (progressObject.state == 'TERMINATE'){
-						$scope.indexModel.progressBarVisible = false;
+						$scope.indexModel.index_progress_status.progressBarVisible = false;
 						$scope.indexModel.index_progress_status.addAlertQ(4);
 					}
 					$scope.indexModel.processIndex = progressObject.processIndex;

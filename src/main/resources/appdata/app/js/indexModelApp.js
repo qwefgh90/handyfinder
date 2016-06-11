@@ -39,31 +39,32 @@ app.factory("IndexModel",['$rootScope', function($rootScope){
 							open : false,
 							progress : false,
 							progressItemCount : 0,
+							progressBarVisible : false,
 							alerts : [{// 0
 								open : false,
 								type : 'success',
 								msg : 'Directories are stored on disk!',
-								timeout : 4000
+								timeout : 10000
 							}, {// 1
 								open : false,
 								type : 'danger',
 								msg : 'Storing directories is failed on disk!',
-								timeout : 4000
+								timeout : 10000
 							}, {// 2
 								open : false,
 								type : 'success',
 								msg : 'Directories are loaded on disk!',
-								timeout : 4000
+								timeout : 10000
 							}, {// 3
 								open : false,
 								type : 'danger',
 								msg : 'Loading directories is failed from disk!',
-								timeout : 4000
+								timeout : 10000
 							}, {// 4
 								open : false,
 								type : 'success',
 								msg : 'Ready to search your files!',
-								timeout : 4000
+								timeout : 10000
 							}],
 							alertQ : [],
 							addAlertQ : function(index) {
@@ -73,15 +74,15 @@ app.factory("IndexModel",['$rootScope', function($rootScope){
 								this.progressItemCount++;
 								this.refreshState();
 							},
-							removeAlertQ : function(index) {
-								if (this.alertQ.indexOf(this.alerts[index]) == -1)	//already removed
+							removeAlertQ : function(queueSeq) {
+								if (this.alertQ.length <= queueSeq)	//invalid request
 									return;
-								this.alertQ.splice(index, 1);
+								this.alertQ.splice(queueSeq, 1);
 								this.progressItemCount--;
 								this.refreshState();
 							},
 							refreshState : function() {
-								if (this.progressItemCount > 0 || progressBarVisible == true) {
+								if (this.progressItemCount > 0 || this.progressBarVisible == true) {
 									this.progress = true;
 									this.open = true;
 								} else {
@@ -90,7 +91,6 @@ app.factory("IndexModel",['$rootScope', function($rootScope){
 								}
 							}
 					},
-				progressBarVisible : false,
 				processIndex : 0,
 				totalProcessCount : 100,
 				processPath : '',

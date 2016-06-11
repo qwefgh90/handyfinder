@@ -15,7 +15,7 @@
 				type="{{alert.type}}" dismiss-on-timeout="{{alert.timeout}}"
 				close="indexModel.index_progress_status.removeAlertQ($index);">
 			{{alert.msg}} </uib-alert>
-			<div ng-show="indexModel.progressBarVisible">
+			<div ng-show="indexModel.index_progress_status.progressBarVisible">
 				<h3>Indexing</h3>
 				<uib-progressbar max="indexModel.totalProcessCount"
 					value="indexModel.processIndex"> <span
