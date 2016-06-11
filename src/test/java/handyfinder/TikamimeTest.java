@@ -1,6 +1,7 @@
 package handyfinder;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.util.regex.Pattern;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.tika.mime.MediaType;
@@ -29,6 +31,7 @@ import org.xml.sax.SAXException;
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
 import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject;
 import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject.TikaMimeXmlObjectFactory;
+import com.qwefgh90.io.jsearch.FileExtension;
 
 public class TikamimeTest {
 	private final static Logger LOG = LoggerFactory.getLogger(TikamimeTest.class);
@@ -64,18 +67,24 @@ public class TikamimeTest {
 
 		if (matcher.matches()) {
 			jarPath = matcher.group(1);
+			if(SystemUtils.IS_OS_WINDOWS)
+				jarPath = jarPath.substring(1);
 			resourceName = matcher.group(2);
-			System.out.println(matcher.group(1));
-			System.out.println(matcher.group(2));
+			System.out.println(jarPath);
+			System.out.println(resourceName);
 			AppStartupConfig.copyFileInJar(jarPath, resourceName, new File(getClass().getResource("/").toURI()), true);
 			LOG.info(getClass().getResource("/tika-mimetypes.xml").toString());
 		}
 		afterUrl = MimeTypes.class.getResource("/tika-mimetypes.xml");
-		obj = TikaMimeXmlObjectFactory.createInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString());
+		obj = TikaMimeXmlObjectFactory.getInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString());
 		LOG.info("*.hwp:" + obj.getGlobUsing("*.hwp"));
 		LOG.info("*.xml:" + obj.getGlobUsing("*.xml"));
 		obj.setGlob("*.hwp", false);
 		obj.setGlob("*.xml", false);
+		
+		assertFalse(obj.isAllowMime("application/x-hwp"));
+		MediaType mt = FileExtension.getContentType(new File(afterUrl.toURI()), "tika-mimetypes.xml");
+		LOG.info(mt.toString());
 	}
 
 	TikaMimeXmlObject obj;
@@ -89,7 +98,7 @@ public class TikamimeTest {
 		LOG.info(String.valueOf(obj.getCountofGlob()));
 		LOG.info(String.valueOf(obj.getGlobIterator("application/vnd.ms-excel").next().toString()));
 		TikaMimeXmlObject obj2 = TikaMimeXmlObjectFactory
-				.createInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString());
+				.getInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString());
 		assertTrue(obj == obj2);
 		obj.updateGlobPropertiesFile();
 	}

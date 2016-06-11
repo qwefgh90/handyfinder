@@ -19,9 +19,9 @@ import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject.TikaMimeXmlObjectF
 public class AppDataConfig {
 
 	@Bean
-	public LuceneHandler luceneHandler(CommandInvoker invoker) {
+	public LuceneHandler luceneHandler(CommandInvoker invoker, TikaMimeXmlObject types) {
 		return LuceneHandler
-				.getInstance(AppStartupConfig.pathForIndex, invoker);
+				.getInstance(AppStartupConfig.pathForIndex, invoker, types);
 	}
 
 	@Bean
@@ -32,6 +32,6 @@ public class AppDataConfig {
 
 	@Bean
 	public TikaMimeXmlObject tikaMimeXmlObject() throws ParserConfigurationException, SAXException, IOException {
-		return TikaMimeXmlObjectFactory.createInstanceFromXml(AppStartupConfig.tikaXmlFilePath.toAbsolutePath().toString());
+		return TikaMimeXmlObjectFactory.getInstanceFromXml(AppStartupConfig.tikaXmlFilePath.toAbsolutePath().toString());
 	}
 }

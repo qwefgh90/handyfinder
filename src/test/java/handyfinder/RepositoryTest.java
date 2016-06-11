@@ -52,6 +52,7 @@ public class RepositoryTest {
 	
 	@Before
 	public void setup() throws SQLException, IOException {
+		indexProperty.deleteDirectories();
 		dir1 = new Directory();
 		dir1.setPathString("path1");
 		dir1.setUsed(true);
@@ -67,7 +68,6 @@ public class RepositoryTest {
 	@After
 	public void clean() throws SQLException{
 		indexProperty.deleteDirectories();
-		
 	}
 
 	@Test

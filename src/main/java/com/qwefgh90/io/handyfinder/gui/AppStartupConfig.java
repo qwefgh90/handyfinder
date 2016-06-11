@@ -35,6 +35,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.james.mime4j.codec.EncoderUtil.Usage;
 import org.apache.tika.mime.MimeTypes;
@@ -134,7 +135,8 @@ public class AppStartupConfig extends Application {
 				copyDirectoryInJar(deployedPath.toString(), APP_DATA_DIR_NAME, parentOfClassPath.toFile());
 			} else { // no jar start
 				// all files copied in classpath
-				FileUtils.copyDirectory(deployedPath.toFile(), parentOfClassPath.toFile());
+				Path classsPath = deployedPath.getParent().resolve("classes");
+				FileUtils.copyDirectory(classsPath.toFile(), parentOfClassPath.toFile());
 			}
 			// tika-mimetypes.xml copy to appdata
 			copyTikaXml();
@@ -233,6 +235,8 @@ public class AppStartupConfig extends Application {
 			String resourceName = null;
 			if (matcher.matches()) {
 				jarPath = matcher.group(1);
+				if(SystemUtils.IS_OS_WINDOWS)
+					jarPath = jarPath.substring(1);
 				resourceName = matcher.group(2);
 				AppStartupConfig.copyFileInJar(jarPath, resourceName, tikaXmlFilePath.getParent().toFile(), true);
 			}
@@ -422,7 +426,8 @@ public class AppStartupConfig extends Application {
 	 */
 	public static void copyDirectoryInJar(String jarPath, String resourceDirInJar, File destinationRoot)
 			throws URISyntaxException, IOException {
-		if (resourceDirInJar.startsWith(File.separator)) { // replace to jar
+		if (resourceDirInJar.startsWith("/")) { // jar url start with /
+													// replace to jar
 															// entry style which
 															// is not start with
 															// '/'
@@ -434,7 +439,7 @@ public class AppStartupConfig extends Application {
 																												// seperator
 			resourceDirInJar = resourceDirInJar + "/";
 
-		LOG.trace("extract info : " + "\nFile.separator : " + File.separator + "\nresourceDirInJar : "
+		LOG.trace("package extract info : " + "\nFile.separator : " + File.separator + "\nresourceDirInJar : "
 				+ resourceDirInJar + "\njarPath : " + jarPath + "\ndestinationRoot" + destinationRoot);
 
 		FileInputStream fis = new FileInputStream(jarPath);
@@ -463,7 +468,8 @@ public class AppStartupConfig extends Application {
 
 	public static void copyFileInJar(String jarPath, String resourcePathInJar, File destinationRootDir,
 			boolean ignoreHierarchyOfResource) throws URISyntaxException, IOException {
-		if (resourcePathInJar.startsWith(File.separator)) { // replace to jar
+		if (resourcePathInJar.startsWith("/")) { // jar url start with /
+															// replace to jar
 															// entry style which
 															// is not start with
 															// '/'

@@ -1,13 +1,13 @@
 package com.qwefgh90.io.handyfinder.springweb.controller;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,11 +24,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.qwefgh90.io.handyfinder.lucene.LuceneHandler.IndexException;
 import com.qwefgh90.io.handyfinder.springweb.model.CommandDto;
+import com.qwefgh90.io.handyfinder.springweb.model.CommandDto.COMMAND;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.model.DocumentDto;
-import com.qwefgh90.io.handyfinder.springweb.model.CommandDto.COMMAND;
+import com.qwefgh90.io.handyfinder.springweb.model.SupportTypeDto;
 import com.qwefgh90.io.handyfinder.springweb.service.RootService;
 
 @RestController
@@ -71,6 +71,22 @@ public class RootController {
 		} else {
 			return new ResponseEntity<List<DocumentDto>>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+	}
+
+	@RequestMapping(value = "/updateSupportType", method = RequestMethod.POST)
+	public ResponseEntity<String> updateIndexType(@RequestBody SupportTypeDto supportType) {
+		try {
+			rootService.updateSupportType(supportType);
+			return new ResponseEntity<String>(HttpStatus.OK);
+		} catch (IOException e) {
+			LOG.warn(ExceptionUtils.getStackTrace(e));
+			return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@RequestMapping(value = "/getSupportTypes", method = RequestMethod.GET)
+	public ResponseEntity<List<SupportTypeDto>> getSupportTypes() {
+		return new ResponseEntity<List<SupportTypeDto>>(rootService.getSupportType(), HttpStatus.OK);
 	}
 
 	/**
