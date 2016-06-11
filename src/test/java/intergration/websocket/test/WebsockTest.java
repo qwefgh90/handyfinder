@@ -115,7 +115,7 @@ public class WebsockTest {
 			throw new AssertionError("", failure.get());
 		}
 
-		if (!latch.await(360, TimeUnit.SECONDS)) {
+		if (!latch.await(30, TimeUnit.SECONDS)) {
 			fail("not received");
 		}
 	}

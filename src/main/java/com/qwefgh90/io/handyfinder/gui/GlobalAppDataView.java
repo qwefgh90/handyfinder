@@ -9,9 +9,10 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.qwefgh90.io.handyfinder.lucene.ILuceneHandlerBasicOption;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 
-public class GlobalAppDataView {
+public class GlobalAppDataView implements ILuceneHandlerBasicOption{
 	private final static Logger LOG = LoggerFactory
 			.getLogger(GlobalAppDataView.class);
 
@@ -32,10 +33,6 @@ public class GlobalAppDataView {
 		if(singleton==null)
 			singleton = new GlobalAppDataView();
 		return singleton;
-	}
-
-	public int getLimitOfSearch() {
-		return app.getLimitOfSearch();
 	}
 
 	public List<Directory> getDirectoryList() {
@@ -72,5 +69,15 @@ public class GlobalAppDataView {
 
 	public void deleteAppDataFromDisk() throws IOException {
 		app.deleteAppDataFromDisk();
+	}
+
+	@Override
+	public int getMaximumDocumentMBSize() {
+		return app.getMaximumDocumentMBSize();
+	}
+
+	@Override
+	public int getLimitCountOfResult() {
+		return app.getLimitCountOfResult();
 	}
 }

@@ -22,12 +22,12 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
+import com.qwefgh90.io.handyfinder.lucene.ILuceneHandlerMimeOption;
 
 /**
  * instance is created by <b>TikaMimeXmlObjectFactory</b>
@@ -35,7 +35,7 @@ import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
  * @author choechangwon
  *
  */
-public final class TikaMimeXmlObject {
+public final class TikaMimeXmlObject implements ILuceneHandlerMimeOption {
 	private final static Logger LOG = LoggerFactory.getLogger(TikaMimeXmlObject.class);
 
 	private TikaMimeXmlObject() {
@@ -53,18 +53,6 @@ public final class TikaMimeXmlObject {
 		if(str == null)
 			return null;
 		return str.iterator();
-	}
-
-	public boolean isAllowMime(String mime) {
-		Iterator<String> iter = getGlobIterator(mime);
-		if(iter == null)
-			return true;
-		while (iter.hasNext()) {
-			Boolean used = getGlobUsing(iter.next());
-			if (used == false)
-				return false;
-		}
-		return true;
 	}
 
 	public Iterator<String> getGlobIterator() {
@@ -131,7 +119,20 @@ public final class TikaMimeXmlObject {
 			globMap.put(iter.next(), Boolean.TRUE);
 		}
 	}
-	
+
+	@Override
+	public boolean isAllowMime(String mime) {
+		Iterator<String> iter = getGlobIterator(mime);
+		if(iter == null)
+			return true;
+		while (iter.hasNext()) {
+			Boolean used = getGlobUsing(iter.next());
+			if (used == false)
+				return false;
+		}
+		return true;
+	}
+
 	/**
 	 * update <b>glob properties file</b> in file system.
 	 * 

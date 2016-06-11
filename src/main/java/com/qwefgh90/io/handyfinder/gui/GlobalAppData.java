@@ -16,9 +16,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.qwefgh90.io.handyfinder.lucene.ILuceneHandlerBasicOption;
 import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 
-@JsonIgnoreProperties(value = { "singleton", "om", "LOG" })
+@JsonIgnoreProperties(value = { "singleton", "om", "LOG" },ignoreUnknown = true)
 class GlobalAppData {
 	private final static Logger LOG = LoggerFactory
 			.getLogger(GlobalAppData.class);
@@ -27,12 +28,14 @@ class GlobalAppData {
 	private static ObjectMapper om = new ObjectMapper();
 
 	private List<Directory> directoryList;
-	private int limitOfSearch;
+	private int limitCountOfResult;
+	private int maximumDocumentMBSize;
 
 	private GlobalAppData() throws JsonParseException, JsonMappingException,
 			IOException {
 		this.directoryList = new ArrayList<Directory>();
-		this.limitOfSearch = 100;
+		this.limitCountOfResult = ILuceneHandlerBasicOption.limitCountOfResult;
+		this.maximumDocumentMBSize = ILuceneHandlerBasicOption.maximumDocumentMBSize;
 	}
 
 	//for Object to JSON public visibility
@@ -44,12 +47,20 @@ class GlobalAppData {
 		this.directoryList = directoryList;
 	}
 
-	public int getLimitOfSearch() {
-		return limitOfSearch;
+	public int getLimitCountOfResult() {
+		return limitCountOfResult;
 	}
 
-	public void setLimitOfSearch(int limitOfSearch) {
-		this.limitOfSearch = limitOfSearch;
+	public void setLimitCountOfResult(int limitCountOfResult) {
+		this.limitCountOfResult = limitCountOfResult;
+	}
+	
+	public int getMaximumDocumentMBSize() {
+		return maximumDocumentMBSize;
+	}
+
+	public void setMaximumDocumentMBSize(int maximumDocumentMBSize) {
+		this.maximumDocumentMBSize = maximumDocumentMBSize;
 	}
 
 	void writeAppDataToDisk() {
@@ -85,7 +96,7 @@ class GlobalAppData {
 	}
 
 	/**
-	 * 
+	 * load from xml. if loaded value is null, apply default value.
 	 * @return
 	 * @throws JsonParseException
 	 * @throws JsonMappingException
@@ -96,10 +107,10 @@ class GlobalAppData {
 		if (singleton == null) {
 			singleton = new GlobalAppData();
 			GlobalAppData appData = singleton.loadAppDataFromDisk();
-			if (appData == null) {
-			} else {
+			if (appData != null) {
 				singleton.directoryList = appData.directoryList;
-				singleton.limitOfSearch = appData.limitOfSearch;
+				singleton.limitCountOfResult = appData.limitCountOfResult;
+				singleton.maximumDocumentMBSize = appData.maximumDocumentMBSize;
 			}
 		}
 		return singleton;
