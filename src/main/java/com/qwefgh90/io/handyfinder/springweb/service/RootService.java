@@ -26,16 +26,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.qwefgh90.io.handyfinder.lucene.LuceneHandler;
-import com.qwefgh90.io.handyfinder.lucene.LuceneHandler.IndexException;
 import com.qwefgh90.io.handyfinder.springweb.model.CommandDto.COMMAND;
-import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.model.DocumentDto;
+import com.qwefgh90.io.handyfinder.springweb.model.OptionDto;
 import com.qwefgh90.io.handyfinder.springweb.model.SupportTypeDto;
 import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
-import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject;
 import com.qwefgh90.io.jsearch.FileExtension;
+
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
+import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandler.IndexException;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
 @Service
 public class RootService {
@@ -52,6 +55,9 @@ public class RootService {
 
 	@Autowired
 	TikaMimeXmlObject tikaMimeObject;
+	
+	@Autowired
+	LuceneHandlerBasicOptionView globalAppData;
 	
 	/**
 	 * Get directories to be indexed.
@@ -99,6 +105,26 @@ public class RootService {
 			result.add(dto);
 		}
 		return result;
+	}
+
+	/**
+	 * 
+	 * @return lucene handler option dto
+	 */
+	public OptionDto getOption(){
+		OptionDto dto = new OptionDto();
+		dto.setLimitCountOfResult(globalAppData.getLimitCountOfResult());
+		dto.setMaximumDocumentMBSize(globalAppData.getMaximumDocumentMBSize());
+		return dto;
+	}
+	
+	/**
+	 * 
+	 * @param dto option which will be applied
+	 */
+	public void setOption(OptionDto dto){
+		globalAppData.setLimitCountOfResult(dto.getLimitCountOfResult());
+		globalAppData.setLimitCountOfResult(dto.getMaximumDocumentMBSize());
 	}
 	
 	public void closeAppLucene() throws IOException{

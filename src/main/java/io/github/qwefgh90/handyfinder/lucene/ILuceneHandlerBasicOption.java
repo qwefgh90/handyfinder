@@ -1,8 +1,8 @@
-package com.qwefgh90.io.handyfinder.lucene;
+package io.github.qwefgh90.handyfinder.lucene;
 
 public interface ILuceneHandlerBasicOption {
 	int limitCountOfResult = 100;
-	int maximumDocumentMBSize = 10;
+	int maximumDocumentMBSize = 100;
 	
 	int getMaximumDocumentMBSize();
 	int getLimitCountOfResult();

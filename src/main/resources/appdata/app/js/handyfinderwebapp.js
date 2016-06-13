@@ -71,10 +71,13 @@ function($location, $log, $scope, apiService, Document, $sce, GUIService, Search
 	}
 }]);
 
-app.controller('indexController', ['$q','$log', '$timeout', '$location', '$scope', 'apiService', 'Path', 'ProgressService', 'IndexModel',
-function($q, $log, $timeout, $location, $scope, apiService, Path, progressService, IndexModel) {
+app.controller('indexController', ['$q','$log', '$timeout', '$location', '$scope', 'apiService', 'Path', 'ProgressService', 'IndexModel', 'OptionModel',
+function($q, $log, $timeout, $location, $scope, apiService, Path, progressService, IndexModel, OptionModel) {
 	$scope.indexModel = IndexModel.model;
+	$scope.optionModel = OptionModel.model;
+	
 	var promise = apiService.getDirectories();
+	
 	$scope.totalDisplayed = 0;
 	$scope.searchedKeyword = '';
 	$scope.searchedType = '';
@@ -90,37 +93,13 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 			}
 		}
 	};
+	
 	$scope.loadMore = function(){
 		$scope.totalDisplayed = $scope.totalDisplayed + 100000;
 		if($scope.indexModel.supportTypes.length < $scope.totalDisplayed){
 			$scope.totalDisplayed = $scope.indexModel.supportTypes.length;
 		}
-	}
-	promise.then(function(msg) {
-		$scope.indexModel.pathList = msg;
-		$scope.indexModel.index_progress_status.addAlertQ(2);
-		$scope.startWatch();
-	}, function(msg) {
-		$scope.indexModel.index_progress_status.addAlertQ(3);
-		$scope.startWatch();
-	}, function(msg) {
-		$scope.indexModel.index_progress_status.addAlertQ(3);
-		$scope.startWatch();
-	});
-	
-	if($scope.indexModel.supportTypes.length == 0){
-		promise = apiService.getSupportTypes();
-		promise.then(function(msg) {
-			$scope.indexModel.supportTypes = msg;
-			$scope.totalDisplayed = 100;	//minimum > 1000 
-			$log.log('supportTypes loaded : ' + msg.length);
-		}, function(msg) {
-			$log.log('supportTypes fail to load');
-		}, function(msg) {
-		});
-	}else{
-		$scope.totalDisplayed = 100; //minimum > 1000 
-	}
+	};
 	
 	$scope.save = function() {
 		var deferred = $q.defer();
@@ -200,7 +179,6 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 	};
 	
 	
-	
 	if(progressService.isConnected() == false){
 		var promise = progressService.connect();
 		promise.then(function(frame) {
@@ -229,7 +207,33 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 			$log.log('[handy]'+noti);
 		});
 	}
+	
+	promise.then(function(msg) {
+		$scope.indexModel.pathList = msg;
+		$scope.indexModel.index_progress_status.addAlertQ(2);
+		$scope.startWatch();
+	}, function(msg) {
+		$scope.indexModel.index_progress_status.addAlertQ(3);
+		$scope.startWatch();
+	}, function(msg) {
+		$scope.indexModel.index_progress_status.addAlertQ(3);
+		$scope.startWatch();
+	});
 
+	if($scope.indexModel.supportTypes.length == 0){
+		promise = apiService.getSupportTypes();
+		promise.then(function(msg) {
+			$scope.indexModel.supportTypes = msg;
+			$scope.totalDisplayed = 100;	//minimum > 1000 
+			$log.log('supportTypes loaded : ' + msg.length);
+		}, function(msg) {
+			$log.log('supportTypes fail to load');
+		}, function(msg) {
+		});
+	}else{
+		$scope.totalDisplayed = 100; //minimum > 1000 
+	}
+	
 }]);
 
 app.controller('settingController', ['$location', '$scope', 'apiService',

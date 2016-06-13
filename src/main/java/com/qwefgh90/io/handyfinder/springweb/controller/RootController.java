@@ -26,10 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.qwefgh90.io.handyfinder.springweb.model.CommandDto;
 import com.qwefgh90.io.handyfinder.springweb.model.CommandDto.COMMAND;
-import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.model.DocumentDto;
+import com.qwefgh90.io.handyfinder.springweb.model.OptionDto;
 import com.qwefgh90.io.handyfinder.springweb.model.SupportTypeDto;
 import com.qwefgh90.io.handyfinder.springweb.service.RootService;
+
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
 @RestController
 public class RootController {
@@ -87,6 +89,17 @@ public class RootController {
 	@RequestMapping(value = "/supportTypes", method = RequestMethod.GET)
 	public ResponseEntity<List<SupportTypeDto>> getSupportTypes() {
 		return new ResponseEntity<List<SupportTypeDto>>(rootService.getSupportType(), HttpStatus.OK);
+	}
+
+	@RequestMapping(value = "/options", method = RequestMethod.GET)
+	public ResponseEntity<OptionDto> getOption() {
+		return new ResponseEntity<OptionDto>(rootService.getOption(), HttpStatus.OK);
+	}
+
+	@RequestMapping(value = "/options", method = RequestMethod.POST)
+	public ResponseEntity<String> setOption(@RequestBody OptionDto optionDto) {
+		rootService.setOption(optionDto);
+		return new ResponseEntity<String>(HttpStatus.OK);
 	}
 
 	/**

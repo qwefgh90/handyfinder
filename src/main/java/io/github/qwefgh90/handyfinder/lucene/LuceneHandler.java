@@ -1,4 +1,4 @@
-package com.qwefgh90.io.handyfinder.lucene;
+package io.github.qwefgh90.handyfinder.lucene;
 
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
@@ -61,12 +61,12 @@ import org.apache.tika.mime.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
-import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject;
 import com.qwefgh90.io.jsearch.FileExtension;
 import com.qwefgh90.io.jsearch.JSearch;
 import com.qwefgh90.io.jsearch.JSearch.ParseException;
+
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
 /**
  * document indexing, search class based on Lucene
@@ -101,8 +101,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	private int currentProgress = 0; // indexed documents count
 	private int totalProcess = 0; // total documents count to be indexed
 	private CommandInvoker invokerForCommand; // for command to client
-	private TikaMimeXmlObject mimeTypes;
-
+	private LuceneHandlerOption option;
+	
 	/**
 	 * manage state private API
 	 * 
@@ -146,14 +146,14 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 *            : path where index stored
 	 * @return object identified by path
 	 */
-	public static LuceneHandler getInstance(Path indexWriterPath, CommandInvoker invoker, TikaMimeXmlObject mimeTypes) {
+	public static LuceneHandler getInstance(Path indexWriterPath, CommandInvoker invoker, LuceneHandlerOption option) {
 		if (Files.isDirectory(indexWriterPath.getParent()) && Files.isWritable(indexWriterPath.getParent())) {
 			String pathString = indexWriterPath.toAbsolutePath().toString();
 			if (!map.containsKey(pathString)) {
 				LuceneHandler newInstance = new LuceneHandler();
 				newInstance.writerInit(indexWriterPath);
 				newInstance.invokerForCommand = invoker;
-				newInstance.mimeTypes = mimeTypes;
+				newInstance.option = option;
 				map.put(pathString, newInstance);
 			}
 			return map.get(pathString);
@@ -243,7 +243,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 				Files.walkFileTree(rootDirectory, new SimpleFileVisitor<Path>() {
 					public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
 						if (attrs.isRegularFile()) {
-							index(file);
+							//check file size
+							if(Files.size(file) / (1000 * 1000) < option.basicOption.getMaximumDocumentMBSize())
+								index(file);	
 							currentProgress++; // STATE UPDATE
 							invokerForCommand.updateProgress(currentProgress, file, totalProcess); // STATE
 																									// UPDATE
@@ -259,7 +261,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 						new SimpleFileVisitor<Path>() {
 							public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
 								if (attrs.isRegularFile()) {
-									index(file);
+									//check file size
+									if(Files.size(file) / (1000 * 1000) < option.basicOption.getMaximumDocumentMBSize())
+										index(file);
 									currentProgress++; // STATE UPDATE
 									invokerForCommand.updateProgress(currentProgress, file, totalProcess); // STATE
 																											// UPDATE
@@ -283,7 +287,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 */
 	void index(Path path) throws IOException {
 		MediaType mimeType = FileExtension.getContentType(path.toFile(), path.getFileName().toString());
-		if (!mimeTypes.isAllowMime(mimeType.toString()))
+		if (!option.mimeOption.isAllowMime(mimeType.toString()))
 			return;
 
 		Document doc = new Document();
@@ -345,7 +349,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		Query q2 = parser.parse(addWildcardString(fullString), "contents");
 
 		BooleanQuery query = new BooleanQuery.Builder().add(q1, Occur.SHOULD).add(q2, Occur.SHOULD).build();
-		TopDocs docs = searcher.search(query, 100);
+		TopDocs docs = searcher.search(query, option.basicOption.getLimitCountOfResult());
 		return docs;
 	}
 

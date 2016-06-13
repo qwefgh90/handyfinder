@@ -1,4 +1,4 @@
-package com.qwefgh90.io.handyfinder.lucene;
+package io.github.qwefgh90.handyfinder.lucene;
 
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
@@ -10,9 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.io.IOException;
 
-import org.apache.commons.cli.ParseException;
 import org.hamcrest.Matchers;
-import org.hamcrest.core.Is;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -24,6 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -35,14 +35,14 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
-import com.qwefgh90.io.handyfinder.lucene.LuceneHandler;
-import com.qwefgh90.io.handyfinder.springweb.RootContext;
-import com.qwefgh90.io.handyfinder.springweb.ServletContextTest;
+import com.qwefgh90.io.handyfinder.springweb.config.AppDataConfig;
+import com.qwefgh90.io.handyfinder.springweb.config.RootContext;
+import com.qwefgh90.io.handyfinder.springweb.config.ServletContextTest;
 import com.qwefgh90.io.handyfinder.springweb.model.SupportTypeDto;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@ContextConfiguration(classes = { ServletContextTest.class, RootContext.class })
+@ContextConfiguration(classes = { ServletContextTest.class, RootContext.class, AppDataConfig.class })
 public class ControllerTest {
 	private final static Logger LOG = LoggerFactory.getLogger(ControllerTest.class);
 	@Autowired

@@ -21,12 +21,22 @@ app.factory("SearchModel",['$rootScope', function($rootScope){
 	};
 	return service;
 }]);
+
+
+app.factory("OptionModel",['$rootScope', function($rootScope){
+	var service ={
+		model : {
+			maximum_size : 5,
+		}
+	};
+	return service;
+}]);
+
 app.factory("IndexModel",['$rootScope', function($rootScope){
 	var service = {
 			model : {
 				auto_update_index : false,
 				auto_clean_files : false,
-				maximum_size : 5,
 				supportTypes : [],
 				pathList : [],
 				index_manager_status : {

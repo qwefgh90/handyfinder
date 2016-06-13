@@ -1,4 +1,4 @@
-package com.qwefgh90.io.handyfinder.tikamime;
+package io.github.qwefgh90.handyfinder.lucene;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
-import com.qwefgh90.io.handyfinder.lucene.ILuceneHandlerMimeOption;
 
 /**
  * instance is created by <b>TikaMimeXmlObjectFactory</b>
@@ -147,7 +146,6 @@ public final class TikaMimeXmlObject implements ILuceneHandlerMimeOption {
 			Boolean b = globMap.get(glob);
 			properties.setProperty(glob, Boolean.toString(b.booleanValue()));
 		}
-		Path propertiesPath = AppStartupConfig.propertiesPath;
 		if (Files.exists(propertiesPath)) {
 			Files.delete(propertiesPath);
 		}
@@ -156,6 +154,8 @@ public final class TikaMimeXmlObject implements ILuceneHandlerMimeOption {
 			properties.store(bos, String.valueOf(System.currentTimeMillis()));
 		}
 	}
+	
+	private Path propertiesPath;
 
 	/**
 	 * factory class of <b>TikaMimeXmlObject</b>
@@ -170,18 +170,19 @@ public final class TikaMimeXmlObject implements ILuceneHandlerMimeOption {
 
 		}
 
-		public static TikaMimeXmlObject getInstanceFromXml(String xmlPath)
+		public static TikaMimeXmlObject getInstanceFromXml(String xmlPath, Path propertiesPath, Path customTikaGlobPropertiesPath)
 				throws ParserConfigurationException, SAXException, IOException {
 			if (container.keySet().contains(xmlPath)) {
 				return container.get(xmlPath);
 			}
 			TikaMimeXmlObject obj = new TikaMimeXmlObject();
+			obj.propertiesPath = propertiesPath;
 
 			Properties p = new Properties();
 			// load from property file
-			if (Files.exists(AppStartupConfig.propertiesPath)) {
+			if (Files.exists(propertiesPath)) {
 				try (BufferedInputStream bis = new BufferedInputStream(
-						new FileInputStream(AppStartupConfig.propertiesPath.toFile()))) {
+						new FileInputStream(propertiesPath.toFile()))) {
 					p.load(bis);
 					Iterator<Object> iter = p.keySet().iterator();
 					while (iter.hasNext()) {
@@ -200,14 +201,14 @@ public final class TikaMimeXmlObject implements ILuceneHandlerMimeOption {
 			saxParser.parse(xmlPath, new TikaMimeTypesSaxHandler(obj));
 
 			// after load default, add custom
-			addCustomMimeAndGlob(obj);
+			addCustomMimeAndGlob(obj, customTikaGlobPropertiesPath);
 			return obj;
 		}
 
-		private static void addCustomMimeAndGlob(TikaMimeXmlObject obj) {
+		private static void addCustomMimeAndGlob(TikaMimeXmlObject obj, Path customTikaGlobPropertiesPath) {
 			try {
 				Properties p = new Properties();
-				InputStream is = new FileInputStream(AppStartupConfig.customTikaPropertiesPath.toFile());
+				InputStream is = new FileInputStream(customTikaGlobPropertiesPath.toFile());
 				p.load(is);
 				for (Map.Entry<Object, Object> entry : p.entrySet()) {
 					obj.addGlobType((String) entry.getKey(), (String) entry.getValue());

@@ -1,4 +1,4 @@
-package com.qwefgh90.io.handyfinder.lucene;
+package io.github.qwefgh90.handyfinder.lucene;
 
 import static org.junit.Assert.assertTrue;
 
@@ -24,30 +24,36 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
-import com.qwefgh90.io.handyfinder.lucene.LuceneHandler;
-import com.qwefgh90.io.handyfinder.lucene.LuceneHandler.IndexException;
-import com.qwefgh90.io.handyfinder.springweb.AppDataConfig;
-import com.qwefgh90.io.handyfinder.springweb.RootContext;
-import com.qwefgh90.io.handyfinder.springweb.ServletContextTest;
+import com.qwefgh90.io.handyfinder.springweb.config.AppDataConfig;
+import com.qwefgh90.io.handyfinder.springweb.config.RootContext;
+import com.qwefgh90.io.handyfinder.springweb.config.ServletContextTest;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
-import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject;
 import com.qwefgh90.io.jsearch.JSearch.ParseException;
+
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerOption;
+import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = { ServletContextTest.class, RootContext.class, AppDataConfig.class })
+@DirtiesContext(classMode = ClassMode.AFTER_CLASS)
 public class LuceneHandlerTest {
 	private final static Logger LOG = LoggerFactory.getLogger(LuceneHandlerTest.class);
 	@Autowired
 	CommandInvoker invoker;
 	
 	@Autowired
-	TikaMimeXmlObject types;
+	LuceneHandlerOption option;
+	@Autowired
+	TikaMimeXmlObject mime;
 
 	LuceneHandler handler;
 	LuceneHandler handler2;
@@ -67,9 +73,9 @@ public class LuceneHandlerTest {
 
 	@Before
 	public void setup() throws IOException {
-		types.initGlobTrue();
-		handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invoker, types);
-		handler2 = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invoker, types);
+		mime.initGlobTrue();
+		handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invoker, option);
+		handler2 = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invoker, option);
 		assertTrue(handler == handler2);
 		handler.deleteAllIndexesFromFileSystem();
 
@@ -111,12 +117,12 @@ public class LuceneHandlerTest {
 
 	@Test
 	public void mimeExceptTest() throws IOException {
-		types.setGlob("*.txt", false);
+		mime.setGlob("*.txt", false);
 		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 		int count1 = handler.getDocumentCount();
 		assertTrue(count1 < 13);
 		LOG.info("mime except : "+ count1);
-		types.initGlobTrue();
+		mime.initGlobTrue();
 	}
 
 	@Test

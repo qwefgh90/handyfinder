@@ -1,14 +1,12 @@
-package com.qwefgh90.io.handyfinder.gui;
+package io.github.qwefgh90.handyfinder.lucene;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.bouncycastle.crypto.RuntimeCryptoException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,22 +14,23 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.qwefgh90.io.handyfinder.lucene.ILuceneHandlerBasicOption;
-import com.qwefgh90.io.handyfinder.springweb.model.Directory;
+import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
+
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
 @JsonIgnoreProperties(value = { "singleton", "om", "LOG" },ignoreUnknown = true)
-class GlobalAppData {
+class LuceneHandlerBasicOption {
 	private final static Logger LOG = LoggerFactory
-			.getLogger(GlobalAppData.class);
+			.getLogger(LuceneHandlerBasicOption.class);
 
-	private static GlobalAppData singleton;
+	private static LuceneHandlerBasicOption singleton;
 	private static ObjectMapper om = new ObjectMapper();
 
 	private List<Directory> directoryList;
 	private int limitCountOfResult;
 	private int maximumDocumentMBSize;
 
-	private GlobalAppData() throws JsonParseException, JsonMappingException,
+	private LuceneHandlerBasicOption() throws JsonParseException, JsonMappingException,
 			IOException {
 		this.directoryList = new ArrayList<Directory>();
 		this.limitCountOfResult = ILuceneHandlerBasicOption.limitCountOfResult;
@@ -80,12 +79,12 @@ class GlobalAppData {
 	 * @throws JsonMappingException
 	 * @throws IOException
 	 */
-	GlobalAppData loadAppDataFromDisk() throws JsonParseException,
+	LuceneHandlerBasicOption loadAppDataFromDisk() throws JsonParseException,
 			JsonMappingException, IOException {
 		Path path = AppStartupConfig.appDataJsonPath;
 		if (!Files.exists(path))
 			return null;
-		GlobalAppData app = om.readValue(path.toFile(), GlobalAppData.class);
+		LuceneHandlerBasicOption app = om.readValue(path.toFile(), LuceneHandlerBasicOption.class);
 		return app;
 	}
 
@@ -102,11 +101,11 @@ class GlobalAppData {
 	 * @throws JsonMappingException
 	 * @throws IOException
 	 */
-	static GlobalAppData getInstance() throws JsonParseException,
+	static LuceneHandlerBasicOption getInstance() throws JsonParseException,
 			JsonMappingException, IOException {
 		if (singleton == null) {
-			singleton = new GlobalAppData();
-			GlobalAppData appData = singleton.loadAppDataFromDisk();
+			singleton = new LuceneHandlerBasicOption();
+			LuceneHandlerBasicOption appData = singleton.loadAppDataFromDisk();
 			if (appData != null) {
 				singleton.directoryList = appData.directoryList;
 				singleton.limitCountOfResult = appData.limitCountOfResult;

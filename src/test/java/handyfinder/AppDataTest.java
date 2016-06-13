@@ -15,12 +15,13 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import com.qwefgh90.io.handyfinder.gui.GlobalAppDataView;
-import com.qwefgh90.io.handyfinder.springweb.AppDataConfig;
-import com.qwefgh90.io.handyfinder.springweb.RootContext;
-import com.qwefgh90.io.handyfinder.springweb.RootWebSocketConfig;
-import com.qwefgh90.io.handyfinder.springweb.ServletContextTest;
-import com.qwefgh90.io.handyfinder.springweb.model.Directory;
+import com.qwefgh90.io.handyfinder.springweb.config.AppDataConfig;
+import com.qwefgh90.io.handyfinder.springweb.config.RootContext;
+import com.qwefgh90.io.handyfinder.springweb.config.RootWebSocketConfig;
+import com.qwefgh90.io.handyfinder.springweb.config.ServletContextTest;
+
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -29,7 +30,7 @@ import com.qwefgh90.io.handyfinder.springweb.model.Directory;
 public class AppDataTest {
 	
 	@Autowired
-	GlobalAppDataView globalAppDataView;
+	LuceneHandlerBasicOptionView globalAppDataView;
 
 	Directory d;
 
