@@ -1,4 +1,4 @@
-package com.qwefgh90.io.handyfinder.gui;
+package io.github.qwefgh90.handyfinder.lucene;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -9,33 +9,29 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.qwefgh90.io.handyfinder.springweb.model.Directory;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
-public class GlobalAppDataView {
+public class LuceneHandlerBasicOptionView implements ILuceneHandlerBasicOption{
 	private final static Logger LOG = LoggerFactory
-			.getLogger(GlobalAppDataView.class);
+			.getLogger(LuceneHandlerBasicOptionView.class);
 
-	private GlobalAppData app;
+	private LuceneHandlerBasicOption app;
 
-	private GlobalAppDataView(){
+	private LuceneHandlerBasicOptionView(){
 		try {
-			app = GlobalAppData.getInstance();
+			app = LuceneHandlerBasicOption.getInstance();
 		} catch (IOException e) {
 			LOG.error(ExceptionUtils.getStackTrace(e));
 			throw new RuntimeException(e.toString());
 		}
 	}
 	
-	private static GlobalAppDataView singleton = null;
+	private static LuceneHandlerBasicOptionView singleton = null;
 	
-	public static GlobalAppDataView getInstance(){
+	public static LuceneHandlerBasicOptionView getInstance(){
 		if(singleton==null)
-			singleton = new GlobalAppDataView();
+			singleton = new LuceneHandlerBasicOptionView();
 		return singleton;
-	}
-
-	public int getLimitOfSearch() {
-		return app.getLimitOfSearch();
 	}
 
 	public List<Directory> getDirectoryList() {
@@ -72,5 +68,23 @@ public class GlobalAppDataView {
 
 	public void deleteAppDataFromDisk() throws IOException {
 		app.deleteAppDataFromDisk();
+	}
+
+	public void setMaximumDocumentMBSize(int size){
+		app.setMaximumDocumentMBSize(size);
+	}
+	
+	public void setLimitCountOfResult(int limit){
+		app.setLimitCountOfResult(limit);
+	}
+	
+	@Override
+	public int getMaximumDocumentMBSize() {
+		return app.getMaximumDocumentMBSize();
+	}
+
+	@Override
+	public int getLimitCountOfResult() {
+		return app.getLimitCountOfResult();
 	}
 }

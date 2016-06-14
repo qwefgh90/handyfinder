@@ -51,7 +51,7 @@ app.factory('apiService', ['$http', '$q', function($http, $q){
 			if (response.status == 200) {
 				deferred.resolve(response.data);
 			} else {
-				deferred.reject('getDirectories() fail');
+				deferred.reject('supportTypes() fail');
 			}
 		}, function(response) {
 			deferred.reject(response.data);
@@ -152,9 +152,71 @@ app.factory('apiService', ['$http', '$q', function($http, $q){
 		
 	};
 
+	var getOptions = function() {
+		var deferred = $q.defer();
+		
+		// ajax $http
+		var headers = {
+			'Accept' : 'application/json',
+			'Content-Type' : 'application/json'
+		};
+		var params = {
+		};
+		var config = {
+			'params' : params,
+			'headers' : headers
+		};
+
+		$http.get(url = '/options', config).then(function(response) {
+			if (response.status == 200) {
+				deferred.resolve(response.data);
+			} else {
+				deferred.reject('getDirectories() fail');
+			}
+		}, function(response) {
+			deferred.reject(response.data);
+		}, function(response) {
+			deferred.reject(response.data);
+		});
+		return deferred.promise;
+		// then(successCallback, errorCallback, notifyCallback)
+	};
+	
+	var updateOptions = function(option) {
+		var deferred = $q.defer();
+		
+		// ajax $http
+		var headers = {
+			'Accept' : 'application/json',
+			'Content-Type' : 'application/json'
+		};
+		var params = {
+		};
+		var config = {
+			'headers' : headers
+		};
+		var data = JSON.stringify(option);
+
+		$http.post(url = '/options', data, config).then(function(response) {
+			if (response.status == 200) {
+				deferred.resolve();
+			} else {
+				deferred.reject();
+			}
+		}, function(response) {
+			deferred.reject();
+		}, function(response) {
+			deferred.reject();
+		});
+		return deferred.promise;
+		// then(successCallback, errorCallback, notifyCallback)
+	};
+	
 	return {getDirectories : getDirectories
 			,updateDirectories : updateDirectories
 			,search : search
 			,getSupportTypes : getSupportTypes
-			,updateSupportType : updateSupportType};
+			,updateSupportType : updateSupportType
+			,updateOptions : updateOptions
+			,getOptions : getOptions};
 }]);

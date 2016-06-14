@@ -78,7 +78,7 @@ public class AppStartupConfig extends Application {
 	public final static Path tomatLoggingFilePath;
 	public final static Path appLoggingFilePath;
 	public final static Path tikaXmlFilePath;
-	public final static Path customTikaPropertiesPath;
+	public final static Path customTikaGlobPropertiesPath;
 	public final static Path propertiesPath;
 	public final static Path appDataJsonPath;
 	public final static String address;
@@ -107,7 +107,7 @@ public class AppStartupConfig extends Application {
 		tikaXmlFilePath = pathForAppdata.resolve("tika-mimetypes.xml");
 		propertiesPath = pathForAppdata.resolve("glob-used.properties");
 		appDataJsonPath = pathForAppdata.resolve("appdata.json");
-		customTikaPropertiesPath = pathForAppdata.resolve("custom-tika-mimetypes.properties");
+		customTikaGlobPropertiesPath = pathForAppdata.resolve("custom-tika-mimetypes.properties");
 
 		address = "127.0.0.1";
 		port = findFreePort();

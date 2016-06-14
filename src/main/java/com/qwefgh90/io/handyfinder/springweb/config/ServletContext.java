@@ -1,4 +1,4 @@
-package com.qwefgh90.io.handyfinder.springweb;
+package com.qwefgh90.io.handyfinder.springweb.config;
 
 import java.util.List;
 
@@ -18,20 +18,16 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
 import com.qwefgh90.io.handyfinder.springweb.repository.Query;
 
-/**
- * for Test Servlet Context
- * @author choechangwon
- *
- */
 @Configuration
 @EnableWebMvc
-@ComponentScan(basePackages = {"com.qwefgh90.io.handyfinder.springweb","com.qwefgh90.io.handyfinder.springweb.service","com.qwefgh90.io.handyfinder.springweb.controller"})
-public class ServletContextTest extends WebMvcConfigurerAdapter {
+@ComponentScan(basePackages = {"com.qwefgh90.io.handyfinder.springweb.config","com.qwefgh90.io.handyfinder.springweb.service","com.qwefgh90.io.handyfinder.springweb.controller"})
+public class ServletContext extends WebMvcConfigurerAdapter {
 
-	private final static Logger LOG = LoggerFactory.getLogger(ServletContextTest.class);
+	private final static Logger LOG = LoggerFactory.getLogger(ServletContext.class);
 	
 	@Override
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -50,9 +46,17 @@ public class ServletContextTest extends WebMvcConfigurerAdapter {
 	@Bean(name="dataSource")
 	public DataSource dataSource(){
 		EmbeddedDataSource ds = new EmbeddedDataSource();
-		ds.setDatabaseName("target/testdb");
+		ds.setDatabaseName(AppStartupConfig.pathForDatabase.toString());
 		ds.setCreateDatabase("create");
 		LOG.info(ds.toString());
 		return ds;
 	}
+	
+	@Bean(name="objectMapper")
+	public ObjectMapper opjectMapper(){
+		ObjectMapper om = new ObjectMapper();
+		return om;
+	}
+	
+	
 }

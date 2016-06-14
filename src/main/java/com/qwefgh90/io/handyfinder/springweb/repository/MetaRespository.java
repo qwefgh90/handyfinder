@@ -13,8 +13,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Repository;
 
-import com.qwefgh90.io.handyfinder.gui.GlobalAppDataView;
-import com.qwefgh90.io.handyfinder.springweb.model.Directory;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
 /**
  * CRUD of index properties
@@ -32,7 +32,7 @@ public class MetaRespository {
 	DataSource dataSource;
 
 	@Autowired
-	GlobalAppDataView appData;
+	LuceneHandlerBasicOptionView appData;
 
 	public void save(List<Directory> list) throws SQLException {
 		for (Directory dir : list) {

@@ -1,4 +1,4 @@
-package com.qwefgh90.io.handyfinder.springweb;
+package com.qwefgh90.io.handyfinder.springweb.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

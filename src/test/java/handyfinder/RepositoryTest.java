@@ -15,21 +15,25 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
-import com.qwefgh90.io.handyfinder.springweb.RootContext;
-import com.qwefgh90.io.handyfinder.springweb.ServletContextTest;
-import com.qwefgh90.io.handyfinder.springweb.model.Directory;
+import com.qwefgh90.io.handyfinder.springweb.config.RootContext;
+import com.qwefgh90.io.handyfinder.springweb.config.ServletContextTest;
 import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
+
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 // ApplicationContext will be loaded from
 // "classpath:/com/example/OrderServiceTest-context.xml"
 @ContextConfiguration(classes = { ServletContextTest.class, RootContext.class })
+@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
 public class RepositoryTest {
 	private final static Logger LOG = LoggerFactory.getLogger(RepositoryTest.class);
 	@Autowired

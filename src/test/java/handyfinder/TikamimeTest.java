@@ -29,9 +29,10 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
-import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject;
-import com.qwefgh90.io.handyfinder.tikamime.TikaMimeXmlObject.TikaMimeXmlObjectFactory;
 import com.qwefgh90.io.jsearch.FileExtension;
+
+import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
+import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject.TikaMimeXmlObjectFactory;
 
 public class TikamimeTest {
 	private final static Logger LOG = LoggerFactory.getLogger(TikamimeTest.class);
@@ -76,7 +77,8 @@ public class TikamimeTest {
 			LOG.info(getClass().getResource("/tika-mimetypes.xml").toString());
 		}
 		afterUrl = MimeTypes.class.getResource("/tika-mimetypes.xml");
-		obj = TikaMimeXmlObjectFactory.getInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString());
+		obj = TikaMimeXmlObjectFactory.getInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString()
+				,AppStartupConfig.propertiesPath, AppStartupConfig.customTikaGlobPropertiesPath);
 		LOG.info("*.hwp:" + obj.getGlobUsing("*.hwp"));
 		LOG.info("*.xml:" + obj.getGlobUsing("*.xml"));
 		obj.setGlob("*.hwp", false);
@@ -98,7 +100,8 @@ public class TikamimeTest {
 		LOG.info(String.valueOf(obj.getCountofGlob()));
 		LOG.info(String.valueOf(obj.getGlobIterator("application/vnd.ms-excel").next().toString()));
 		TikaMimeXmlObject obj2 = TikaMimeXmlObjectFactory
-				.getInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString());
+				.getInstanceFromXml(Paths.get(afterUrl.toURI()).toAbsolutePath().toString()
+						,AppStartupConfig.propertiesPath, AppStartupConfig.customTikaGlobPropertiesPath);
 		assertTrue(obj == obj2);
 		obj.updateGlobPropertiesFile();
 	}

@@ -1,9 +1,5 @@
-package com.qwefgh90.io.handyfinder.tikamime;
+package io.github.qwefgh90.handyfinder.lucene;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.tika.mime.MimeTypes;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -16,7 +12,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author choechangwon
  *
  */
-public class TikaMimeTypesSaxHandler extends DefaultHandler {
+class TikaMimeTypesSaxHandler extends DefaultHandler {
 	/*
 	 * <mime-type type="text/x-asciidoc"> 
 	 * <_comment>Asciidoc source

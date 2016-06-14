@@ -1,4 +1,4 @@
-package com.qwefgh90.io.handyfinder.springweb.model;
+package io.github.qwefgh90.handyfinder.lucene.model;
 
 public class Directory {
 	String pathString;

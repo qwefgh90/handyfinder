@@ -5,7 +5,6 @@ app.factory("StompClient", ['sockJsProtocols', '$q', '$log',
 function(sockJsProtocols, $q, $log) {
 	function StompClient(){
 		this.stompClient = undefined;
-		this.connection = false;
 	};
 
 	StompClient.prototype = {
@@ -20,19 +19,20 @@ function(sockJsProtocols, $q, $log) {
 		},
 		connect : function() {
 			var deferred = $q.defer();
+			var failDeferred = $q.defer();
 			if (!this.stompClient) {
 				reject("STOMP client not created");
 			} else {
+				var parentObject = this;
 				this.stompClient.connect({}, function(frame) {
-					this.connection = true;
 					deferred.resolve(frame);
 				}, function(error) {
-					this.connection = false;
-					$log.log('suddenly stomp session is disconnected : ' + error);
+					$log.log('suddenly stomp session is disconnected : ');
 					deferred.reject("STOMP protocol error " + error);
+					failDeferred.reject("STOMP protocol error " + error);
 				});
 			}
-			return deferred.promise;
+			return [deferred.promise, failDeferred.promise];
 		},
 		disconnect : function() {
 			this.stompClient.disconnect();

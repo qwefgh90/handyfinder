@@ -1,4 +1,4 @@
-package com.qwefgh90.io.handyfinder.tikamime;
+package io.github.qwefgh90.handyfinder.lucene;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -22,7 +22,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -35,7 +34,7 @@ import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
  * @author choechangwon
  *
  */
-public final class TikaMimeXmlObject {
+public final class TikaMimeXmlObject implements ILuceneHandlerMimeOption {
 	private final static Logger LOG = LoggerFactory.getLogger(TikaMimeXmlObject.class);
 
 	private TikaMimeXmlObject() {
@@ -53,18 +52,6 @@ public final class TikaMimeXmlObject {
 		if(str == null)
 			return null;
 		return str.iterator();
-	}
-
-	public boolean isAllowMime(String mime) {
-		Iterator<String> iter = getGlobIterator(mime);
-		if(iter == null)
-			return true;
-		while (iter.hasNext()) {
-			Boolean used = getGlobUsing(iter.next());
-			if (used == false)
-				return false;
-		}
-		return true;
 	}
 
 	public Iterator<String> getGlobIterator() {
@@ -131,7 +118,20 @@ public final class TikaMimeXmlObject {
 			globMap.put(iter.next(), Boolean.TRUE);
 		}
 	}
-	
+
+	@Override
+	public boolean isAllowMime(String mime) {
+		Iterator<String> iter = getGlobIterator(mime);
+		if(iter == null)
+			return true;
+		while (iter.hasNext()) {
+			Boolean used = getGlobUsing(iter.next());
+			if (used == false)
+				return false;
+		}
+		return true;
+	}
+
 	/**
 	 * update <b>glob properties file</b> in file system.
 	 * 
@@ -146,7 +146,6 @@ public final class TikaMimeXmlObject {
 			Boolean b = globMap.get(glob);
 			properties.setProperty(glob, Boolean.toString(b.booleanValue()));
 		}
-		Path propertiesPath = AppStartupConfig.propertiesPath;
 		if (Files.exists(propertiesPath)) {
 			Files.delete(propertiesPath);
 		}
@@ -155,6 +154,8 @@ public final class TikaMimeXmlObject {
 			properties.store(bos, String.valueOf(System.currentTimeMillis()));
 		}
 	}
+	
+	private Path propertiesPath;
 
 	/**
 	 * factory class of <b>TikaMimeXmlObject</b>
@@ -169,18 +170,19 @@ public final class TikaMimeXmlObject {
 
 		}
 
-		public static TikaMimeXmlObject getInstanceFromXml(String xmlPath)
+		public static TikaMimeXmlObject getInstanceFromXml(String xmlPath, Path propertiesPath, Path customTikaGlobPropertiesPath)
 				throws ParserConfigurationException, SAXException, IOException {
 			if (container.keySet().contains(xmlPath)) {
 				return container.get(xmlPath);
 			}
 			TikaMimeXmlObject obj = new TikaMimeXmlObject();
+			obj.propertiesPath = propertiesPath;
 
 			Properties p = new Properties();
 			// load from property file
-			if (Files.exists(AppStartupConfig.propertiesPath)) {
+			if (Files.exists(propertiesPath)) {
 				try (BufferedInputStream bis = new BufferedInputStream(
-						new FileInputStream(AppStartupConfig.propertiesPath.toFile()))) {
+						new FileInputStream(propertiesPath.toFile()))) {
 					p.load(bis);
 					Iterator<Object> iter = p.keySet().iterator();
 					while (iter.hasNext()) {
@@ -199,14 +201,14 @@ public final class TikaMimeXmlObject {
 			saxParser.parse(xmlPath, new TikaMimeTypesSaxHandler(obj));
 
 			// after load default, add custom
-			addCustomMimeAndGlob(obj);
+			addCustomMimeAndGlob(obj, customTikaGlobPropertiesPath);
 			return obj;
 		}
 
-		private static void addCustomMimeAndGlob(TikaMimeXmlObject obj) {
+		private static void addCustomMimeAndGlob(TikaMimeXmlObject obj, Path customTikaGlobPropertiesPath) {
 			try {
 				Properties p = new Properties();
-				InputStream is = new FileInputStream(AppStartupConfig.customTikaPropertiesPath.toFile());
+				InputStream is = new FileInputStream(customTikaGlobPropertiesPath.toFile());
 				p.load(is);
 				for (Map.Entry<Object, Object> entry : p.entrySet()) {
 					obj.addGlobType((String) entry.getKey(), (String) entry.getValue());

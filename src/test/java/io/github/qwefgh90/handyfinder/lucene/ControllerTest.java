@@ -1,8 +1,9 @@
-package com.qwefgh90.io.handyfinder.lucene;
+package io.github.qwefgh90.handyfinder.lucene;
 
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -10,9 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.io.IOException;
 
-import org.apache.commons.cli.ParseException;
 import org.hamcrest.Matchers;
-import org.hamcrest.core.Is;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -35,14 +34,15 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
-import com.qwefgh90.io.handyfinder.lucene.LuceneHandler;
-import com.qwefgh90.io.handyfinder.springweb.RootContext;
-import com.qwefgh90.io.handyfinder.springweb.ServletContextTest;
+import com.qwefgh90.io.handyfinder.springweb.config.AppDataConfig;
+import com.qwefgh90.io.handyfinder.springweb.config.RootContext;
+import com.qwefgh90.io.handyfinder.springweb.config.ServletContextTest;
+import com.qwefgh90.io.handyfinder.springweb.model.OptionDto;
 import com.qwefgh90.io.handyfinder.springweb.model.SupportTypeDto;
 import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@ContextConfiguration(classes = { ServletContextTest.class, RootContext.class })
+@ContextConfiguration(classes = { ServletContextTest.class, RootContext.class, AppDataConfig.class })
 public class ControllerTest {
 	private final static Logger LOG = LoggerFactory.getLogger(ControllerTest.class);
 	@Autowired
@@ -55,6 +55,9 @@ public class ControllerTest {
 	@Autowired
 	LuceneHandler handler;
 
+	@Autowired
+	LuceneHandlerBasicOptionView view;
+	
 	@Before
 	public void setup() throws IOException{
 		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
@@ -63,9 +66,27 @@ public class ControllerTest {
 	
 	@After
 	public void clean() throws IOException{
+		view.deleteAppDataFromDisk();
 	}
 
 	ObjectMapper om = new ObjectMapper();
+	
+	@Test
+	public void optionTest() throws Exception{
+		MvcResult mvcResult = mvc.perform(get("/options").contentType(MediaType.APPLICATION_JSON_UTF8))
+		.andExpect(status().isOk()).andDo(MockMvcResultHandlers.print()).andReturn();
+		
+		String responseString = mvcResult.getResponse().getContentAsString();
+		OptionDto option1 = om.readValue(responseString, OptionDto.class);
+		option1.setLimitCountOfResult(2);
+		option1.setMaximumDocumentMBSize(1);
+		
+		String modifiedJsonString = om.writeValueAsString(option1);
+		OptionDto option2 = om.readValue(modifiedJsonString, OptionDto.class);
+		assertTrue(option1.getLimitCountOfResult() == option2.getLimitCountOfResult());
+		assertTrue(option1.getMaximumDocumentMBSize()== option2.getMaximumDocumentMBSize());
+	}
+	
 	@Test
 	public void searchTest() throws Exception{
 		mvc.perform(get("/documents").contentType(MediaType.APPLICATION_JSON_UTF8).param("keyword", "자바 고언어 파이썬"))
