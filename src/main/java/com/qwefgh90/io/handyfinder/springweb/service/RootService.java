@@ -123,8 +123,11 @@ public class RootService {
 	 * @param dto option which will be applied
 	 */
 	public void setOption(OptionDto dto){
-		globalAppData.setLimitCountOfResult(dto.getLimitCountOfResult());
-		globalAppData.setLimitCountOfResult(dto.getMaximumDocumentMBSize());
+		if(dto.getLimitCountOfResult() > 0)
+			globalAppData.setLimitCountOfResult(dto.getLimitCountOfResult());
+		if(dto.getMaximumDocumentMBSize() > 0)
+			globalAppData.setMaximumDocumentMBSize(dto.getMaximumDocumentMBSize());
+		globalAppData.writeAppDataToDisk();
 	}
 	
 	public void closeAppLucene() throws IOException{

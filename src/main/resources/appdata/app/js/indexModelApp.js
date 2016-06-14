@@ -23,10 +23,11 @@ app.factory("SearchModel",['$rootScope', function($rootScope){
 }]);
 
 
-app.factory("OptionModel",['$rootScope', function($rootScope){
+app.factory("OptionModel",['$rootScope', 'Option', function($rootScope, Option){
+	var option = new Option();
 	var service ={
 		model : {
-			maximum_size : 5,
+			option : option
 		}
 	};
 	return service;
@@ -37,7 +38,7 @@ app.factory("IndexModel",['$rootScope', function($rootScope){
 			model : {
 				auto_update_index : false,
 				auto_clean_files : false,
-				supportTypes : [],
+				supportTypes : [], //{type:xx, used:xx}
 				pathList : [],
 				index_manager_status : {
 						open : true
@@ -122,6 +123,28 @@ app.factory("IndexModel",['$rootScope', function($rootScope){
 		return service;
 	
 }]);
+
+app.factory("Option", function() {
+	// Define the constructor function.
+	/*
+	 * 
+	private int limitCountOfResult;
+	private int maximumDocumentMBSize;
+	 * 
+	 */
+	function Option(limitCountOfResult, maximumDocumentMBSize) {
+		this.limitCountOfResult = limitCountOfResult;
+		this.maximumDocumentMBSize = maximumDocumentMBSize;
+	}
+	function Option() {
+		this.limitCountOfResult = -1;
+		this.maximumDocumentMBSize = -1;
+	}
+
+	// Return constructor - this is what defines the actual
+	// injectable in the DI framework.
+	return (Option);
+}); 
 
 app.factory("Path", function() {
 	// Define the constructor function.
