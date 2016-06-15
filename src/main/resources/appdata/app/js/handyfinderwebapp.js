@@ -31,26 +31,36 @@ function($location, $scope, apiService) {
 	});
 }]);
 
-app.controller('searchController', ['$location','$log', '$scope', 'apiService', 'Document','$sce', 'GUIService', 'SearchModel',
-function($location, $log, $scope, apiService, Document, $sce, GUIService, SearchModel) {
+app.controller('searchController', ['$location','$log', '$scope', '$timeout', 'apiService', 'Document','$sce', 'GUIService', 'SearchModel',
+function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIService, SearchModel) {
 	$scope.searchModel = SearchModel.model;
-	var searchFlag = true;
+	$scope.searchFlag = false;
 	$scope.search = function(keyword){
-		if(searchFlag == false)
+		var milliseconds = (new Date).getTime();
+		if($scope.searchFlag == true)
 			return;
 		var promise = apiService.search(keyword);
-		searchFlag = false;
-		$scope.searchModel.searchCount = $scope.searchModel.searchCount + 1;
+		$scope.searchFlag = true;
+		$scope.searchModel.searchTryCount = $scope.searchModel.searchTryCount + 1;
 		promise.then(function(json){
+			var toMiliseconds = (new Date).getTime();
 			$scope.searchModel.searchResult = [];
 			for(var i = 0 ; i < json.length ; i ++){
 				var data = json[i];
 				var document = new Document(data.createdTime, data.modifiedTime, data.title, data.pathString, data.contents, data.parentPathString);
 				$scope.searchModel.searchResult.push(document);
 			}
-			searchFlag = true;
-		},function(){searchFlag = true;$log.log('search failed');}
-		,function(){searchFlag = true;});
+			$scope.searchModel.searchTime = (toMiliseconds * 1.0 - milliseconds * 1.0) / 1000
+			$scope.searchFlag = false;
+		},function(){
+			var toMiliseconds = (new Date).getTime();
+			$scope.searchFlag = false;
+			$log.log('search failed');
+			$scope.searchModel.searchTime = (toMiliseconds * 1.0 - milliseconds * 1.0) / 1000}
+		,function(){
+			var toMiliseconds = (new Date).getTime();
+			$scope.searchFlag = false;
+			$scope.searchModel.searchTime = (toMiliseconds * 1.0 - milliseconds * 1.0) / 1000});
 	};
 
 	$scope.initGUIService = function(){

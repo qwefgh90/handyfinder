@@ -13,8 +13,12 @@
 	<!-- summary  -->
 	<div class="row">
 		<div class="col-xs-12" style="padding-top: 5px; padding-bottom: 5px">
-			<p ng-show="searchModel.searchResult.length > 0">
-				{{searchModel.searchResult.length}} result found, accuracy order
+		
+			<p ng-show="searchFlag == true">
+				<img alt="Look for documents..." src="/app/image/progress.gif">
+			</p>
+			<p ng-show="searchFlag == false && searchModel.searchTryCount > 0">
+				About {{searchModel.searchResult.length}} results ({{searchModel.searchTime}} secs), accuracy order
 			</p>
 			<!-- 
 			<div>
@@ -37,7 +41,7 @@
 				
 				<div class="col-xs-12 description " style="padding-left:0px;">
 					<small>{{object.modifiedTime | date:'yyyy-MM-dd HH:mm:ss'}}</small>
-					<p style="max-height:5.1em;line-height:2em" ng-bind-html="object.contents">
+					<p style="text-overflow: ellipsis;" style="max-height:5.1em;line-height:2em" ng-bind-html="object.contents">
 					</p>
 				</div>
 				

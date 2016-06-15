@@ -4,7 +4,8 @@ app.factory("SearchModel",['$rootScope', function($rootScope){
 		model : {
 			searchKeyword : '',
 			searchResult : [],
-			searchCount : 0,
+			searchTime : 0,
+			searchTryCount : 0,
 		},
 
         SaveState: function () {
