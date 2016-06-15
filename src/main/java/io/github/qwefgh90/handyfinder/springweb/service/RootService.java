@@ -43,7 +43,8 @@ import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 @Service
 public class RootService {
 
-	private final static Logger LOG = LoggerFactory.getLogger(RootService.class);
+	private final static Logger LOG = LoggerFactory
+			.getLogger(RootService.class);
 	@Autowired
 	CommandInvoker invokerForCommand;
 
@@ -55,10 +56,10 @@ public class RootService {
 
 	@Autowired
 	TikaMimeXmlObject tikaMimeObject;
-	
+
 	@Autowired
 	LuceneHandlerBasicOptionView globalAppData;
-	
+
 	/**
 	 * Get directories to be indexed.
 	 * 
@@ -77,27 +78,44 @@ public class RootService {
 	public void updateDirectories(List<Directory> list) throws SQLException {
 		indexProperty.save(list);
 	}
-	
+
 	/**
 	 * update support type and save to disk
+	 * 
 	 * @param item
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	public void updateSupportType(SupportTypeDto item) throws FileNotFoundException, IOException{
-		tikaMimeObject.setGlob(item.getType(), item.isUsed());
+	public void updateSupportType(SupportTypeDto typeDto)
+			throws FileNotFoundException, IOException {
+		tikaMimeObject.setGlob(typeDto.getType(), typeDto.isUsed());
 		tikaMimeObject.updateGlobPropertiesFile();
 	}
-	
+
+	/**
+	 * update support type and save to disk
+	 * 
+	 * @param item
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	public void updateSupportsType(List<SupportTypeDto> typeDtoList)
+			throws FileNotFoundException, IOException {
+		for (SupportTypeDto typeDto : typeDtoList) {
+			tikaMimeObject.setGlob(typeDto.getType(), typeDto.isUsed());
+		}
+		tikaMimeObject.updateGlobPropertiesFile();
+	}
+
 	/**
 	 * 
 	 * @return list of support type
 	 */
-	public List<SupportTypeDto> getSupportType(){
+	public List<SupportTypeDto> getSupportType() {
 		Map<String, Boolean> map = tikaMimeObject.getGlobMap();
 		List<SupportTypeDto> result = new ArrayList<>();
 		Iterator<Entry<String, Boolean>> iter = map.entrySet().iterator();
-		while(iter.hasNext()){
+		while (iter.hasNext()) {
 			Entry<String, Boolean> entry = iter.next();
 			SupportTypeDto dto = new SupportTypeDto();
 			dto.setType(entry.getKey());
@@ -111,26 +129,28 @@ public class RootService {
 	 * 
 	 * @return lucene handler option dto
 	 */
-	public OptionDto getOption(){
+	public OptionDto getOption() {
 		OptionDto dto = new OptionDto();
 		dto.setLimitCountOfResult(globalAppData.getLimitCountOfResult());
 		dto.setMaximumDocumentMBSize(globalAppData.getMaximumDocumentMBSize());
 		return dto;
 	}
-	
+
 	/**
 	 * 
-	 * @param dto option which will be applied
+	 * @param dto
+	 *            option which will be applied
 	 */
-	public void setOption(OptionDto dto){
-		if(dto.getLimitCountOfResult() > 0)
+	public void setOption(OptionDto dto) {
+		if (dto.getLimitCountOfResult() > 0)
 			globalAppData.setLimitCountOfResult(dto.getLimitCountOfResult());
-		if(dto.getMaximumDocumentMBSize() > 0)
-			globalAppData.setMaximumDocumentMBSize(dto.getMaximumDocumentMBSize());
+		if (dto.getMaximumDocumentMBSize() > 0)
+			globalAppData.setMaximumDocumentMBSize(dto
+					.getMaximumDocumentMBSize());
 		globalAppData.writeAppDataToDisk();
 	}
-	
-	public void closeAppLucene() throws IOException{
+
+	public void closeAppLucene() throws IOException {
 		handler.close();
 	}
 
@@ -143,7 +163,8 @@ public class RootService {
 				DocumentDto dto = new DocumentDto();
 				String highlightTag;
 				try {
-					highlightTag = handler.highlight(docs.scoreDocs[i].doc, keyword);
+					highlightTag = handler.highlight(docs.scoreDocs[i].doc,
+							keyword);
 				} catch (ParseException e) {
 					LOG.info(e.toString());
 					continue;
@@ -153,16 +174,18 @@ public class RootService {
 				} catch (com.qwefgh90.io.jsearch.JSearch.ParseException e) {
 					LOG.info(e.toString());
 					continue;
-				} catch (Exception e){
+				} catch (Exception e) {
 					LOG.warn(ExceptionUtils.getStackTrace(e));
 					continue;
 				}
 
-				dto.setCreatedTime(document.getField("createdTime").numericValue().longValue());
+				dto.setCreatedTime(document.getField("createdTime")
+						.numericValue().longValue());
 				dto.setTitle(document.get("title"));
 				dto.setContents(highlightTag);
 				dto.setPathString(document.get("pathString"));
-				dto.setParentPathString(Paths.get(document.get("pathString")).getParent().toAbsolutePath().toString());
+				dto.setParentPathString(Paths.get(document.get("pathString"))
+						.getParent().toAbsolutePath().toString());
 
 				Path path = Paths.get(dto.getPathString());
 				dto.setModifiedTime(Files.getLastModifiedTime(path).toMillis());
@@ -215,14 +238,16 @@ public class RootService {
 			}
 		}
 	}
-	
-	public void openFile(String pathStr){
+
+	public void openFile(String pathStr) {
 		Path path = Paths.get(pathStr);
-		if (Files.exists(path) && Files.isRegularFile(path) && !Files.isExecutable(path)) {
+		if (Files.exists(path) && Files.isRegularFile(path)
+				&& !Files.isExecutable(path)) {
 			try {
-				MediaType mime = FileExtension.getContentType(path.toFile(), path.getFileName().toString());
-				
-				//if ok, run program
+				MediaType mime = FileExtension.getContentType(path.toFile(),
+						path.getFileName().toString());
+
+				// if ok, run program
 				if (Desktop.isDesktopSupported()) {
 					try {
 						Desktop.getDesktop().open(path.toFile());
@@ -233,7 +258,7 @@ public class RootService {
 			} catch (IOException e) {
 				LOG.warn(ExceptionUtils.getStackTrace(e));
 			}
-			
+
 		}
 	}
 }

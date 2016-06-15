@@ -41,6 +41,7 @@ app.factory("IndexModel",['$rootScope', function($rootScope){
 				auto_clean_files : false,
 				supportTypes : [], //{type:xx, used:xx}
 				pathList : [],
+				select_toggle : false,
 				index_manager_status : {
 						open : true
 					},
