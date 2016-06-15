@@ -43,14 +43,13 @@ import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.Transport;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
-import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
-import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
-import com.qwefgh90.io.handyfinder.springweb.service.RootService;
-import com.qwefgh90.io.handyfinder.springweb.websocket.ProgressCommand;
-import com.qwefgh90.io.handyfinder.springweb.websocket.ProgressCommand.STATE;
-
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
+import io.github.qwefgh90.handyfinder.springweb.service.RootService;
+import io.github.qwefgh90.handyfinder.springweb.websocket.ProgressCommand;
+import io.github.qwefgh90.handyfinder.springweb.websocket.ProgressCommand.STATE;
 
 public class WebsockTest {
 	private final static Logger LOG = LoggerFactory.getLogger(WebsockTest.class);

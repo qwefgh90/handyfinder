@@ -15,13 +15,12 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import com.qwefgh90.io.handyfinder.springweb.config.AppDataConfig;
-import com.qwefgh90.io.handyfinder.springweb.config.RootContext;
-import com.qwefgh90.io.handyfinder.springweb.config.RootWebSocketConfig;
-import com.qwefgh90.io.handyfinder.springweb.config.ServletContextTest;
-
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
+import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
+import io.github.qwefgh90.handyfinder.springweb.config.RootWebSocketConfig;
+import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration

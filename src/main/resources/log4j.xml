@@ -25,10 +25,10 @@
 	<logger name="handyfinder">
 		<level value="trace" />
 	</logger>
-	<logger name="com.qwefgh90.io.handyfinder.springweb.service">
+	<logger name="io.github.qwefgh90.springweb.service">
 		<level value="info" />
 	</logger>
-	<logger name="com.qwefgh90.io.handyfinder.lucene">
+	<logger name="io.github.qwefgh90.handyfinder.lucene">
 		<level value="info" />
 	</logger>
 	

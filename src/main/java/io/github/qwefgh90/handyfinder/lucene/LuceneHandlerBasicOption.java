@@ -14,8 +14,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
 
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
 @JsonIgnoreProperties(value = { "singleton", "om", "LOG" },ignoreUnknown = true)

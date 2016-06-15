@@ -21,7 +21,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.qwefgh90.io.handyfinder.springweb.websocket.ProgressCommand;
+import io.github.qwefgh90.handyfinder.springweb.websocket.ProgressCommand;
 
 public class DerbyTest {
 

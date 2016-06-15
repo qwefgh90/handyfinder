@@ -33,13 +33,14 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
-import com.qwefgh90.io.handyfinder.springweb.config.AppDataConfig;
-import com.qwefgh90.io.handyfinder.springweb.config.RootContext;
-import com.qwefgh90.io.handyfinder.springweb.config.ServletContextTest;
-import com.qwefgh90.io.handyfinder.springweb.model.OptionDto;
-import com.qwefgh90.io.handyfinder.springweb.model.SupportTypeDto;
-import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
+
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
+import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
+import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
+import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
+import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
+import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = { ServletContextTest.class, RootContext.class, AppDataConfig.class })

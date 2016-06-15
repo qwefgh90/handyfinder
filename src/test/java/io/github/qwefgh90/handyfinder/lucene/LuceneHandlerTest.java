@@ -30,16 +30,16 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
-import com.qwefgh90.io.handyfinder.springweb.config.AppDataConfig;
-import com.qwefgh90.io.handyfinder.springweb.config.RootContext;
-import com.qwefgh90.io.handyfinder.springweb.config.ServletContextTest;
-import com.qwefgh90.io.handyfinder.springweb.websocket.CommandInvoker;
 import com.qwefgh90.io.jsearch.JSearch.ParseException;
 
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerOption;
 import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
+import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
+import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
+import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
+import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -133,10 +133,10 @@ public class LuceneHandlerTest {
 		TopDocs docs = handler.search("자바 고언어");
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
 			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
-			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "자바");
-//			LOG.info(exp.toString());
+			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "자바 고언어");
+			LOG.info(exp.toString());
 
-//			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "자바 고언어"));
+			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "자바 고언어"));
 		}
 		assertTrue(docs.scoreDocs.length == 7);
 
@@ -156,10 +156,10 @@ public class LuceneHandlerTest {
 
 			String info = "[" + docs.scoreDocs[i].score + "]" + doc.get("pathString") + " : \n" + doc.get("contents")
 					+ "\n";
-//			LOG.info(info);
+	//		LOG.info(info);
 
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "부트로더 Proto");
-//			LOG.info(exp.toString());
+///			LOG.info(exp.toString());
 
 //			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "부트로더 Proto"));
 		}

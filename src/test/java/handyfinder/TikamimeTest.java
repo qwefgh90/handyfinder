@@ -28,9 +28,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
 import com.qwefgh90.io.jsearch.FileExtension;
 
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
 import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject.TikaMimeXmlObjectFactory;
 

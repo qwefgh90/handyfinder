@@ -21,12 +21,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import com.qwefgh90.io.handyfinder.gui.AppStartupConfig;
-import com.qwefgh90.io.handyfinder.springweb.config.RootContext;
-import com.qwefgh90.io.handyfinder.springweb.config.ServletContextTest;
-import com.qwefgh90.io.handyfinder.springweb.repository.MetaRespository;
-
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
+import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
+import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration

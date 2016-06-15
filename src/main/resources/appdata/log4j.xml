@@ -19,13 +19,13 @@
 	<logger name="org.springframework.web.socket">
 		<level value="info" />
 	</logger>
-	<logger name="com.qwefgh90.io.handyfinder.gui">
+	<logger name="io.github.qwefgh90.handyfinder.gui">
 		<level value="info" />
 	</logger>
 	<logger name="handyfinder">
 		<level value="info" />
 	</logger>
-	<logger name="com.qwefgh90.io.handyfinder.springweb.service">
+	<logger name="io.github.qwefgh90.handyfinder.springweb.service">
 		<level value="info" />
 	</logger>
 	
