@@ -62,6 +62,36 @@ app.factory('apiService', ['$http', '$q', function($http, $q){
 		// then(successCallback, errorCallback, notifyCallback)
 	};
 	
+	var updateSupportTypeList = function(list) {
+		var deferred = $q.defer();
+		
+		// ajax $http
+		var headers = {
+			'Accept' : 'application/json',
+			'Content-Type' : 'application/json'
+		};
+		var params = {
+		};
+		var config = {
+			'headers' : headers
+		};
+		var data = JSON.stringify(list);
+
+		$http.post(url = '/supportTypes', data, config).then(function(response) {
+			if (response.status == 200) {
+				deferred.resolve();
+			} else {
+				deferred.reject();
+			}
+		}, function(response) {
+			deferred.reject();
+		}, function(response) {
+			deferred.reject();
+		});
+		return deferred.promise;
+		// then(successCallback, errorCallback, notifyCallback)
+	};
+	
 	var updateSupportType = function(supportTypeDto) {
 		var deferred = $q.defer();
 		
@@ -217,6 +247,7 @@ app.factory('apiService', ['$http', '$q', function($http, $q){
 			,search : search
 			,getSupportTypes : getSupportTypes
 			,updateSupportType : updateSupportType
+			,updateSupportTypeList : updateSupportTypeList
 			,updateOptions : updateOptions
 			,getOptions : getOptions};
 }]);

@@ -63,15 +63,21 @@
 					<b>Support Types ({{totalDisplayed}}/{{indexModel.supportTypes.length}}) </b>
 					<div class="boxes">
 					
+						<div class="checkbox">
+							<label> <input type="checkbox" ng-model="indexModel.select_toggle"
+								ng-change="toggleTopcheckbox()">&lt;Toggle&gt;
+							</label>
+						</div>
 						<div class="checkbox"
 							ng-repeat="typeObj in indexModel.supportTypes | limitTo:totalDisplayed"
 							scroll-if="typeObj.type == searchedType">
-							<label> <input type="checkbox" ng-model="typeObj.used"
+							<label ng-style="searchedTypeKeyword != '' && typeObj.type.indexOf(searchedTypeKeyword) > -1 && {'font-weight':800}"> <input type="checkbox" ng-model="typeObj.used"
 								ng-change="updateType(typeObj)"> {{typeObj.type}}
 							</label>
 						</div>
 					</div>
-					<input type="text" placeholder="Search Box" style="width:100%" ng-change='changeSearchKeyword(searchedKeyword)' ng-model='searchedKeyword'/>
+					<input type="text" placeholder="*.txt" style="width:100%" ng-change='changeSearchKeyword(searchedTypeKeyword)' ng-model='searchedTypeKeyword'
+					ng-keydown="$event.which === 13 && nextSearch(searchedTypeKeyword)"/>
     				<button ng-click="loadMore()" style="width:100%" type="submit" class="btn btn-default">Read More</button>
 				</div>
 				<div class="col-xs-8 " style="">

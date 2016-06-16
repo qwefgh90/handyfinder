@@ -98,32 +98,67 @@ function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIServi
 	$scope.initGUIService();
 }]);
 
-app.controller('indexController', ['$q','$log', '$timeout', '$location', '$scope', 'apiService', 'Path', 'ProgressService', 'IndexModel', 'OptionModel',
-function($q, $log, $timeout, $location, $scope, apiService, Path, progressService, IndexModel, OptionModel) {
+app.constant('LOAD_MORE_COUNT', 500);
+app.controller('indexController', ['$q','$log', '$timeout', '$location', '$scope', 'apiService', 'Path', 'ProgressService', 'IndexModel', 'OptionModel', 'LOAD_MORE_COUNT',
+function($q, $log, $timeout, $location, $scope, apiService, Path, progressService, IndexModel, OptionModel, LOAD_MORE_COUNT) {
 	$scope.indexModel = IndexModel.model;
 	$scope.optionModel = OptionModel.model;
 	
 	var directoriesPromise = apiService.getDirectories();	
 	var optionPromise = apiService.getOptions();
 	
+	$scope.indexModel.select_toggle = false;
 	$scope.totalDisplayed = 0;
-	$scope.searchedKeyword = '';
+	$scope.searchedTypeKeyword = '';
 	$scope.searchedType = '';
-	$scope.changeSearchKeyword = function(searchedKeyword){
-		if(searchedKeyword == '')
+	$scope.enterHitCount = 0;
+	$scope.changeSearchKeyword = function(searchedTypeKeyword){
+		$scope.enterHitCount = 0;
+		if(searchedTypeKeyword == '')
 			return;
 		for(var i = 0; i < $scope.totalDisplayed; i++){
 //			$log.log($scope.indexModel.supportTypes[i].type);
-			if($scope.indexModel.supportTypes[i].type.indexOf(searchedKeyword) > -1){
+			if($scope.indexModel.supportTypes[i].type.indexOf(searchedTypeKeyword) > -1){
 				$scope.searchedType = $scope.indexModel.supportTypes[i].type;
 				$log.log($scope.indexModel.supportTypes[i].type + ' is matched');
+				$log.log('0 hit');
 				return;
+				
 			}
 		}
+//		$scope.searchedType = $scope.indexModel.supportTypes[i].type;
 	};
 	
+	$scope.nextSearch = function(searchedTypeKeyword){
+		$scope.enterHitCount += 1;
+		var enterHitCount = $scope.enterHitCount;
+		var searchStack = [];
+		var offsetCounter = 0;
+		var searchedType = '';
+		if(searchedTypeKeyword == '')
+			return;
+		for(var i = 0; i < $scope.totalDisplayed; i++){
+			//matched
+			if($scope.indexModel.supportTypes[i].type.indexOf(searchedTypeKeyword) > -1){
+				searchedType = $scope.indexModel.supportTypes[i].type;
+				searchStack.push(searchedType);
+			}
+		}
+		//enter overflow
+		if(searchStack.length <= $scope.enterHitCount){
+			$scope.searchedType = searchStack[0]
+			$scope.enterHitCount = 0;
+			$log.log('enter hit overflow');
+			$log.log($scope.enterHitCount + ' offset hit');
+		}else{
+			$scope.searchedType = searchStack[$scope.enterHitCount];
+			$log.log($scope.enterHitCount + ' offset hit');
+		}
+		
+	}
+	
 	$scope.loadMore = function(){
-		$scope.totalDisplayed = $scope.totalDisplayed + 100000;
+		$scope.totalDisplayed = $scope.totalDisplayed + LOAD_MORE_COUNT;
 		if($scope.indexModel.supportTypes.length < $scope.totalDisplayed){
 			$scope.totalDisplayed = $scope.indexModel.supportTypes.length;
 		}
@@ -217,6 +252,23 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 				$log.log('fail to update ');},function(){});
 	};
 	
+	//click top element of check boxes
+	$scope.toggleTopcheckbox = function(){
+		$log.log('toggle top checkbox : ' + $scope.indexModel.select_toggle);
+		for (var i=0; i<$scope.indexModel.supportTypes.length; i++){
+			$scope.indexModel.supportTypes[i].used = $scope.indexModel.select_toggle;
+		}
+		$scope.updateSupportTypeList(); //update to api server
+	}
+	
+	$scope.updateSupportTypeList = function() {
+		var promise = apiService.updateSupportTypeList($scope.indexModel.supportTypes);
+		promise.then(function(){
+			$log.log('successful update support list');
+		},function(){
+			$log.log('fail to update ');},function(){});
+	}
+	
 	$scope.initProgressService = function(){
 		if(progressService.isConnected() == false){
 			var promiseArray = progressService.connect();;
@@ -297,6 +349,16 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 	}else{
 		$scope.totalDisplayed = 100; //minimum > 1000 
 	}
+	
+	$scope.$watch('indexModel.supportTypes', function(){
+		for(var i=0; i<$scope.indexModel.supportTypes.length; i++){
+			if($scope.indexModel.supportTypes[i].used == false){
+				$scope.indexModel.select_toggle = false;
+				return;
+			}
+		}
+		$scope.indexModel.select_toggle = true;
+	}, true);
 	
 }]);
 

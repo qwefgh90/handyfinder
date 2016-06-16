@@ -90,6 +90,18 @@ public class RootController {
 		return new ResponseEntity<List<SupportTypeDto>>(rootService.getSupportType(), HttpStatus.OK);
 	}
 
+	@RequestMapping(value = "/supportTypes", method = RequestMethod.POST)
+	public ResponseEntity<String> updateIndexType(@RequestBody List<SupportTypeDto> supportTypeList) {
+		try {
+			rootService.updateSupportsType(supportTypeList);
+			return new ResponseEntity<String>(HttpStatus.OK);
+		} catch (IOException e) {
+			LOG.warn(ExceptionUtils.getStackTrace(e));
+			return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+	
+
 	@RequestMapping(value = "/options", method = RequestMethod.GET)
 	public ResponseEntity<OptionDto> getOption() {
 		return new ResponseEntity<OptionDto>(rootService.getOption(), HttpStatus.OK);
