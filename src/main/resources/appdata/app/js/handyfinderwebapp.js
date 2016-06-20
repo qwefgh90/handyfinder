@@ -47,7 +47,7 @@ function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIServi
 			$scope.searchModel.searchResult = [];
 			for(var i = 0 ; i < json.length ; i ++){
 				var data = json[i];
-				var document = new Document(data.createdTime, data.modifiedTime, data.title, data.pathString, data.contents, data.parentPathString);
+				var document = new Document(data.createdTime, data.modifiedTime, data.title, data.pathString, data.contents, data.parentPathString, data.fileSize, data.mimeType);
 				$scope.searchModel.searchResult.push(document);
 			}
 			$scope.searchModel.searchTime = (toMiliseconds * 1.0 - milliseconds * 1.0) / 1000

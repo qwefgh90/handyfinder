@@ -181,7 +181,7 @@ app.factory("Path", function() {
 }); 
 app.factory("Document", function() {
 	// Define the constructor function.
-	function Document(createdTime, modifiedTime, title, pathString, contents, parentPathString) {
+	function Document(createdTime, modifiedTime, title, pathString, contents, parentPathString, fileSize, mimeType) {
 		/*
 		 * private long createdTime; private long modifiedTime; private String
 		 * title; private String pathString; private String contents;
@@ -192,6 +192,8 @@ app.factory("Document", function() {
 		this.pathString = pathString;
 		this.contents = contents;
 		this.parentPathString = parentPathString;
+		this.fileSize = fileSize;
+		this.mimeType = mimeType;
 	}
 
 	// Define the "instance" methods using the prototype

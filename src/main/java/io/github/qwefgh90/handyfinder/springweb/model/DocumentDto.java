@@ -7,6 +7,21 @@ public class DocumentDto {
 	private String pathString;
 	private String contents;
 	private String parentPathString;
+	private long fileSize;
+	private String mimeType;
+	
+	public long getFileSize() {
+		return fileSize;
+	}
+	public void setFileSize(long fileSize) {
+		this.fileSize = fileSize;
+	}
+	public String getMimeType() {
+		return mimeType;
+	}
+	public void setMimeType(String mimeType) {
+		this.mimeType = mimeType;
+	}
 	public String getContents() {
 		return contents;
 	}

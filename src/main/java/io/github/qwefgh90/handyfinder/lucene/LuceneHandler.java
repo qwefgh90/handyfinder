@@ -310,6 +310,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 
 		BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
 
+		StringField mimeTypeString = new StringField("mimeType", mimeType.toString(), Store.YES);
 		StringField title = new StringField("title", path.getFileName().toString(), Store.YES);
 		StringField pathStringField = new StringField("pathString", path.toAbsolutePath().toString(), Store.YES);
 		LegacyLongField createdTimeField = new LegacyLongField("createdTime", attr.creationTime().toMillis(),
@@ -321,6 +322,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		doc.add(title);
 		doc.add(pathStringField);
 		doc.add(contentsField);
+		doc.add(mimeTypeString);
 		writer.updateDocument(new Term("pathString", path.toAbsolutePath().toString()), doc);
 		LOG.info("indexing complete : " + path);
 		writer.commit(); // commit() is important for real-time search

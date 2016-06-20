@@ -178,7 +178,7 @@ public class RootService {
 					LOG.warn(ExceptionUtils.getStackTrace(e));
 					continue;
 				}
-
+				
 				dto.setCreatedTime(document.getField("createdTime")
 						.numericValue().longValue());
 				dto.setTitle(document.get("title"));
@@ -186,9 +186,12 @@ public class RootService {
 				dto.setPathString(document.get("pathString"));
 				dto.setParentPathString(Paths.get(document.get("pathString"))
 						.getParent().toAbsolutePath().toString());
-
+				dto.setMimeType(document.get("mimeType"));
+				
 				Path path = Paths.get(dto.getPathString());
 				dto.setModifiedTime(Files.getLastModifiedTime(path).toMillis());
+				dto.setFileSize(Files.size(path));
+				
 				list.add(dto);
 			}
 			return Optional.of(list);
