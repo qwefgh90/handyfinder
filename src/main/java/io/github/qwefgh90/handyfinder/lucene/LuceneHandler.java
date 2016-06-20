@@ -52,6 +52,7 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.search.highlight.Highlighter;
@@ -301,6 +302,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @throws ParseException
 	 */
 	void index(Path path) throws IOException {
+		
 		MediaType mimeType = FileExtension.getContentType(path.toFile(), path.getFileName().toString());
 		if (!option.mimeOption.isAllowMime(mimeType.toString()))
 			return;
@@ -406,7 +408,35 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		checkDirectoryReader();
 		return indexReader.numDocs();
 	}
-
+	
+	/**
+	 * remove or update indexed documents
+	 */
+	public void updateIndexedDocuments() {
+		checkDirectoryReader();
+		checkIndexWriter();
+		List<Document> list = getDocumentList();
+		cleanInternalIndex(list);
+		updateInternalIndex(list);
+	}
+	
+	/**
+	 * check if indexed.
+	 * function time test : 1000 of indexed documents consume 200 millis.
+	 * maybe 500 micro seconds
+	 * @param pathString
+	 * @return
+	 * @throws IOException
+	 */
+	boolean isExists(String pathString) throws IOException{
+		TopDocs results = searcher.search(new TermQuery(new Term("pathString", pathString)), 1);
+		if (results.totalHits == 0){
+			return false;
+			
+		}
+		return true;
+	}
+	
 	/**
 	 * 
 	 * @return live documents
@@ -427,17 +457,6 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			}
 		}
 		return list;
-	}
-	
-	/**
-	 * remove or update indexed documents
-	 */
-	public void updateIndexedDocuments() {
-		checkDirectoryReader();
-		checkIndexWriter();
-		List<Document> list = getDocumentList();
-		cleanInternalIndex(list);
-		updateInternalIndex(list);
 	}
 	
 	/**
@@ -602,7 +621,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		return query;
 	}
 
-	private void updateSearcher() throws IOException {
+	void updateSearcher() throws IOException {
 		DirectoryReader temp = DirectoryReader.openIfChanged(indexReader);
 		if (temp != null) {
 			indexReader = temp;

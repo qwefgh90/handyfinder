@@ -44,13 +44,15 @@ import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@ContextConfiguration(classes = { ServletContextTest.class, RootContext.class, AppDataConfig.class })
+@ContextConfiguration(classes = { ServletContextTest.class, RootContext.class,
+		AppDataConfig.class })
 @DirtiesContext(classMode = ClassMode.AFTER_CLASS)
 public class LuceneHandlerTest {
-	private final static Logger LOG = LoggerFactory.getLogger(LuceneHandlerTest.class);
+	private final static Logger LOG = LoggerFactory
+			.getLogger(LuceneHandlerTest.class);
 	@Autowired
 	CommandInvoker invoker;
-	
+
 	@Autowired
 	LuceneHandlerOption option;
 	@Autowired
@@ -76,8 +78,10 @@ public class LuceneHandlerTest {
 	@Before
 	public void setup() throws IOException {
 		mime.initGlobTrue();
-		handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invoker, option);
-		handler2 = LuceneHandler.getInstance(AppStartupConfig.pathForIndex, invoker, option);
+		handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex,
+				invoker, option);
+		handler2 = LuceneHandler.getInstance(AppStartupConfig.pathForIndex,
+				invoker, option);
 		assertTrue(handler == handler2);
 		handler.deleteAllIndexesFromFileSystem();
 
@@ -86,11 +90,13 @@ public class LuceneHandlerTest {
 		testpath2 = testpath.resolve("temp2.txt");
 		fileForUpdate = testpath.resolve("text.txt");
 		testpath = testpath.resolve("temp.txt");
-		
-		try (BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(testpath.toFile()))) {
+
+		try (BufferedOutputStream os = new BufferedOutputStream(
+				new FileOutputStream(testpath.toFile()))) {
 			os.write("안녕?".getBytes());
 		}
-		try (BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(testpath2.toFile()))) {
+		try (BufferedOutputStream os = new BufferedOutputStream(
+				new FileOutputStream(testpath2.toFile()))) {
 			os.write("안녕?".getBytes());
 		}
 	}
@@ -99,7 +105,8 @@ public class LuceneHandlerTest {
 	public void clean() throws IOException {
 		LuceneHandler.closeResources();
 		try {
-			handler.indexDirectory(AppStartupConfig.pathForAppdata.resolve("notexists"), true);
+			handler.indexDirectory(
+					AppStartupConfig.pathForAppdata.resolve("notexists"), true);
 		} catch (RuntimeException e) { // after close, throw RuntimeException
 			assertTrue(true);
 			return;
@@ -109,7 +116,8 @@ public class LuceneHandlerTest {
 
 	@Test
 	public void deleteTest() throws IOException {
-		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
+		handler.indexDirectory(
+				AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 		int count1 = handler.getDocumentCount();
 		StringBuilder sb = new StringBuilder();
 		List<Document> list = handler.getDocumentList();
@@ -118,7 +126,7 @@ public class LuceneHandlerTest {
 
 		Files.delete(testpath2);
 		testpath.toFile().delete();
-		
+
 		handler.updateIndexedDocuments();
 		int countAfter = handler.getDocumentCount();
 
@@ -128,32 +136,36 @@ public class LuceneHandlerTest {
 		list = handler.getDocumentList();
 		list.forEach(doc -> sb.append(doc.get("title") + ", "));
 		LOG.info(sb.toString());
-		
+
 		Files.write(fileForUpdate, Files.readAllBytes(fileForUpdate));
 
 		handler.updateIndexedDocuments();
-	
+
 	}
 
 	@Test
 	public void mimeExceptTest() throws IOException {
 		mime.setGlob("*.txt", false);
-		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
+		handler.indexDirectory(
+				AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 		int count1 = handler.getDocumentCount();
 		assertTrue(count1 < 13);
-		LOG.info("mime except : "+ count1);
+		LOG.info("mime except : " + count1);
 		mime.initGlobTrue();
 	}
 
 	@Test
-	public void writeTest() throws IOException, org.apache.lucene.queryparser.classic.ParseException,
+	public void writeTest() throws IOException,
+			org.apache.lucene.queryparser.classic.ParseException,
 			InvalidTokenOffsetsException, QueryNodeException, ParseException {
-		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
+		handler.indexDirectory(
+				AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 
 		TopDocs docs = handler.search("자바 고언어");
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
 			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
-			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "자바 고언어");
+			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc,
+					"자바 고언어");
 			LOG.info(exp.toString());
 
 			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "자바 고언어"));
@@ -163,10 +175,11 @@ public class LuceneHandlerTest {
 		docs = handler.search("HTTP");
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
 			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
-			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "HTTP");
-//			LOG.info(exp.toString());
+			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc,
+					"HTTP");
+			// LOG.info(exp.toString());
 
-//			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "HTTP"));
+			// LOG.info(handler.highlight(docs.scoreDocs[i].doc, "HTTP"));
 		}
 		assertTrue(docs.scoreDocs.length == 1);
 
@@ -174,23 +187,28 @@ public class LuceneHandlerTest {
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
 			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
 
-			String info = "[" + docs.scoreDocs[i].score + "]" + doc.get("pathString") + " : \n" + doc.get("contents")
+			String info = "[" + docs.scoreDocs[i].score + "]"
+					+ doc.get("pathString") + " : \n" + doc.get("contents")
 					+ "\n";
-	//		LOG.info(info);
+			// LOG.info(info);
 
-			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "부트로더 Proto");
-///			LOG.info(exp.toString());
+			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc,
+					"부트로더 Proto");
+			// / LOG.info(exp.toString());
 
-//			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "부트로더 Proto"));
+			// LOG.info(handler.highlight(docs.scoreDocs[i].doc, "부트로더 Proto"));
 		}
 		assertTrue(docs.scoreDocs.length == 2);
 
 	}
 
 	@Test
-	public void fileURITest() throws org.apache.lucene.queryparser.classic.ParseException, QueryNodeException,
-			InvalidTokenOffsetsException, ParseException, IOException {
-		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
+	public void fileURITest()
+			throws org.apache.lucene.queryparser.classic.ParseException,
+			QueryNodeException, InvalidTokenOffsetsException, ParseException,
+			IOException {
+		handler.indexDirectory(
+				AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 
 		TopDocs docs = handler.search("부트로더");
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
@@ -202,11 +220,30 @@ public class LuceneHandlerTest {
 			// doc.get("contents").length()) + "\n";
 			// log.info(info);
 
-			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc, "/depth/ homec/choe");
-//			LOG.info(exp.toString());
+			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc,
+					"/depth/ homec/choe");
+			// LOG.info(exp.toString());
 
-//			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "/depth/ homec/choe"));
+			// LOG.info(handler.highlight(docs.scoreDocs[i].doc,
+			// "/depth/ homec/choe"));
 		}
 		assertTrue(docs.scoreDocs.length > 0);
+	}
+
+	@Test
+	public void checkTime() throws IOException {
+		handler.indexDirectory(
+				AppStartupConfig.deployedPath.resolve("index-test-files-2"), true);
+		handler.updateSearcher();
+		List<Document> list = handler.getDocumentList();
+		boolean b = true;
+		long before = System.currentTimeMillis();
+		for (Document doc : list) {
+			String pathString = doc.get("pathString");
+			b = b && handler.isExists(pathString);
+		}
+		long after = System.currentTimeMillis();
+		assertTrue(b == true);
+		LOG.info("check time gap : " + b + ", " + (after - before));
 	}
 }
