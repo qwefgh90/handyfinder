@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.List;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
@@ -68,6 +69,7 @@ public class LuceneHandlerTest {
 			e.printStackTrace();
 		}
 	}
+	Path fileForUpdate;
 	Path testpath;
 	Path testpath2;
 
@@ -82,7 +84,9 @@ public class LuceneHandlerTest {
 		testpath = AppStartupConfig.deployedPath.resolve("index-test-files");
 
 		testpath2 = testpath.resolve("temp2.txt");
+		fileForUpdate = testpath.resolve("text.txt");
 		testpath = testpath.resolve("temp.txt");
+		
 		try (BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(testpath.toFile()))) {
 			os.write("안녕?".getBytes());
 		}
@@ -107,12 +111,28 @@ public class LuceneHandlerTest {
 	public void deleteTest() throws IOException {
 		handler.indexDirectory(AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 		int count1 = handler.getDocumentCount();
+		StringBuilder sb = new StringBuilder();
+		List<Document> list = handler.getDocumentList();
+		list.forEach(doc -> sb.append(doc.get("title") + ", "));
+		LOG.info(sb.toString());
+
 		Files.delete(testpath2);
 		testpath.toFile().delete();
-		handler.cleanGarbageIndex();
+		
+		handler.updateIndexedDocuments();
 		int countAfter = handler.getDocumentCount();
 
 		assertTrue(countAfter + 2 == count1);
+
+		sb.setLength(0);
+		list = handler.getDocumentList();
+		list.forEach(doc -> sb.append(doc.get("title") + ", "));
+		LOG.info(sb.toString());
+		
+		Files.write(fileForUpdate, Files.readAllBytes(fileForUpdate));
+
+		handler.updateIndexedDocuments();
+	
 	}
 
 	@Test

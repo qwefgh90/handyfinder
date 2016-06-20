@@ -31,7 +31,6 @@ import com.qwefgh90.io.jsearch.FileExtension;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
 import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandler.IndexException;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
 import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
@@ -215,9 +214,6 @@ public class RootService {
 				LOG.info(ExceptionUtils.getStackTrace(e));
 				// terminate command
 			} catch (IOException e) {
-				LOG.info(ExceptionUtils.getStackTrace(e));
-				// terminate command
-			} catch (IndexException e) {
 				LOG.info(ExceptionUtils.getStackTrace(e));
 				// terminate command
 			}

@@ -1,5 +1,8 @@
 package io.github.qwefgh90.handyfinder.lucene;
 
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
@@ -9,12 +12,15 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import javax.activity.InvalidActivityException;
 
@@ -64,9 +70,6 @@ import org.slf4j.LoggerFactory;
 import com.qwefgh90.io.jsearch.FileExtension;
 import com.qwefgh90.io.jsearch.JSearch;
 import com.qwefgh90.io.jsearch.JSearch.ParseException;
-
-import io.github.qwefgh90.handyfinder.lucene.model.Directory;
-import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
 /**
  * document indexing, search class based on Lucene
@@ -168,6 +171,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * object initialization identified by path
 	 * 
 	 * @param path
+	 * @throws RuntimeException index directory error in file system
 	 */
 	private void writerInit(Path path) {
 		try {
@@ -187,7 +191,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			parser = new StandardQueryParser();
 			parser.setAllowLeadingWildcard(true);
 		} catch (IOException e) {
-			throw new RuntimeException("lucene IndexWriter initialization is failed");
+			throw new RuntimeException("lucene IndexWriter initialization is failed" + ExceptionUtils.getStackTrace(e));
 		}
 	}
 
@@ -196,11 +200,11 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * 
 	 * @param list
 	 * @throws IOException
-	 * @throws IndexException
+	 * @throws IllegalStateException already start index
 	 */
-	public void startIndex(List<Directory> list) throws IOException, IndexException {
+	public void startIndex(List<Directory> list) throws IOException {
 		if (INDEX_WRITE_STATE.PROGRESS == writeState)
-			throw new IndexException("already indexing");
+			throw new IllegalStateException("already indexing");
 		checkIndexWriter();
 		totalProcess = sizeOfindexDirectories(list);
 		updateHandlerState(INDEX_WRITE_STATE.PROGRESS);
@@ -226,6 +230,17 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	public void stopIndex() {
 		updateHandlerState(LuceneHandler.INDEX_WRITE_STATE.STOPPING);
 	}
+	
+	void autoRun(){
+		
+		//while(1 minute over)
+		//1)exclude and update index in lucene index system 
+		//alert
+		//2)create index of new files 
+		//alert
+	}
+	
+	
 
 	/**
 	 * single directory indexing API
@@ -315,16 +330,17 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		StringField pathStringField = new StringField("pathString", path.toAbsolutePath().toString(), Store.YES);
 		LegacyLongField createdTimeField = new LegacyLongField("createdTime", attr.creationTime().toMillis(),
 				Store.YES);
+		LegacyLongField lastModifiedTimeField = new LegacyLongField("lastModifiedTime", attr.lastModifiedTime().toMillis(), Store.YES);
 
 		Field contentsField = new Field("contents", contents, type);
-
 		doc.add(createdTimeField);
 		doc.add(title);
 		doc.add(pathStringField);
 		doc.add(contentsField);
 		doc.add(mimeTypeString);
+		doc.add(lastModifiedTimeField);
 		writer.updateDocument(new Term("pathString", path.toAbsolutePath().toString()), doc);
-		LOG.info("indexing complete : " + path);
+		LOG.info("indexed : " + path);
 		writer.commit(); // commit() is important for real-time search
 	}
 
@@ -392,29 +408,97 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	}
 
 	/**
-	 * remove documents, if not exist
+	 * 
+	 * @return live documents
 	 */
-	public void cleanGarbageIndex() {
-		checkDirectoryReader();
+	List<Document> getDocumentList(){
 		int maxDocId = indexReader.maxDoc();
+		List<Document> list = new ArrayList<>();
 		for (int i = 0; i < maxDocId; i++) {
 			try {
 				Bits liveDocs = MultiFields.getLiveDocs(indexReader);
 				if (liveDocs == null || liveDocs.get(i)) {
 					Document doc = indexReader.document(i);
-					String pathString = doc.get("pathString");
-					if (!Files.exists(Paths.get(pathString))) { // remove
-																// document if
-																// not exist
-						writer.deleteDocuments(new Term("pathString", pathString));
-						writer.commit();
-					}
+					//String pathString = doc.get("pathString");
+					list.add(doc);
 				}
 			} catch (IOException e) {
 				LOG.warn(e.toString());
 			}
 		}
+		return list;
 	}
+	
+	/**
+	 * remove or update indexed documents
+	 */
+	public void updateIndexedDocuments() {
+		checkDirectoryReader();
+		checkIndexWriter();
+		List<Document> list = getDocumentList();
+		cleanInternalIndex(list);
+		updateInternalIndex(list);
+	}
+	
+	/**
+	 * 
+	 * @param list a list of all pathString in Lucene System
+	 */
+	void cleanInternalIndex(List<Document> list){
+		Stream<Document> parallelStream = list.parallelStream();
+		Iterator<Document> iteratorOfDeletedFiles = parallelStream.filter(document -> 
+						{ 
+							String pathString = document.get("pathString");
+							return !Files.exists(Paths.get(pathString));
+						})
+						.iterator();
+		while(iteratorOfDeletedFiles.hasNext()){
+			String pathString = iteratorOfDeletedFiles.next().get("pathString");
+			try {
+				writer.deleteDocuments(new Term("pathString", pathString));
+				writer.commit();
+				LOG.debug("clean index : " + pathString);
+			} catch (Exception e) {
+				LOG.warn(ExceptionUtils.getStackTrace(e));
+			}
+		}
+	}
+
+	/**
+	 * 
+	 * @param list a list of all pathString in Lucene System
+	 */
+	void updateInternalIndex(List<Document> list){
+		Stream<Document> parallelStream = list.parallelStream();
+		Iterator<Path> iteratorForUpdate = parallelStream.filter(document -> 
+					{ 
+						String pathString = document.get("pathString");
+						Path path = Paths.get(pathString);
+						if(!Files.exists(path))
+							return false;
+						
+						long savedLastModifiedTime= document.getField("lastModifiedTime").
+								numericValue().longValue();
+						long lastModifiedTime = -1;
+						try {
+							lastModifiedTime = Files.getLastModifiedTime(path).toMillis();
+						} catch (Exception e) {
+							LOG.warn(ExceptionUtils.getStackTrace(e));
+						}
+						return lastModifiedTime != savedLastModifiedTime;
+					}).map(document -> Paths.get(document.get("pathString")))
+						.iterator();
+		while(iteratorForUpdate.hasNext()){
+			Path path = iteratorForUpdate.next();
+			try {
+				LOG.debug("change detected : " + path);
+				index(path);
+			} catch (Exception e) {
+				LOG.warn(ExceptionUtils.getStackTrace(e));
+			}
+		}
+	}
+	
 
 	/**
 	 * if there is no matched Field, return null.
@@ -569,14 +653,14 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 
 	private void checkIndexWriter() {
 		if (writer == null) {
-			throw new RuntimeException(
+			throw new IllegalStateException(
 					"invalid state. After LuceneHandler.closeResources() or close(), you can't get instances.");
 		}
 	}
 
 	private void checkDirectoryReader() {
 		if (indexReader == null) {
-			throw new RuntimeException(
+			throw new IllegalStateException(
 					"invalid state. After LuceneHandler.closeResources() or close(), you can't search.");
 		}
 		try {
@@ -689,36 +773,4 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		dir = null;
 	}
 
-	public class IndexException extends Exception {
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = 1L;
-
-		public IndexException() {
-			super();
-			// TODO Auto-generated constructor stub
-		}
-
-		public IndexException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-			super(message, cause, enableSuppression, writableStackTrace);
-			// TODO Auto-generated constructor stub
-		}
-
-		public IndexException(String message, Throwable cause) {
-			super(message, cause);
-			// TODO Auto-generated constructor stub
-		}
-
-		public IndexException(String message) {
-			super(message);
-			// TODO Auto-generated constructor stub
-		}
-
-		public IndexException(Throwable cause) {
-			super(cause);
-			// TODO Auto-generated constructor stub
-		}
-
-	}
 }
