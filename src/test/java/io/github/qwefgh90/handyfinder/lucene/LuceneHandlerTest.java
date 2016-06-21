@@ -1,16 +1,19 @@
 package io.github.qwefgh90.handyfinder.lucene;
 
 import static org.junit.Assert.assertTrue;
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
+import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
+import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
+import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.lucene.document.Document;
@@ -32,15 +35,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
 import com.qwefgh90.io.jsearch.JSearch.ParseException;
-
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerOption;
-import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
-import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
-import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
-import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
-import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -127,7 +121,14 @@ public class LuceneHandlerTest {
 		Files.delete(testpath2);
 		testpath.toFile().delete();
 
-		handler.updateIndexedDocuments();
+		Directory dir = new Directory();
+		dir.setRecursively(true);
+		dir.setUsed(true);
+		dir.setPathString(AppStartupConfig.deployedPath.resolve("index-test-files").toAbsolutePath().toString());
+		List<Directory> rootIndexDir = new ArrayList<>();
+		rootIndexDir.add(dir);
+		
+		handler.updateIndexedDocuments(rootIndexDir);
 		int countAfter = handler.getDocumentCount();
 
 		assertTrue(countAfter + 2 == count1);
@@ -139,8 +140,11 @@ public class LuceneHandlerTest {
 
 		Files.write(fileForUpdate, Files.readAllBytes(fileForUpdate));
 
-		handler.updateIndexedDocuments();
-
+		rootIndexDir.clear();
+		handler.updateIndexedDocuments(rootIndexDir);
+		int clearCount = handler.getDocumentCount();
+		LOG.info("clear count : "+ clearCount);
+		assertTrue(clearCount == 0);
 	}
 
 	@Test
@@ -230,7 +234,7 @@ public class LuceneHandlerTest {
 		assertTrue(docs.scoreDocs.length > 0);
 	}
 
-	@Test
+	//@Test
 	public void checkTime() throws IOException {
 		handler.indexDirectory(
 				AppStartupConfig.deployedPath.resolve("index-test-files-2"), true);

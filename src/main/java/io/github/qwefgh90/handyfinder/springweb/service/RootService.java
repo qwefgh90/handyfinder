@@ -32,10 +32,10 @@ import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
 import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.model.COMMAND;
 import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
 import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
 import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
-import io.github.qwefgh90.handyfinder.springweb.model.CommandDto.COMMAND;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
@@ -177,7 +177,7 @@ public class RootService {
 					LOG.warn(ExceptionUtils.getStackTrace(e));
 					continue;
 				}
-				
+
 				dto.setCreatedTime(document.getField("createdTime")
 						.numericValue().longValue());
 				dto.setTitle(document.get("title"));
@@ -186,11 +186,11 @@ public class RootService {
 				dto.setParentPathString(Paths.get(document.get("pathString"))
 						.getParent().toAbsolutePath().toString());
 				dto.setMimeType(document.get("mimeType"));
-				
+
 				Path path = Paths.get(dto.getPathString());
 				dto.setModifiedTime(Files.getLastModifiedTime(path).toMillis());
 				dto.setFileSize(Files.size(path));
-				
+
 				list.add(dto);
 			}
 			return Optional.of(list);
@@ -212,11 +212,23 @@ public class RootService {
 				return;
 			} catch (SQLException e) {
 				LOG.info(ExceptionUtils.getStackTrace(e));
-				// terminate command
 			} catch (IOException e) {
 				LOG.info(ExceptionUtils.getStackTrace(e));
-				// terminate command
 			}
+			break;
+		}
+		case UPDATE_INDEXING: {
+			List<Directory> list;
+			try {
+				list = indexProperty.selectDirectory();
+				handler.updateIndexedDocuments(list);
+			} catch (SQLException e) {
+				LOG.info(ExceptionUtils.getStackTrace(e));
+			}
+			break;
+		}
+		case STOP_INDEXING: {
+			handler.stopIndex();
 			break;
 		}
 		default: {

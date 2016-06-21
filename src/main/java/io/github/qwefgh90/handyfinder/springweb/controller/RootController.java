@@ -25,11 +25,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
-import io.github.qwefgh90.handyfinder.springweb.model.CommandDto;
+import io.github.qwefgh90.handyfinder.springweb.model.COMMAND;
 import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
 import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
 import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
-import io.github.qwefgh90.handyfinder.springweb.model.CommandDto.COMMAND;
 import io.github.qwefgh90.handyfinder.springweb.service.RootService;
 
 @RestController
@@ -124,9 +123,11 @@ public class RootController {
 			return;
 		COMMAND dto;
 		if (command.equals("start"))
-			dto = CommandDto.COMMAND.START_INDEXING;
+			dto = COMMAND.START_INDEXING;
 		else if (command.equals("stop"))
-			dto = CommandDto.COMMAND.STOP_INDEXING;
+			dto = COMMAND.STOP_INDEXING;
+		else if (command.equals("update"))
+			dto = COMMAND.UPDATE_INDEXING;
 		else
 			return;
 
