@@ -98,11 +98,11 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	private StandardQueryParser parser;
 
 	// indexing state (startIndex(), stopIndex() use state)
-	private enum INDEX_WRITE_STATE {
+	public enum INDEX_WRITE_STATE {
 		PROGRESS, STOPPING, READY
 	}
 
-	private INDEX_WRITE_STATE writeState; // current state
+	private INDEX_WRITE_STATE writeState = INDEX_WRITE_STATE.READY; // current state
 	private int currentProgress = 0; // indexed documents count
 	private int totalProcess = 0; // total documents count to be indexed
 	private CommandInvoker invokerForCommand; // for command to client
@@ -239,12 +239,14 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		checkIndexWriter();
 		try {
 			updateHandlerState(INDEX_WRITE_STATE.PROGRESS);
+			invokerForCommand.startUpdateSummary();
 			List<Document> list = getDocumentList();
 			list = cleanNonPresentInternalIndex(list);
 			list = cleanNonContainedInternalIndex(list, rootIndexDirectory);
 			updateContentInternalIndex(list);
 		} finally {
 			updateHandlerState(INDEX_WRITE_STATE.READY);
+			invokerForCommand.terminateUpdateSummary(1,2,3);
 		}
 	}
 
@@ -450,12 +452,15 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 
 	@Override
 	public void close() throws IOException {
+		if(writer!= null)
+			writer.close();
+		if(indexReader!=null)
+			indexReader.close();
+		if(dir!=null)
+			dir.close();
 		map.remove(indexWriterPath.toAbsolutePath().toString());
-		writer.close();
 		writer = null;
-		indexReader.close();
 		indexReader = null;
-		dir.close();
 		dir = null;
 	}
 
@@ -603,7 +608,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 */
 	List<Document> cleanNonPresentInternalIndex(List<Document> docList) {
 		Stream<Document> parallelStream = docList.parallelStream();
-		Map<Boolean, List<Document>> map = parallelStream.collect(Collectors
+		Map<Boolean, List<Document>> map = parallelStream
+				.filter(document -> document.getField("pathString") != null)
+				.collect(Collectors
 				.partitioningBy(document -> {
 					String pathString = document.get("pathString");
 					return Files.exists(Paths.get(pathString));
@@ -635,7 +642,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	List<Document> cleanNonContainedInternalIndex(List<Document> docList,
 			List<Directory> dirList) {
 		Stream<Document> parallelStream = docList.parallelStream();
-		Map<Boolean, List<Document>> map = parallelStream.collect(Collectors
+		Map<Boolean, List<Document>> map = parallelStream
+				.filter(document -> document.getField("pathString") != null)
+				.collect(Collectors
 				.partitioningBy(document -> {
 					String pathString = document.get("pathString");
 					Path path = Paths.get(pathString);
@@ -679,6 +688,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	void updateContentInternalIndex(List<Document> docList) {
 		Stream<Document> parallelStream = docList.parallelStream();
 		Iterator<Path> iteratorForUpdate = parallelStream
+				.filter(document -> document.getField("pathString") != null)
 				.filter(document -> {
 					String pathString = document.get("pathString");
 					Path path = Paths.get(pathString);

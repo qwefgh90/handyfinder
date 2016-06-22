@@ -48,8 +48,12 @@
 				</button>
 			</div>
 			<div style="text-align: center">
-				<button class="btn btn-default" ng-click="run()">
+				<button class="btn btn-default" ng-show="indexModel.running == 'READY'" ng-click="run()">
 					Run
+					<!--automatically update indexes. automatically clean deleted files.-->
+				</button>
+				<button class="btn btn-default" ng-show="indexModel.running == 'RUNNING'" ng-click="stop()">
+					Stop
 					<!--automatically update indexes. automatically clean deleted files.-->
 				</button>
 			</div>

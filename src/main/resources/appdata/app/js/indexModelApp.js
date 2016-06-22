@@ -107,7 +107,16 @@ app.factory("IndexModel",['$rootScope', function($rootScope){
 				processIndex : 0,
 				totalProcessCount : 100,
 				processPath : '',
-				state : 'TERMINATE'
+				state : 'TERMINATE',
+				updateSummary : {
+					countOfDeleted : 0,
+					countOfExcluded : 0,
+					countOfModified : 0,
+					state : 'TERMINATE'
+				},
+				intervalStopObject : undefined,
+				intervalTurn : 0,
+				running : 'READY' //READY RUNNING WAITING
 			},
 
 	        SaveState: function () {

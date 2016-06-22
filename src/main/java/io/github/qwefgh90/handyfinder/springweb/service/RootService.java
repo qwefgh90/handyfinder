@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 
 import com.qwefgh90.io.jsearch.FileExtension;
 
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandler.INDEX_WRITE_STATE;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
 import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
@@ -208,7 +209,8 @@ public class RootService {
 		case START_INDEXING: {
 			try {
 				List<Directory> list = indexProperty.selectDirectory();
-				handler.startIndex(list);
+				if(handler.getWriteState() == INDEX_WRITE_STATE.READY)
+					handler.startIndex(list);
 				return;
 			} catch (SQLException e) {
 				LOG.info(ExceptionUtils.getStackTrace(e));
@@ -221,7 +223,8 @@ public class RootService {
 			List<Directory> list;
 			try {
 				list = indexProperty.selectDirectory();
-				handler.updateIndexedDocuments(list);
+				if(handler.getWriteState() == INDEX_WRITE_STATE.READY)
+					handler.updateIndexedDocuments(list);
 			} catch (SQLException e) {
 				LOG.info(ExceptionUtils.getStackTrace(e));
 			}

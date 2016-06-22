@@ -99,8 +99,9 @@ function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIServi
 }]);
 
 app.constant('LOAD_MORE_COUNT', 500);
-app.controller('indexController', ['$q','$log', '$timeout', '$location', '$scope', 'apiService', 'Path', 'ProgressService', 'IndexModel', 'OptionModel', 'LOAD_MORE_COUNT',
-function($q, $log, $timeout, $location, $scope, apiService, Path, progressService, IndexModel, OptionModel, LOAD_MORE_COUNT) {
+app.constant('RUNNING_INTERVAL', 60000);
+app.controller('indexController', ['$q','$log', '$timeout', '$location', '$scope', '$interval', 'apiService', 'Path', 'ProgressService', 'IndexModel', 'OptionModel', 'LOAD_MORE_COUNT', 'RUNNING_INTERVAL',
+function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, progressService, IndexModel, OptionModel, LOAD_MORE_COUNT, RUNNING_INTERVAL) {
 	$scope.indexModel = IndexModel.model;
 	$scope.optionModel = OptionModel.model;
 	
@@ -241,8 +242,33 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 
 	$scope.run = function() {
 		var promise = $scope.save();
-		promise.then(function(){progressService.sendStartIndex();},function(){},function(){});
+		promise.then(function(){
+			progressService.sendStartIndex();
+			$scope.indexModel.intervalStopObject = $interval(function(){
+				if($scope.indexModel.intervalTurn % 2 == 0){
+					$log.log('update index...');
+					progressService.sendUpdateIndex();
+				}else{
+					$log.log('start index...');
+					progressService.sendStartIndex();
+				}
+				
+				$scope.indexModel.intervalTurn = $scope.indexModel.intervalTurn + 1;
+				if($scope.indexModel.intervalTurn == 100)
+					$scope.indexModel.intervalTurn = 0;
+			}, RUNNING_INTERVAL);
+		},function(){},function(){});
 	};
+	
+	$scope.stop = function(){
+		if($scope.indexModel.intervalStopObject != undefined){
+			$log.log('stopping index...');
+			progressService.sendStopIndex();
+			$interval.cancel($scope.indexModel.intervalStopObject);
+			$scope.indexModel.intervalStopObject = undefined;
+			$scope.indexModel.running = 'WAITING';
+		}
+	}
 	
 	$scope.updateType = function(obj) {
 		var promise = apiService.updateSupportType(obj);
@@ -274,8 +300,8 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 			var promiseArray = progressService.connect();;
 			var promise = promiseArray[0];
 			promise.then(function(frame) {
-					$log.log('[handy]'+frame);
-					var progressPromise = progressService.subProgress();
+				$log.log('[handy]'+frame);
+				var progressPromise = progressService.subProgress();
 				progressPromise.then(function() {
 					}, function(msg) {
 						$log.log(msg);
@@ -293,6 +319,18 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 						$scope.indexModel.index_progress_status.refreshState();
 						$log.log(progressObject.processIndex + ", " + progressObject.totalProcessCount + ", " + progressObject.processPath + ", " + progressObject.state);
 					});
+				var updatePromise = progressService.subUpdate();
+				updatePromise.then(function() {
+				}, function(msg) {
+					$log.log(msg);
+				}, function(summaryObject) {
+					$scope.indexModel.updateSummary.countOfDeleted = summaryObject.countOfDeleted;
+					$scope.indexModel.updateSummary.countOfExcluded = summaryObject.countOfExcluded;
+					$scope.indexModel.updateSummary.countOfModified = summaryObject.countOfModified;
+					$scope.indexModel.updateSummary.state = summaryObject.state;
+					$log.log(summaryObject.countOfDeleted + ", " + summaryObject.countOfExcluded + ", " + summaryObject.countOfModified);
+				});
+				
 			}, function(error) {
 				$log.log('[handy]'+error);
 			}, function(noti) {
@@ -359,6 +397,16 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 		}
 		$scope.indexModel.select_toggle = true;
 	}, true);
+	
+	$scope.$watch('indexModel.running + indexModel.state + indexModel.updateSummary.state', function () {
+		if($scope.indexModel.running == 'WAITING' && $scope.indexModel.state == 'TERMINATE' && $scope.indexModel.updateSummary.state == 'TERMINATE'){
+			$log.log('INDEX WRTIE TERMINATE');
+			$scope.indexModel.running = 'READY';
+		}else if(($scope.indexModel.state != 'TERMINATE' || $scope.indexModel.updateSummary.state != 'TERMINATE')){
+			$log.log('INDEX WRTIE START');
+			$scope.indexModel.running = 'RUNNING';
+		}
+	});
 	
 }]);
 

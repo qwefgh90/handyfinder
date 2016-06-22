@@ -21,18 +21,18 @@ public class CommandReceiver implements ICommandReceiver {
 
 	@Override
 	public void sendToProgressChannel(ProgressCommand obj) {
-		messaging.convertAndSend("/progress/single", obj);
+		messaging.convertAndSend("/index/progress", obj);
 	}
 
 	@Override
 	public void startProgressChannel(ProgressCommand obj) {
-		messaging.convertAndSend("/progress/single", obj);
+		messaging.convertAndSend("/index/progress", obj);
 
 	}
 
 	@Override
 	public void terminateProgressChannel(ProgressCommand obj) {
-		messaging.convertAndSend("/progress/single", obj);
+		messaging.convertAndSend("/index/progress", obj);
 
 	}
 
@@ -51,5 +51,10 @@ public class CommandReceiver implements ICommandReceiver {
 			}
 			messaging.convertAndSend("/gui/directory", result);
 		}
+	}
+
+	@Override
+	public void sendToUpdateSummary(UpdateSummaryCommand obj) {
+		messaging.convertAndSend("/index/update", obj);
 	}
 }
