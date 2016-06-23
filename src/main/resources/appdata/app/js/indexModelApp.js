@@ -37,6 +37,7 @@ app.factory("OptionModel",['$rootScope', 'Option', function($rootScope, Option){
 app.factory("IndexModel",['$rootScope', function($rootScope){
 	var service = {
 			model : {
+				indexDocumentCount : 0,
 				auto_update_index : false,
 				auto_clean_files : false,
 				supportTypes : [], //{type:xx, used:xx}
@@ -78,8 +79,22 @@ app.factory("IndexModel",['$rootScope', function($rootScope){
 								type : 'success',
 								msg : 'Ready to search your files!',
 								timeout : 10000
+							}, {// 5
+								open : false,
+								type : 'success',
+								msg : 'Ready to search your files!',
+								timeout : 10000
 							}],
 							alertQ : [],
+							setMsgAlertQ : function(index, msg){
+								if(msg == undefined){
+									return;
+								}
+								if(index < 0 && index >= this.alerts.length){
+									return;
+								}
+								this.alerts[index].msg = msg;
+							},
 							addAlertQ : function(index) {
 								if (this.alertQ.indexOf(this.alerts[index]) != -1)	//already added
 									return;
@@ -190,7 +205,7 @@ app.factory("Path", function() {
 }); 
 app.factory("Document", function() {
 	// Define the constructor function.
-	function Document(createdTime, modifiedTime, title, pathString, contents, parentPathString, fileSize, mimeType) {
+	function Document(createdTime, modifiedTime, title, pathString, contents, parentPathString, fileSize, mimeType, exist) {
 		/*
 		 * private long createdTime; private long modifiedTime; private String
 		 * title; private String pathString; private String contents;
@@ -203,6 +218,7 @@ app.factory("Document", function() {
 		this.parentPathString = parentPathString;
 		this.fileSize = fileSize;
 		this.mimeType = mimeType;
+		this.exist = exist;
 	}
 
 	// Define the "instance" methods using the prototype

@@ -73,6 +73,12 @@ public class RootController {
 		}
 	}
 
+	@RequestMapping(value = "/documents/count", method = RequestMethod.GET)
+	public ResponseEntity<Integer> getDocumentCount() {
+		int count = rootService.getDocumentCount();
+		return new ResponseEntity<Integer>(count, HttpStatus.OK);
+	}
+	
 	@RequestMapping(value = "/supportType", method = RequestMethod.POST)
 	public ResponseEntity<String> updateIndexType(@RequestBody SupportTypeDto supportType) {
 		try {

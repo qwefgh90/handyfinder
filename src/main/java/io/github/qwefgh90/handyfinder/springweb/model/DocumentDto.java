@@ -9,7 +9,14 @@ public class DocumentDto {
 	private String parentPathString;
 	private long fileSize;
 	private String mimeType;
+	private boolean exist;
 	
+	public boolean isExist() {
+		return exist;
+	}
+	public void setExist(boolean exist) {
+		this.exist = exist;
+	}
 	public long getFileSize() {
 		return fileSize;
 	}

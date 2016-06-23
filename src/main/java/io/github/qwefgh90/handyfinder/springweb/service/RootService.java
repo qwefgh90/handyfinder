@@ -153,6 +153,10 @@ public class RootService {
 	public void closeAppLucene() throws IOException {
 		handler.close();
 	}
+	
+	public int getDocumentCount(){
+		return handler.getDocumentCount();
+	}
 
 	public Optional<List<DocumentDto>> search(String keyword) {
 		List<DocumentDto> list = new ArrayList<>();
@@ -161,24 +165,36 @@ public class RootService {
 			for (int i = 0; i < docs.scoreDocs.length; i++) {
 				Document document = handler.getDocument(docs.scoreDocs[i].doc);
 				DocumentDto dto = new DocumentDto();
+				String pathString = document.get("pathString");
+				Path path = Paths.get(pathString);
 				String highlightTag;
-				try {
-					highlightTag = handler.highlight(docs.scoreDocs[i].doc,
-							keyword);
-				} catch (ParseException e) {
-					LOG.info(e.toString());
-					continue;
-				} catch (InvalidTokenOffsetsException e) {
-					LOG.info(e.toString());
-					continue;
-				} catch (com.qwefgh90.io.jsearch.JSearch.ParseException e) {
-					LOG.info(e.toString());
-					continue;
-				} catch (Exception e) {
-					LOG.warn(ExceptionUtils.getStackTrace(e));
-					continue;
+				if(Files.exists(path)){
+					dto.setExist(true);
+					dto.setModifiedTime(Files.getLastModifiedTime(path).toMillis());
+					dto.setFileSize(Files.size(path));
+					try {
+						highlightTag = handler.highlight(docs.scoreDocs[i].doc,
+								keyword);
+					} catch (ParseException e) {
+						LOG.warn(e.toString());
+						continue;
+					} catch (InvalidTokenOffsetsException e) {
+						LOG.warn(e.toString());
+						continue;
+					} catch (com.qwefgh90.io.jsearch.JSearch.ParseException e) {
+						LOG.warn(e.toString());
+						continue;
+					} catch (IOException e) {
+						LOG.warn(e.toString());
+						continue;
+					}
+				}else{
+					dto.setExist(false);
+					dto.setModifiedTime(document.getField("lastModifiedTime").numericValue().longValue());
+					dto.setFileSize(-1);
+					highlightTag = ""; //empty string
 				}
-
+				
 				dto.setCreatedTime(document.getField("createdTime")
 						.numericValue().longValue());
 				dto.setTitle(document.get("title"));
@@ -187,10 +203,6 @@ public class RootService {
 				dto.setParentPathString(Paths.get(document.get("pathString"))
 						.getParent().toAbsolutePath().toString());
 				dto.setMimeType(document.get("mimeType"));
-
-				Path path = Paths.get(dto.getPathString());
-				dto.setModifiedTime(Files.getLastModifiedTime(path).toMillis());
-				dto.setFileSize(Files.size(path));
 
 				list.add(dto);
 			}

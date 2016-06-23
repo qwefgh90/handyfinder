@@ -62,6 +62,9 @@ public class CommandInvoker {
 	public void startUpdateSummary(){
 		UpdateSummaryCommand comm = UpdateSummaryCommand.getInstance(receiver);
 		comm.setState(STATE.START);
+		comm.setCountOfDeleted(-1);
+		comm.setCountOfExcluded(-1);
+		comm.setCountOfModified(-1);
 		comm.execute();
 	}
 	

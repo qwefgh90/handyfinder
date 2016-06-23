@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.InvalidParameterException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -237,16 +238,29 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			throw new IllegalStateException("already indexing");
 		checkDirectoryReader();
 		checkIndexWriter();
+		//count variables
+		int nonPresentCount = 0;
+		int nonContainedCount = 0;
+		int updateCount = 0;
 		try {
 			updateHandlerState(INDEX_WRITE_STATE.PROGRESS);
 			invokerForCommand.startUpdateSummary();
+			Map.Entry<List<Document>, Integer> returnValue;
+			
+			//clean non present file
 			List<Document> list = getDocumentList();
-			list = cleanNonPresentInternalIndex(list);
-			list = cleanNonContainedInternalIndex(list, rootIndexDirectory);
-			updateContentInternalIndex(list);
+			returnValue = cleanNonPresentInternalIndex(list);
+			list = returnValue.getKey();
+			nonPresentCount = returnValue.getValue();
+			//clean non contained file
+			returnValue = cleanNonContainedInternalIndex(list, rootIndexDirectory);
+			list = returnValue.getKey();
+			nonContainedCount = returnValue.getValue();
+			//update file
+			updateCount = updateContentInternalIndex(list);
 		} finally {
 			updateHandlerState(INDEX_WRITE_STATE.READY);
-			invokerForCommand.terminateUpdateSummary(1,2,3);
+			invokerForCommand.terminateUpdateSummary(nonPresentCount, nonContainedCount, updateCount);
 		}
 	}
 
@@ -374,7 +388,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		Highlighter highlighter = new Highlighter(htmlFormatter,
 				new QueryScorer(query));
 		String pathString = doc.get("pathString");
-
+		if(!Files.exists(Paths.get(pathString)))
+			throw new IOException(pathString+" does not exists.");
 		String contents = JSearch.extractContentsFromFile(pathString);
 		Document tempDocument = new Document();
 		FieldType type = new FieldType();
@@ -542,9 +557,11 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 								try {
 									if (Files.size(file) / (1000 * 1000) < option.basicOption
 											.getMaximumDocumentMBSize()
-											|| !isExists(file.toAbsolutePath()
+											&& !isExists(file.toAbsolutePath()
 													.toString()))
 										index(file);
+									else
+										LOG.debug("skip " + file.toString());
 								} catch (Exception e) {
 									LOG.warn(ExceptionUtils.getStackTrace(e));
 								}
@@ -606,7 +623,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 *            a list of all pathString in Lucene System
 	 * @return
 	 */
-	List<Document> cleanNonPresentInternalIndex(List<Document> docList) {
+	Map.Entry<List<Document>,Integer> cleanNonPresentInternalIndex(List<Document> docList) {
+		int countOfProcessed = 0;
 		Stream<Document> parallelStream = docList.parallelStream();
 		Map<Boolean, List<Document>> map = parallelStream
 				.filter(document -> document.getField("pathString") != null)
@@ -620,6 +638,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		while (iteratorOfDeletedFiles.hasNext()) {
 			String pathString = iteratorOfDeletedFiles.next().get("pathString");
 			try {
+				countOfProcessed++;
 				writer.deleteDocuments(new Term("pathString", pathString));
 				writer.commit();
 				LOG.debug("clean non present index : " + pathString);
@@ -628,7 +647,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			}
 		}
 
-		return map.get(Boolean.TRUE);
+		return new AbstractMap.SimpleImmutableEntry<>(map.get(Boolean.TRUE),countOfProcessed);
 	}
 
 	/**
@@ -639,8 +658,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 *            a list of parent directory indexed
 	 * @return
 	 */
-	List<Document> cleanNonContainedInternalIndex(List<Document> docList,
+	Map.Entry<List<Document>,Integer> cleanNonContainedInternalIndex(List<Document> docList,
 			List<Directory> dirList) {
+		int countOfProcessed = 0;
 		Stream<Document> parallelStream = docList.parallelStream();
 		Map<Boolean, List<Document>> map = parallelStream
 				.filter(document -> document.getField("pathString") != null)
@@ -669,6 +689,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			String pathString = iteratorOfNonContainedFile.next().get(
 					"pathString");
 			try {
+				countOfProcessed++;
 				writer.deleteDocuments(new Term("pathString", pathString));
 				writer.commit();
 				LOG.debug("clean non contained index : " + pathString);
@@ -677,7 +698,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			}
 		}
 
-		return map.get(Boolean.FALSE);
+		return new AbstractMap.SimpleImmutableEntry<>(map.get(Boolean.FALSE),countOfProcessed);
 	}
 
 	/**
@@ -685,7 +706,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @param docList
 	 *            a list of all pathString in Lucene System
 	 */
-	void updateContentInternalIndex(List<Document> docList) {
+	int updateContentInternalIndex(List<Document> docList) {
+		int countOfProcessed = 0;
 		Stream<Document> parallelStream = docList.parallelStream();
 		Iterator<Path> iteratorForUpdate = parallelStream
 				.filter(document -> document.getField("pathString") != null)
@@ -711,12 +733,14 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		while (iteratorForUpdate.hasNext()) {
 			Path path = iteratorForUpdate.next();
 			try {
+				countOfProcessed ++;
 				LOG.debug("change detected : " + path);
 				index(path);
 			} catch (Exception e) {
 				LOG.warn(ExceptionUtils.getStackTrace(e));
 			}
 		}
+		return Integer.valueOf(countOfProcessed);
 	}
 
 	/**
