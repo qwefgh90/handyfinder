@@ -22,6 +22,7 @@ import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -238,7 +239,7 @@ public class LuceneHandlerTest {
 	public void checkTime() throws IOException {
 		handler.indexDirectory(
 				AppStartupConfig.deployedPath.resolve("index-test-files-2"), true);
-		handler.updateSearcher();
+		handler.updateIndexReaderAndSearcher();
 		List<Document> list = handler.getDocumentList();
 		boolean b = true;
 		long before = System.currentTimeMillis();

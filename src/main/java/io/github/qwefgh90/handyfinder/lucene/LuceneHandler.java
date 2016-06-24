@@ -215,7 +215,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	public void startIndex(List<Directory> list) throws IOException {
 		if (INDEX_WRITE_STATE.PROGRESS == writeState)
 			throw new IllegalStateException("already indexing");
-		checkIndexWriter();
+//		checkIndexWriter();
 		try {
 			totalProcess = sizeOfindexDirectories(list);
 			updateHandlerState(INDEX_WRITE_STATE.PROGRESS);
@@ -236,8 +236,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	public void updateIndexedDocuments(List<Directory> rootIndexDirectory) {
 		if (INDEX_WRITE_STATE.PROGRESS == writeState)
 			throw new IllegalStateException("already indexing");
-		checkDirectoryReader();
-		checkIndexWriter();
+//		checkDirectoryReader();
+//		checkIndexWriter();
 		//count variables
 		int nonPresentCount = 0;
 		int nonContainedCount = 0;
@@ -467,6 +467,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 
 	@Override
 	public void close() throws IOException {
+		checkIndexWriter();
 		if(writer!= null)
 			writer.close();
 		if(indexReader!=null)
@@ -490,11 +491,10 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			if (writeState == LuceneHandler.INDEX_WRITE_STATE.STOPPING) {
 				break;
 			}
-			checkDirectoryReader(); // update searcher
 		}
 	}
 
-	void updateSearcher() throws IOException {
+	void updateIndexReaderAndSearcher() throws IOException {
 		DirectoryReader temp = DirectoryReader.openIfChanged(indexReader);
 		if (temp != null) {
 			indexReader = temp;
@@ -586,6 +586,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @throws IOException
 	 */
 	boolean isExists(String pathString) throws IOException {
+		checkDirectoryReader();
 		TopDocs results = searcher.search(new TermQuery(new Term("pathString",
 				pathString)), 1);
 		if (results.totalHits == 0) {
@@ -600,6 +601,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @return live documents
 	 */
 	List<Document> getDocumentList() {
+		checkDirectoryReader();
 		int maxDocId = indexReader.maxDoc();
 		List<Document> list = new ArrayList<>();
 		for (int i = 0; i < maxDocId; i++) {
@@ -624,6 +626,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @return
 	 */
 	Map.Entry<List<Document>,Integer> cleanNonPresentInternalIndex(List<Document> docList) {
+		checkIndexWriter();
 		int countOfProcessed = 0;
 		Stream<Document> parallelStream = docList.parallelStream();
 		Map<Boolean, List<Document>> map = parallelStream
@@ -660,6 +663,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 */
 	Map.Entry<List<Document>,Integer> cleanNonContainedInternalIndex(List<Document> docList,
 			List<Directory> dirList) {
+		checkIndexWriter();
 		int countOfProcessed = 0;
 		Stream<Document> parallelStream = docList.parallelStream();
 		Map<Boolean, List<Document>> map = parallelStream
@@ -751,7 +755,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @throws ParseException
 	 */
 	void index(Path path) throws IOException {
-
+		checkIndexWriter();
 		MediaType mimeType = FileExtension.getContentType(path.toFile(), path
 				.getFileName().toString());
 		if (!option.mimeOption.isAllowMime(mimeType.toString()))
@@ -947,7 +951,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 					"invalid state. After LuceneHandler.closeResources() or close(), you can't search.");
 		}
 		try {
-			updateSearcher();
+			updateIndexReaderAndSearcher();
 		} catch (IOException e) {
 			LOG.error(ExceptionUtils.getStackTrace(e));
 		}
