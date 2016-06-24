@@ -170,7 +170,7 @@
 				<artifactId>javafx-maven-plugin</artifactId>
 				<version>8.1.4</version>
 				<configuration>
-					<mainClass>com.qwefgh90.io.handyfinder.gui.AppStartupConfig</mainClass>
+					<mainClass>io.github.qwefgh90.handyfinder.gui.AppStartupConfig</mainClass>
 					<vendor>com.qwefgh90.io</vendor>
 				</configuration>
 			</plugin>
