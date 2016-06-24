@@ -47,7 +47,8 @@ function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIServi
 			$scope.searchModel.searchResult = [];
 			for(var i = 0 ; i < json.length ; i ++){
 				var data = json[i];
-				var document = new Document(data.createdTime, data.modifiedTime, data.title, data.pathString, data.contents, data.parentPathString, data.fileSize, data.mimeType);
+				var document = new Document(data.createdTime, data.modifiedTime, data.title, data.pathString
+						, data.contents, data.parentPathString, data.fileSize, data.mimeType, data.exist);
 				$scope.searchModel.searchResult.push(document);
 			}
 			$scope.searchModel.searchTime = (toMiliseconds * 1.0 - milliseconds * 1.0) / 1000
@@ -99,8 +100,9 @@ function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIServi
 }]);
 
 app.constant('LOAD_MORE_COUNT', 500);
-app.controller('indexController', ['$q','$log', '$timeout', '$location', '$scope', 'apiService', 'Path', 'ProgressService', 'IndexModel', 'OptionModel', 'LOAD_MORE_COUNT',
-function($q, $log, $timeout, $location, $scope, apiService, Path, progressService, IndexModel, OptionModel, LOAD_MORE_COUNT) {
+app.constant('RUNNING_INTERVAL', 10000);
+app.controller('indexController', ['$q','$log', '$timeout', '$location', '$scope', '$interval', 'apiService', 'Path', 'ProgressService', 'IndexModel', 'OptionModel', 'LOAD_MORE_COUNT', 'RUNNING_INTERVAL',
+function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, progressService, IndexModel, OptionModel, LOAD_MORE_COUNT, RUNNING_INTERVAL) {
 	$scope.indexModel = IndexModel.model;
 	$scope.optionModel = OptionModel.model;
 	
@@ -170,9 +172,11 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 		promise.then(function() {
 			//$scope.indexModel.index_progress_status.addAlertQ(0);
 			deferred.resolve();
+			$log.log('successful update a list of path');
 		}, function() {
 			$scope.indexModel.index_progress_status.addAlertQ(1);
 			deferred.reject();
+			$log.log('fail to update a list of path');
 		}, function() {
 			$scope.indexModel.index_progress_status.addAlertQ(1);
 			deferred.reject();
@@ -192,9 +196,9 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 	}
 	
 	$scope.startWatch = function() {
-		$scope.$watchCollection('pathList', function(newNames, oldNames) {
+		$scope.$watchCollection('indexModel.pathList', function(newNames, oldNames) {
 			$scope.save();
-			$log.log('update a list of indexes in server');
+			$log.log('update a list of path in server');
 		});
 	};
 
@@ -238,11 +242,54 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 			}
 		}, 100);
 	};
+	
+	$scope.refreshCount = function(){
+		var countPromise = apiService.getDocumentCount();
+		countPromise.then(function(count){
+			$scope.indexModel.indexDocumentCount = count;
+			$log.log('indexed Count : ' + count);
+		}, function(){}, function(){});
+	}
 
 	$scope.run = function() {
 		var promise = $scope.save();
-		promise.then(function(){progressService.sendStartIndex();},function(){},function(){});
+		promise.then(function(){
+			progressService.sendStartIndex();
+			$scope.indexModel.intervalStopObject = $interval(function(){
+				$scope.refreshCount();
+				if($scope.indexModel.intervalTurn % 2 == 0){
+					$log.log('update index...');
+					if($scope.indexModel.state != 'TERMINATE'){
+						$scope.indexModel.intervalTurn = $scope.indexModel.intervalTurn - 1; //next time call sendUpdateIndex() again;
+						$log.log('stopping update index... other job still working');
+					}
+					else
+						progressService.sendUpdateIndex();
+				}else{
+					$log.log('start index...');
+					if($scope.indexModel.updateSummary.state != 'TERMINATE'){
+						$scope.indexModel.intervalTurn = $scope.indexModel.intervalTurn - 1; //next time call sendStartIndex() again;
+						$log.log('stopping start index... other job still working');
+					}
+					progressService.sendStartIndex();
+				}
+				
+				$scope.indexModel.intervalTurn = $scope.indexModel.intervalTurn + 1;
+				if($scope.indexModel.intervalTurn == 100)
+					$scope.indexModel.intervalTurn = 0;
+			}, RUNNING_INTERVAL);
+		},function(){},function(){});
 	};
+	
+	$scope.stop = function(){
+		if($scope.indexModel.intervalStopObject != undefined){
+			$log.log('stopping index...');
+			$interval.cancel($scope.indexModel.intervalStopObject);
+			$scope.indexModel.intervalStopObject = undefined;
+			$scope.indexModel.running = 'WAITING';
+			progressService.sendStopIndex();
+		}
+	}
 	
 	$scope.updateType = function(obj) {
 		var promise = apiService.updateSupportType(obj);
@@ -274,8 +321,8 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 			var promiseArray = progressService.connect();;
 			var promise = promiseArray[0];
 			promise.then(function(frame) {
-					$log.log('[handy]'+frame);
-					var progressPromise = progressService.subProgress();
+				$log.log('[handy]'+frame);
+				var progressPromise = progressService.subProgress();
 				progressPromise.then(function() {
 					}, function(msg) {
 						$log.log(msg);
@@ -293,6 +340,22 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 						$scope.indexModel.index_progress_status.refreshState();
 						$log.log(progressObject.processIndex + ", " + progressObject.totalProcessCount + ", " + progressObject.processPath + ", " + progressObject.state);
 					});
+				var updatePromise = progressService.subUpdate();
+				updatePromise.then(function() {
+				}, function(msg) {
+					$log.log(msg);
+				}, function(summaryObject) {
+					$scope.indexModel.updateSummary.countOfDeleted = summaryObject.countOfDeleted;
+					$scope.indexModel.updateSummary.countOfExcluded = summaryObject.countOfExcluded;
+					$scope.indexModel.updateSummary.countOfModified = summaryObject.countOfModified;
+					$scope.indexModel.updateSummary.state = summaryObject.state;
+
+					$scope.indexModel.index_progress_status.setMsgAlertQ(5, 'Update summary -> deleted files : ' + summaryObject.countOfDeleted 
+							+ ', non contained files : ' + summaryObject.countOfExcluded + ', modified files : ' + summaryObject.countOfModified);
+					$scope.indexModel.index_progress_status.addAlertQ(5);
+					$log.log(summaryObject.countOfDeleted + ", " + summaryObject.countOfExcluded + ", " + summaryObject.countOfModified);
+				});
+				
 			}, function(error) {
 				$log.log('[handy]'+error);
 			}, function(noti) {
@@ -360,6 +423,17 @@ function($q, $log, $timeout, $location, $scope, apiService, Path, progressServic
 		$scope.indexModel.select_toggle = true;
 	}, true);
 	
+	$scope.$watch('indexModel.running + indexModel.state + indexModel.updateSummary.state', function () {
+		if($scope.indexModel.running == 'WAITING' && $scope.indexModel.state == 'TERMINATE' && $scope.indexModel.updateSummary.state == 'TERMINATE'){
+			$log.log('INDEX WRTIE TERMINATE');
+			$scope.indexModel.running = 'READY';
+		}else if($scope.indexModel.running != 'WAITING' && ($scope.indexModel.state != 'TERMINATE' || $scope.indexModel.updateSummary.state != 'TERMINATE')){
+			$log.log('INDEX WRTIE START');
+			$scope.indexModel.running = 'RUNNING';
+		}
+	});
+	
+	$scope.refreshCount();
 }]);
 
 app.controller('settingController', ['$location', '$scope', 'apiService',

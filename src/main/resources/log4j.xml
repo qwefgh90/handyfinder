@@ -29,7 +29,7 @@
 		<level value="info" />
 	</logger>
 	<logger name="io.github.qwefgh90.handyfinder.lucene">
-		<level value="info" />
+		<level value="debug" />
 	</logger>
 	
 

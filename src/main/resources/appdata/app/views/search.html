@@ -18,7 +18,7 @@
 				<img alt="Look for documents..." src="/app/image/progress.gif">
 			</p>
 			<p ng-show="searchFlag == false && searchModel.searchTryCount > 0">
-				About <b>{{searchModel.searchResult.length}}</b> results (<b>{{searchModel.searchTime}}</b> secs), order of documents to have your inputs.
+				About <b>{{searchModel.searchResult.length}}</b> results (<b>{{searchModel.searchTime}}</b> secs), order of documents to contain more keywords.
 			</p>
 			<!-- 
 			<div>
@@ -35,14 +35,14 @@
 		<div class="col-xs-12 content-wrapper-outer">
 			<div class="content-wrapper container-fluid" ng-repeat="object in searchModel.searchResult">
 				
-				<span class="col-xs-12" style="padding-left:0px;"><a class="title" href ng-click='open_file(object.pathString)'>{{object.title}}</a>
-				</span> 
+				<span class="col-xs-12" style="padding-left:0px;"><a class="title" href ng-click='open_file(object.pathString)'>{{object.title}}</a><small ng-show="object.exist == false"> (lost file)</small>
+				</span>
 				<span class="col-xs-12" style="padding-left:0px;"> <a class="url text-warning" style="padding-left: 0px;" href ng-click='open(object.parentPathString)'>{{object.parentPathString}}</a>
 				</span>
 				
 				<div class="col-xs-12 description " style="padding-left:0px;">
 					<b>
-					<small ng-if="object.fileSize < 1000"> {{object.fileSize}} Bytes,</small>
+					<small ng-if="object.fileSize < 1000"> {{object.fileSize}} bytes,</small>
 					<small ng-if="object.fileSize >= 1000 && object.fileSize < 1000000">{{object.fileSize / 1000.0 | number:3}} KB,</small>
 					<small ng-if="object.fileSize >= 1000000">{{object.fileSize / 1000000.0 | number:3}} MB,</small></b>
 					<small>{{object.modifiedTime | date:'yyyy-MM-dd HH:mm:ss'}},</small>

@@ -79,7 +79,10 @@ function(StompClient, $q, $log) {
 			stompClient.disconnect();
 		},
 		subProgress : function() {
-			return stompClient.subscribe("/progress/single");
+			return stompClient.subscribe("/index/progress");
+		},
+		subUpdate : function() {
+			return stompClient.subscribe("/index/update");
 		},
 		sendStartIndex : function() {
 			return stompClient.send("/handyfinder/command/index/start", {}, '');
@@ -87,6 +90,10 @@ function(StompClient, $q, $log) {
 		},
 		sendStopIndex : function() {
 			return stompClient.send("/handyfinder/command/index/stop", {}, '');
+			//JSON.stringify(tradeOrder));
+		},
+		sendUpdateIndex : function() {
+			return stompClient.send("/handyfinder/command/index/update", {}, '');
 			//JSON.stringify(tradeOrder));
 		},
 		isConnected : function(){

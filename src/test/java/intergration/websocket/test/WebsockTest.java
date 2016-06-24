@@ -144,7 +144,7 @@ public class WebsockTest {
 		public void afterConnected(final StompSession session, StompHeaders connectedHeaders) {
 			this.session = session;
 
-			session.subscribe("/progress/single", new StompFrameHandler() {
+			session.subscribe("/index/progress", new StompFrameHandler() {
 				@Override
 				public Type getPayloadType(StompHeaders headers) {
 					return ProgressCommand.class;

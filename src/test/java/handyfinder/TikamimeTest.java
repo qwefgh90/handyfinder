@@ -4,6 +4,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -107,9 +108,11 @@ public class TikamimeTest {
 	}
 
 	@After
-	public void clean() throws URISyntaxException {
+	public void clean() throws URISyntaxException, FileNotFoundException, IOException {
 		File f = new File(afterUrl.toURI());
 		f.delete();
+		obj.initGlobTrue();
+		obj.updateGlobPropertiesFile();
 	}
 
 }

@@ -16,7 +16,7 @@
 				close="indexModel.index_progress_status.removeAlertQ($index);">
 			{{alert.msg}} </uib-alert>
 			<div ng-show="indexModel.index_progress_status.progressBarVisible">
-				<h3>Indexing</h3>
+				<h3>Checking your files</h3>
 				<uib-progressbar max="indexModel.totalProcessCount"
 					value="indexModel.processIndex"> <span
 					style="color: black; white-space: nowrap;">{{indexModel.processPath}}
@@ -25,7 +25,7 @@
 			<strong ng-if="indexModel.index_progress_status.progress==false">We
 				currently do not running.</strong> </uib-accordion-group> <uib-accordion-group
 				is-open="indexModel.index_manager_status.open">
-			<uib-accordion-heading> Directories <i
+			<uib-accordion-heading>Checked Directories <i
 				class="pull-right glyphicon"
 				ng-class="{'glyphicon-chevron-down': indexModel.index_manager_status.open, 'glyphicon-chevron-right': !indexModel.index_manager_status.open}"></i>
 			</uib-accordion-heading>
@@ -48,8 +48,12 @@
 				</button>
 			</div>
 			<div style="text-align: center">
-				<button class="btn btn-default" ng-click="run()">
+				<button class="btn btn-default" ng-show="indexModel.running == 'READY'" ng-click="run()">
 					Run
+					<!--automatically update indexes. automatically clean deleted files.-->
+				</button>
+				<button class="btn btn-info" ng-show="indexModel.running == 'RUNNING'" ng-click="stop()">
+					Running
 					<!--automatically update indexes. automatically clean deleted files.-->
 				</button>
 			</div>

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import io.github.qwefgh90.handyfinder.springweb.websocket.GUICommand.COMMAND;
+import io.github.qwefgh90.handyfinder.springweb.websocket.UpdateSummaryCommand.STATE;
 import javafx.stage.DirectoryChooser;
 
 /**
@@ -55,6 +56,24 @@ public class CommandInvoker {
 
 	public void sendDirectory(String pathString) {
 		GUICommand comm = new GUICommand(receiver, COMMAND.OPEN_DIRECTORY, pathString);
+		comm.execute();
+	}
+
+	public void startUpdateSummary(){
+		UpdateSummaryCommand comm = UpdateSummaryCommand.getInstance(receiver);
+		comm.setState(STATE.START);
+		comm.setCountOfDeleted(-1);
+		comm.setCountOfExcluded(-1);
+		comm.setCountOfModified(-1);
+		comm.execute();
+	}
+	
+	public void terminateUpdateSummary(int countOfDeleted, int countOfExcluded, int countOfModified){
+		UpdateSummaryCommand comm = UpdateSummaryCommand.getInstance(receiver);
+		comm.setState(STATE.TERMINATE);
+		comm.setCountOfDeleted(countOfDeleted);
+		comm.setCountOfExcluded(countOfExcluded);
+		comm.setCountOfModified(countOfModified);
 		comm.execute();
 	}
 

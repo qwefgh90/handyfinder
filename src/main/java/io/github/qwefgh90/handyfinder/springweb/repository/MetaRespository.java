@@ -35,6 +35,7 @@ public class MetaRespository {
 	LuceneHandlerBasicOptionView appData;
 
 	public void save(List<Directory> list) throws SQLException {
+		appData.deleteDirectories();
 		for (Directory dir : list) {
 			appData.setDirectory(dir);
 		}

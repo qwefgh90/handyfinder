@@ -28,15 +28,15 @@ import org.springframework.stereotype.Service;
 
 import com.qwefgh90.io.jsearch.FileExtension;
 
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandler.INDEX_WRITE_STATE;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
 import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandler.IndexException;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.model.COMMAND;
 import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
 import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
 import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
-import io.github.qwefgh90.handyfinder.springweb.model.CommandDto.COMMAND;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
@@ -153,6 +153,10 @@ public class RootService {
 	public void closeAppLucene() throws IOException {
 		handler.close();
 	}
+	
+	public int getDocumentCount(){
+		return handler.getDocumentCount();
+	}
 
 	public Optional<List<DocumentDto>> search(String keyword) {
 		List<DocumentDto> list = new ArrayList<>();
@@ -161,22 +165,34 @@ public class RootService {
 			for (int i = 0; i < docs.scoreDocs.length; i++) {
 				Document document = handler.getDocument(docs.scoreDocs[i].doc);
 				DocumentDto dto = new DocumentDto();
+				String pathString = document.get("pathString");
+				Path path = Paths.get(pathString);
 				String highlightTag;
-				try {
-					highlightTag = handler.highlight(docs.scoreDocs[i].doc,
-							keyword);
-				} catch (ParseException e) {
-					LOG.info(e.toString());
-					continue;
-				} catch (InvalidTokenOffsetsException e) {
-					LOG.info(e.toString());
-					continue;
-				} catch (com.qwefgh90.io.jsearch.JSearch.ParseException e) {
-					LOG.info(e.toString());
-					continue;
-				} catch (Exception e) {
-					LOG.warn(ExceptionUtils.getStackTrace(e));
-					continue;
+				if(Files.exists(path)){
+					dto.setExist(true);
+					dto.setModifiedTime(Files.getLastModifiedTime(path).toMillis());
+					dto.setFileSize(Files.size(path));
+					try {
+						highlightTag = handler.highlight(docs.scoreDocs[i].doc,
+								keyword);
+					} catch (ParseException e) {
+						LOG.warn(e.toString());
+						continue;
+					} catch (InvalidTokenOffsetsException e) {
+						LOG.warn(e.toString());
+						continue;
+					} catch (com.qwefgh90.io.jsearch.JSearch.ParseException e) {
+						LOG.warn(e.toString());
+						continue;
+					} catch (IOException e) {
+						LOG.warn(e.toString());
+						continue;
+					}
+				}else{
+					dto.setExist(false);
+					dto.setModifiedTime(document.getField("lastModifiedTime").numericValue().longValue());
+					dto.setFileSize(-1);
+					highlightTag = ""; //empty string
 				}
 				
 				dto.setCreatedTime(document.getField("createdTime")
@@ -187,11 +203,7 @@ public class RootService {
 				dto.setParentPathString(Paths.get(document.get("pathString"))
 						.getParent().toAbsolutePath().toString());
 				dto.setMimeType(document.get("mimeType"));
-				
-				Path path = Paths.get(dto.getPathString());
-				dto.setModifiedTime(Files.getLastModifiedTime(path).toMillis());
-				dto.setFileSize(Files.size(path));
-				
+
 				list.add(dto);
 			}
 			return Optional.of(list);
@@ -209,18 +221,29 @@ public class RootService {
 		case START_INDEXING: {
 			try {
 				List<Directory> list = indexProperty.selectDirectory();
-				handler.startIndex(list);
+				if(handler.getWriteState() == INDEX_WRITE_STATE.READY)
+					handler.startIndex(list);
 				return;
 			} catch (SQLException e) {
 				LOG.info(ExceptionUtils.getStackTrace(e));
-				// terminate command
 			} catch (IOException e) {
 				LOG.info(ExceptionUtils.getStackTrace(e));
-				// terminate command
-			} catch (IndexException e) {
-				LOG.info(ExceptionUtils.getStackTrace(e));
-				// terminate command
 			}
+			break;
+		}
+		case UPDATE_INDEXING: {
+			List<Directory> list;
+			try {
+				list = indexProperty.selectDirectory();
+				if(handler.getWriteState() == INDEX_WRITE_STATE.READY)
+					handler.updateIndexedDocuments(list);
+			} catch (SQLException e) {
+				LOG.info(ExceptionUtils.getStackTrace(e));
+			}
+			break;
+		}
+		case STOP_INDEXING: {
+			handler.stopIndex();
 			break;
 		}
 		default: {
