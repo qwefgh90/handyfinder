@@ -204,7 +204,7 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 		});
 	};
 
-	$scope.selectDirectory = function() {
+	$scope.selectDirectory = function(originalPath) {
 		if(guiService == undefined){
 			$log.log('you can\'t javafx method in browser');
 			return '';
@@ -258,7 +258,6 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 		promise.then(function(){
 			progressService.sendStartIndex();
 			$scope.indexModel.intervalStopObject = $interval(function(){
-				$scope.refreshCount();
 				if($scope.indexModel.intervalTurn % 2 == 0){
 					$log.log('update index...');
 					if($scope.indexModel.state != 'TERMINATE'){
@@ -273,7 +272,8 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 						$scope.indexModel.intervalTurn = $scope.indexModel.intervalTurn - 1; //next time call sendStartIndex() again;
 						$log.log('stopping start index... other job still working');
 					}
-					progressService.sendStartIndex();
+					else
+						progressService.sendStartIndex();
 				}
 				
 				$scope.indexModel.intervalTurn = $scope.indexModel.intervalTurn + 1;
@@ -341,6 +341,7 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 						$scope.indexModel.state = progressObject.state;
 						$scope.indexModel.index_progress_status.refreshState();
 						$log.log(progressObject.processIndex + ", " + progressObject.totalProcessCount + ", " + progressObject.processPath + ", " + progressObject.state);
+						$scope.refreshCount();
 					});
 				var updatePromise = progressService.subUpdate();
 				updatePromise.then(function() {
@@ -356,6 +357,7 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 							+ ', non contained files : ' + summaryObject.countOfExcluded + ', modified files : ' + summaryObject.countOfModified);
 					$scope.indexModel.index_progress_status.addAlertQ(5);
 					$log.log(summaryObject.countOfDeleted + ", " + summaryObject.countOfExcluded + ", " + summaryObject.countOfModified);
+					$scope.refreshCount();
 				});
 				
 			}, function(error) {

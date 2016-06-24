@@ -25,7 +25,7 @@
 			<strong ng-if="indexModel.index_progress_status.progress==false">We
 				currently do not running.</strong> </uib-accordion-group> <uib-accordion-group
 				is-open="indexModel.index_manager_status.open">
-			<uib-accordion-heading>Checked Directories <i
+			<uib-accordion-heading>Directories<i
 				class="pull-right glyphicon"
 				ng-class="{'glyphicon-chevron-down': indexModel.index_manager_status.open, 'glyphicon-chevron-right': !indexModel.index_manager_status.open}"></i>
 			</uib-accordion-heading>
@@ -52,11 +52,14 @@
 					Run
 					<!--automatically update indexes. automatically clean deleted files.-->
 				</button>
-				<button class="btn btn-info" ng-show="indexModel.running == 'RUNNING'" ng-click="stop()">
+				<button class="btn btn-info" ng-show="indexModel.running == 'RUNNING' || indexModel.running == 'WAITING'" ng-click="stop()">
 					Running
 					<!--automatically update indexes. automatically clean deleted files.-->
 				</button>
 			</div>
+			<div>
+			 {{indexModel.indexDocumentCount}} files are indexed
+			 </div>
 			</uib-accordion-group> <uib-accordion-group is-open="indexModel.index_option_status.open">
 			<uib-accordion-heading> Index Options <i
 				class="pull-right glyphicon"

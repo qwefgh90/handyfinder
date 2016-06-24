@@ -555,7 +555,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 								}
 								// check file size
 								try {
-									if (Files.size(file) / (1000 * 1000) < option.basicOption
+									if (Files.size(file) / (1000 * 1000) <= option.basicOption
 											.getMaximumDocumentMBSize()
 											&& !isExists(file.toAbsolutePath()
 													.toString()))
@@ -669,9 +669,21 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		Map<Boolean, List<Document>> map = parallelStream
 				.filter(document -> document.getField("pathString") != null)
 				.collect(Collectors
-				.partitioningBy(document -> {
+				.partitioningBy(document -> {	//True partition will be excepted.
 					String pathString = document.get("pathString");
 					Path path = Paths.get(pathString);
+					try {
+						MediaType type = FileExtension.getContentType(path.toFile(), path.toAbsolutePath().toString());
+						if(false == option.mimeOption.isAllowMime(type.toString()))
+							return true;
+						long size = Files.size(path);
+						
+						if(size / (1000 * 1000) > option.basicOption.getMaximumDocumentMBSize()){
+							return true;
+						}
+					} catch (Exception e) {
+						LOG.warn(e.toString());
+					}
 					return dirList.parallelStream()
 							.noneMatch(
 									dir -> { // all test false -> return true
