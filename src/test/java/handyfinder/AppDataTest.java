@@ -51,7 +51,9 @@ public class AppDataTest {
 
 	@Test
 	public void test() {
+		
 		globalAppDataView.addDirectory(d);
+		globalAppDataView.setLimitCountOfResult(100);
 		assertTrue(globalAppDataView.getLimitCountOfResult() == 100);
 		Iterator<Directory> iter = globalAppDataView.getDirectoryList().iterator();
 		Directory tmp = iter.next();
