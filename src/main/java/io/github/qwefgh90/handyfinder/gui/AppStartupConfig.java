@@ -155,12 +155,14 @@ public class AppStartupConfig extends Application {
 		LOG.info(logBuilder.toString());
 
 		logBuilder.setLength(0);
+		/*
 		String[] allPath = allClassPath();
 		for (int i = 0; i < allPath.length; i++) {
 			logBuilder.append("classpath: ").append("\n").append(String.valueOf(i + 1)).append(") ").append(allPath[i]);
 		}
 
 		LOG.debug(logBuilder.toString());
+		*/
 	}
 
 	/**

@@ -2,6 +2,7 @@ var app = angular.module('indexModelApp', []);
 app.factory("SearchModel",['$rootScope', function($rootScope){
 	var service = {
 		model : {
+			searchFlag : false,
 			searchKeyword : '',
 			searchResult : [],
 			searchTime : 0,

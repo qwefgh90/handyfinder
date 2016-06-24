@@ -34,14 +34,16 @@ function($location, $scope, apiService) {
 app.controller('searchController', ['$location','$log', '$scope', '$timeout', 'apiService', 'Document','$sce', 'GUIService', 'SearchModel',
 function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIService, SearchModel) {
 	$scope.searchModel = SearchModel.model;
-	$scope.searchFlag = false;
 	$scope.search = function(keyword){
 		var milliseconds = (new Date).getTime();
-		if($scope.searchFlag == true)
+		if($scope.searchModel.searchFlag == true)
 			return;
-		var promise = apiService.search(keyword);
-		$scope.searchFlag = true;
+		if(keyword.length == 0){
+			return;
+		}
+		$scope.searchModel.searchFlag = true;
 		$scope.searchModel.searchTryCount = $scope.searchModel.searchTryCount + 1;
+		var promise = apiService.search(keyword);
 		promise.then(function(json){
 			var toMiliseconds = (new Date).getTime();
 			$scope.searchModel.searchResult = [];
@@ -52,15 +54,15 @@ function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIServi
 				$scope.searchModel.searchResult.push(document);
 			}
 			$scope.searchModel.searchTime = (toMiliseconds * 1.0 - milliseconds * 1.0) / 1000
-			$scope.searchFlag = false;
+			$scope.searchModel.searchFlag = false;
 		},function(){
 			var toMiliseconds = (new Date).getTime();
-			$scope.searchFlag = false;
+			$scope.searchModel.searchFlag = false;
 			$log.log('search failed');
 			$scope.searchModel.searchTime = (toMiliseconds * 1.0 - milliseconds * 1.0) / 1000}
 		,function(){
 			var toMiliseconds = (new Date).getTime();
-			$scope.searchFlag = false;
+			$scope.searchModel.searchFlag = false;
 			$scope.searchModel.searchTime = (toMiliseconds * 1.0 - milliseconds * 1.0) / 1000});
 	};
 

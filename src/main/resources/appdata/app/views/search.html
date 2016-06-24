@@ -14,10 +14,10 @@
 	<div class="row">
 		<div class="col-xs-12" style="padding-top: 5px; padding-bottom: 5px">
 		
-			<p ng-show="searchFlag == true">
+			<p ng-show="searchModel.searchFlag == true">
 				<img alt="Look for documents..." src="/app/image/progress.gif">
 			</p>
-			<p ng-show="searchFlag == false && searchModel.searchTryCount > 0">
+			<p ng-show="searchModel.searchFlag == false && searchModel.searchTryCount > 0">
 				About <b>{{searchModel.searchResult.length}}</b> results (<b>{{searchModel.searchTime}}</b> secs), order of documents to contain more keywords.
 			</p>
 			<!-- 
