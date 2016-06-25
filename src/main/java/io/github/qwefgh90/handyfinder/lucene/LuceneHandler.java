@@ -19,9 +19,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.activity.InvalidActivityException;
 
@@ -103,7 +107,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		PROGRESS, STOPPING, READY
 	}
 
-	private INDEX_WRITE_STATE writeState = INDEX_WRITE_STATE.READY; // current state
+	private INDEX_WRITE_STATE writeState = INDEX_WRITE_STATE.READY; // current
+																	// state
 	private int currentProgress = 0; // indexed documents count
 	private int totalProcess = 0; // total documents count to be indexed
 	private CommandInvoker invokerForCommand; // for command to client
@@ -215,7 +220,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	public void startIndex(List<Directory> list) throws IOException {
 		if (INDEX_WRITE_STATE.PROGRESS == writeState)
 			throw new IllegalStateException("already indexing");
-//		checkIndexWriter();
+		// checkIndexWriter();
 		try {
 			totalProcess = sizeOfindexDirectories(list);
 			updateHandlerState(INDEX_WRITE_STATE.PROGRESS);
@@ -236,9 +241,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	public void updateIndexedDocuments(List<Directory> rootIndexDirectory) {
 		if (INDEX_WRITE_STATE.PROGRESS == writeState)
 			throw new IllegalStateException("already indexing");
-//		checkDirectoryReader();
-//		checkIndexWriter();
-		//count variables
+		// checkDirectoryReader();
+		// checkIndexWriter();
+		// count variables
 		int nonPresentCount = 0;
 		int nonContainedCount = 0;
 		int updateCount = 0;
@@ -246,21 +251,23 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			updateHandlerState(INDEX_WRITE_STATE.PROGRESS);
 			invokerForCommand.startUpdateSummary();
 			Map.Entry<List<Document>, Integer> returnValue;
-			
-			//clean non present file
+
+			// clean non present file
 			List<Document> list = getDocumentList();
 			returnValue = cleanNonPresentInternalIndex(list);
 			list = returnValue.getKey();
 			nonPresentCount = returnValue.getValue();
-			//clean non contained file
-			returnValue = cleanNonContainedInternalIndex(list, rootIndexDirectory);
+			// clean non contained file
+			returnValue = cleanNonContainedInternalIndex(list,
+					rootIndexDirectory);
 			list = returnValue.getKey();
 			nonContainedCount = returnValue.getValue();
-			//update file
+			// update file
 			updateCount = updateContentInternalIndex(list);
 		} finally {
 			updateHandlerState(INDEX_WRITE_STATE.READY);
-			invokerForCommand.terminateUpdateSummary(nonPresentCount, nonContainedCount, updateCount);
+			invokerForCommand.terminateUpdateSummary(nonPresentCount,
+					nonContainedCount, updateCount);
 		}
 	}
 
@@ -376,57 +383,70 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @throws InvalidTokenOffsetsException
 	 * @throws QueryNodeException
 	 */
-	public String highlight(int docid, String queryString)
+	public Callable<Optional<Map.Entry<String, String>>> highlight(int docid, String queryString)
 			throws org.apache.lucene.queryparser.classic.ParseException,
 			IOException, InvalidTokenOffsetsException, QueryNodeException,
 			ParseException {
 		checkDirectoryReader();
 		StringBuilder sb = new StringBuilder();
-		Document doc = searcher.doc(docid);
+		final Document doc = searcher.doc(docid);
 		Query query = getBooleanQuery(queryString);
 		SimpleHTMLFormatter htmlFormatter = new SimpleHTMLFormatter();
 		Highlighter highlighter = new Highlighter(htmlFormatter,
 				new QueryScorer(query));
-		String pathString = doc.get("pathString");
-		if(!Files.exists(Paths.get(pathString)))
-			throw new IOException(pathString+" does not exists.");
-		String contents = JSearch.extractContentsFromFile(pathString);
-		Document tempDocument = new Document();
-		FieldType type = new FieldType();
-		type.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
-		type.setStored(true);
-		Field contentsField = new Field("contents", contents, type);
-		tempDocument.add(contentsField);
+		final String pathString = doc.get("pathString");
+		if (!Files.exists(Paths.get(pathString)))
+			throw new IOException(pathString + " does not exists.");
+		Callable<Optional<Map.Entry<String, String>>> getHighlightContent = () -> {
+			String contents;
+			try {
+				contents = JSearch.extractContentsFromFile(pathString);
 
-		try (TokenStream tokenStream = TokenSources.getAnyTokenStream(
-				indexReader, docid, "contents", tempDocument, analyzer)) {
-			TextFragment[] frag = highlighter.getBestTextFragments(tokenStream,
-					contents, false, 2);// highlighter.getBestFragments(tokenStream,
-			for (int j = 0; j < frag.length; j++) {
-				if ((frag[j] != null) && (frag[j].getScore() > 0)) {
-					sb.append(frag[j].toString());
-				}
-			}
-		}
+				Document tempDocument = new Document();
+				FieldType type = new FieldType();
+				type.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
+				type.setStored(true);
+				Field contentsField = new Field("contents", contents, type);
+				tempDocument.add(contentsField);
 
-		if (sb.length() != 0) {
-			return sb.toString();
-		} else {
-			try (TokenStream tokenStream = TokenSources.getAnyTokenStream(
-					indexReader, docid, "pathString", analyzer)) {
-				TextFragment[] frag = highlighter.getBestTextFragments(
-						tokenStream, pathString, false, 2);// highlighter.getBestFragments(tokenStream,
-				for (int j = 0; j < frag.length; j++) {
-					if ((frag[j] != null) && (frag[j].getScore() > 0)) {
-						sb.append(frag[j].toString());
+				try (TokenStream tokenStream = TokenSources.getAnyTokenStream(
+						indexReader, docid, "contents", tempDocument, analyzer)) {
+					TextFragment[] frag = highlighter.getBestTextFragments(
+							tokenStream, contents, false, 2);// highlighter.getBestFragments(tokenStream,
+					for (int j = 0; j < frag.length; j++) {
+						if ((frag[j] != null) && (frag[j].getScore() > 0)) {
+							sb.append(frag[j].toString());
+						}
 					}
 				}
+
+				if (sb.length() == 0)
+				{
+					try (TokenStream tokenStream = TokenSources
+							.getAnyTokenStream(indexReader, docid,
+									"pathString", analyzer)) {
+						TextFragment[] frag = highlighter.getBestTextFragments(
+								tokenStream, pathString, false, 2);// highlighter.getBestFragments(tokenStream,
+						for (int j = 0; j < frag.length; j++) {
+							if ((frag[j] != null) && (frag[j].getScore() > 0)) {
+								sb.append(frag[j].toString());
+							}
+						}
+					}
+				}
+			} catch (Exception e) {
+				LOG.info(ExceptionUtils.getStackTrace(e));
+				return Optional.empty();
 			}
-			int length = 200 - sb.toString().length();
 			sb.append(contents.substring(0,
-					contents.length() < length ? contents.length() : length));
-		}
-		return sb.toString();
+					contents.length() < 200 ? contents.length()
+							: 200));
+			contents = sb.toString();
+			Map.Entry<String, String> entry = new AbstractMap.SimpleImmutableEntry<>(pathString, contents);
+			Optional<Map.Entry<String, String>> result = Optional.of(entry);
+			return result;
+		};
+		return getHighlightContent;
 	}
 
 	/**
@@ -468,11 +488,11 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	@Override
 	public void close() throws IOException {
 		checkIndexWriter();
-		if(writer!= null)
+		if (writer != null)
 			writer.close();
-		if(indexReader!=null)
+		if (indexReader != null)
 			indexReader.close();
-		if(dir!=null)
+		if (dir != null)
 			dir.close();
 		map.remove(indexWriterPath.toAbsolutePath().toString());
 		writer = null;
@@ -625,14 +645,14 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 *            a list of all pathString in Lucene System
 	 * @return
 	 */
-	Map.Entry<List<Document>,Integer> cleanNonPresentInternalIndex(List<Document> docList) {
+	Map.Entry<List<Document>, Integer> cleanNonPresentInternalIndex(
+			List<Document> docList) {
 		checkIndexWriter();
 		int countOfProcessed = 0;
 		Stream<Document> parallelStream = docList.parallelStream();
-		Map<Boolean, List<Document>> map = parallelStream
-				.filter(document -> document.getField("pathString") != null)
-				.collect(Collectors
-				.partitioningBy(document -> {
+		Map<Boolean, List<Document>> map = parallelStream.filter(
+				document -> document.getField("pathString") != null).collect(
+				Collectors.partitioningBy(document -> {
 					String pathString = document.get("pathString");
 					return Files.exists(Paths.get(pathString));
 				}));
@@ -650,7 +670,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			}
 		}
 
-		return new AbstractMap.SimpleImmutableEntry<>(map.get(Boolean.TRUE),countOfProcessed);
+		return new AbstractMap.SimpleImmutableEntry<>(map.get(Boolean.TRUE),
+				countOfProcessed);
 	}
 
 	/**
@@ -661,32 +682,39 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 *            a list of parent directory indexed
 	 * @return
 	 */
-	Map.Entry<List<Document>,Integer> cleanNonContainedInternalIndex(List<Document> docList,
-			List<Directory> dirList) {
+	Map.Entry<List<Document>, Integer> cleanNonContainedInternalIndex(
+			List<Document> docList, List<Directory> dirList) {
 		checkIndexWriter();
 		int countOfProcessed = 0;
 		Stream<Document> parallelStream = docList.parallelStream();
-		Map<Boolean, List<Document>> map = parallelStream
-				.filter(document -> document.getField("pathString") != null)
-				.collect(Collectors
-				.partitioningBy(document -> {	//True partition will be excepted.
-					String pathString = document.get("pathString");
-					Path path = Paths.get(pathString);
-					try {
-						MediaType type = FileExtension.getContentType(path.toFile(), path.toAbsolutePath().toString());
-						if(false == option.mimeOption.isAllowMime(type.toString()))
-							return true;
-						long size = Files.size(path);
-						
-						if(size / (1000 * 1000) > option.basicOption.getMaximumDocumentMBSize()){
-							return true;
-						}
-					} catch (Exception e) {
-						LOG.warn(e.toString());
-					}
-					return dirList.parallelStream()
-							.noneMatch(
-									dir -> { // all test false -> return true
+		Map<Boolean, List<Document>> map = parallelStream.filter(
+				document -> document.getField("pathString") != null).collect(
+				Collectors.partitioningBy(document -> { // True partition will
+														// be excepted.
+							String pathString = document.get("pathString");
+							Path path = Paths.get(pathString);
+							try {
+								MediaType type = FileExtension.getContentType(
+										path.toFile(), path.toAbsolutePath()
+												.toString());
+								if (false == option.mimeOption.isAllowMime(type
+										.toString()))
+									return true;
+								long size = Files.size(path);
+
+								if (size / (1000 * 1000) > option.basicOption
+										.getMaximumDocumentMBSize()) {
+									return true;
+								}
+							} catch (Exception e) {
+								LOG.warn(e.toString());
+							}
+							return dirList.parallelStream().noneMatch(dir -> { // all
+																				// test
+																				// false
+																				// ->
+																				// return
+																				// true
 										if (!dir.isUsed())
 											return false;
 										if (dir.isRecursively()) {
@@ -698,7 +726,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 										}
 									});
 
-				}));
+						}));
 		Iterator<Document> iteratorOfNonContainedFile = map.get(Boolean.TRUE)
 				.iterator();
 		while (iteratorOfNonContainedFile.hasNext()) {
@@ -714,7 +742,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			}
 		}
 
-		return new AbstractMap.SimpleImmutableEntry<>(map.get(Boolean.FALSE),countOfProcessed);
+		return new AbstractMap.SimpleImmutableEntry<>(map.get(Boolean.FALSE),
+				countOfProcessed);
 	}
 
 	/**
@@ -749,7 +778,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		while (iteratorForUpdate.hasNext()) {
 			Path path = iteratorForUpdate.next();
 			try {
-				countOfProcessed ++;
+				countOfProcessed++;
 				LOG.debug("change detected : " + path);
 				index(path);
 			} catch (Exception e) {

@@ -1,5 +1,17 @@
 package io.github.qwefgh90.handyfinder.springweb.service;
 
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandler.INDEX_WRITE_STATE;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
+import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.model.COMMAND;
+import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
+import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
+import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
+import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
+import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+
 import java.awt.Desktop;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -8,11 +20,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.lucene.document.Document;
@@ -27,18 +44,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.qwefgh90.io.jsearch.FileExtension;
-
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandler.INDEX_WRITE_STATE;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
-import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
-import io.github.qwefgh90.handyfinder.lucene.model.Directory;
-import io.github.qwefgh90.handyfinder.springweb.model.COMMAND;
-import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
-import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
-import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
-import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
-import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
 @Service
 public class RootService {
@@ -159,22 +164,26 @@ public class RootService {
 	}
 
 	public Optional<List<DocumentDto>> search(String keyword) {
+		HashMap<String, DocumentDto> docMap = new HashMap<>();
 		List<DocumentDto> list = new ArrayList<>();
+		List<Callable<Optional<Map.Entry<String, String>>>> functionList = new ArrayList<>();
 		try {
 			TopDocs docs = handler.search(keyword);
+			ExecutorService executor = Executors.newWorkStealingPool();
 			for (int i = 0; i < docs.scoreDocs.length; i++) {
 				Document document = handler.getDocument(docs.scoreDocs[i].doc);
 				DocumentDto dto = new DocumentDto();
 				String pathString = document.get("pathString");
 				Path path = Paths.get(pathString);
-				String highlightTag;
+				Callable<Optional<Map.Entry<String, String>>> getHightlightContent;
 				if(Files.exists(path)){
 					dto.setExist(true);
 					dto.setModifiedTime(Files.getLastModifiedTime(path).toMillis());
 					dto.setFileSize(Files.size(path));
 					try {
-						highlightTag = handler.highlight(docs.scoreDocs[i].doc,
+						getHightlightContent = handler.highlight(docs.scoreDocs[i].doc,
 								keyword);
+						functionList.add(getHightlightContent);
 					} catch (ParseException e) {
 						LOG.warn(e.toString());
 						continue;
@@ -192,20 +201,39 @@ public class RootService {
 					dto.setExist(false);
 					dto.setModifiedTime(document.getField("lastModifiedTime").numericValue().longValue());
 					dto.setFileSize(-1);
-					highlightTag = ""; //empty string
 				}
 				
 				dto.setCreatedTime(document.getField("createdTime")
 						.numericValue().longValue());
 				dto.setTitle(document.get("title"));
-				dto.setContents(highlightTag);
+				dto.setContents("");
 				dto.setPathString(document.get("pathString"));
 				dto.setParentPathString(Paths.get(document.get("pathString"))
 						.getParent().toAbsolutePath().toString());
 				dto.setMimeType(document.get("mimeType"));
-
+				docMap.put(dto.getPathString(), dto);
 				list.add(dto);
 			}
+			try {
+				List<Future<Optional<Map.Entry<String, String>>>> futureList = executor.invokeAll(functionList);
+				futureList.parallelStream().forEach(future -> {
+					try {
+						Optional<Map.Entry<String, String>> result = future.get();
+						if(!result.isPresent()){
+							return;
+						}
+						String pathString = result.get().getKey();
+						String contents = result.get().getValue();
+						docMap.get(pathString).setContents(contents);
+					} catch (Exception e) {
+						LOG.warn(e.toString());
+					}
+					
+				});
+			} catch (InterruptedException e) {
+				LOG.warn(e.toString());
+			}
+			executor.shutdown();
 			return Optional.of(list);
 		} catch (QueryNodeException e) {
 			LOG.info(ExceptionUtils.getStackTrace(e));

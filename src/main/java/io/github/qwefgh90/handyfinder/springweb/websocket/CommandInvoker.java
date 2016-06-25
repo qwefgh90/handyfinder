@@ -73,6 +73,11 @@ public class CommandInvoker {
 		});
 	}
 
+	public void sendDocumentContent(String pathString, String content){
+		DocumentContentCommand comm = new DocumentContentCommand(receiver, pathString, content);
+		comm.execute();
+	}
+	
 	public void startUpdateSummary(){
 		UpdateSummaryCommand comm = UpdateSummaryCommand.getInstance(receiver);
 		comm.setState(STATE.START);

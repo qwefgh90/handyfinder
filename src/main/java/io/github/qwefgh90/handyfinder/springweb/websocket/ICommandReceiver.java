@@ -6,4 +6,5 @@ public interface ICommandReceiver {
 	void terminateProgressChannel(ProgressCommand obj);
 	void sendSelectedDirectoryChannel(String pathString);
 	void sendToUpdateSummary(UpdateSummaryCommand obj);
+	void sendToDocumentContent(DocumentContentCommand obj);
 }
