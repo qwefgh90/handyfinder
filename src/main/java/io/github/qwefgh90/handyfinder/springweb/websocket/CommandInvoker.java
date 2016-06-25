@@ -1,5 +1,6 @@
 package io.github.qwefgh90.handyfinder.springweb.websocket;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -8,10 +9,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.springweb.websocket.GUICommand.COMMAND;
 import io.github.qwefgh90.handyfinder.springweb.websocket.UpdateSummaryCommand.STATE;
 import javafx.stage.DirectoryChooser;
-
+import javafx.application.*;
 /**
  * UI Command API
  * 
@@ -54,9 +56,21 @@ public class CommandInvoker {
 		progress.execute();
 	}
 
-	public void sendDirectory(String pathString) {
-		GUICommand comm = new GUICommand(receiver, COMMAND.OPEN_DIRECTORY, pathString);
-		comm.execute();
+	public void openAndSendSelectedDirectory() {
+		Platform.runLater(() -> {
+			String result = "";
+			try {
+				final DirectoryChooser directoryChooser = new DirectoryChooser();
+				final File selectedDirectory = directoryChooser.showDialog(AppStartupConfig.primaryStage);
+				if (selectedDirectory != null) {
+					result = selectedDirectory.getAbsolutePath();
+				}
+			} catch (Exception e) {
+				System.out.println(e.toString());
+			}
+			GUICommand comm = GUICommand.createObjectForDirectory(receiver, result);
+			comm.execute();
+		});
 	}
 
 	public void startUpdateSummary(){
@@ -76,5 +90,5 @@ public class CommandInvoker {
 		comm.setCountOfModified(countOfModified);
 		comm.execute();
 	}
-
+	
 }

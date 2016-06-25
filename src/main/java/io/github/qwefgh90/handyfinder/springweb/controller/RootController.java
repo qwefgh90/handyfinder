@@ -134,6 +134,8 @@ public class RootController {
 			dto = COMMAND.STOP_INDEXING;
 		else if (command.equals("update"))
 			dto = COMMAND.UPDATE_INDEXING;
+		else if (command.equals("openAndSelectDirectory"))
+			dto = COMMAND.OPEN_AND_SEND_DIRECTORY;
 		else
 			return;
 

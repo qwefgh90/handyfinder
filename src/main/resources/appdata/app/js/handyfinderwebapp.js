@@ -205,17 +205,11 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 	};
 
 	$scope.selectDirectory = function(originalPath) {
-		if(guiService == undefined){
-			$log.log('you can\'t javafx method in browser');
-			return '';
-		}
-		var path = guiService.openDialogAndSelectDirectory();
-		$log.log(path);
-		return path;
+		progressService.openDirectoryDialog();
 	};
 
-	$scope.addDirectory = function() {
-		var returnedPath = $scope.selectDirectory();
+	$scope.addDirectory = function(path) {
+		var returnedPath = path;
 		if (returnedPath != '') {
 			var path = Path.createInstance(returnedPath);
 			$scope.indexModel.pathList.push(path);
@@ -230,10 +224,6 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 
 	$scope.recursivelyToggle = function(path) {
 		path.recursively = !path.recursively;
-	};
-
-	$scope.edit = function() {
-		return $scope.selectDirectory();
 	};
 
 	$scope.remove = function(path) {
@@ -359,6 +349,16 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 					$log.log(summaryObject.countOfDeleted + ", " + summaryObject.countOfExcluded + ", " + summaryObject.countOfModified);
 					$scope.refreshCount();
 				});
+
+				var guiDirPromise = progressService.subGuiDirectory();
+				guiDirPromise.then(function(){},
+						function(msg){
+							$log.log(msg);},
+						function(path){
+								$log.log('selected path : ' + path);
+								$scope.addDirectory(path);
+							});
+				
 				
 			}, function(error) {
 				$log.log('[handy]'+error);

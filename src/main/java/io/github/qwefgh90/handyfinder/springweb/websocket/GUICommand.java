@@ -5,25 +5,35 @@ import java.nio.file.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GUICommand implements ICommand{
+public class GUICommand implements ICommand {
 	private final static Logger LOG = LoggerFactory.getLogger(GUICommand.class);
-	public enum COMMAND{
+
+	public enum COMMAND {
 		OPEN_DIRECTORY
 	}
-	
+
 	private COMMAND com;
 	private ICommandReceiver receiver;
 	private String pathString;
+
+	private GUICommand() {}
 	
-	public GUICommand(ICommandReceiver receiver, COMMAND command, String pathString){
-		this.com = command;
-		this.receiver = receiver;
-		this.pathString = pathString;
+	public static GUICommand createObjectForDirectory(ICommandReceiver receiver, String pathString){
+		GUICommand gui = new GUICommand();
+		gui.setCom(COMMAND.OPEN_DIRECTORY);
+		gui.setReceiver(receiver);
+		gui.setPathString(pathString);
+		return gui;
 	}
 
 	@Override
 	public void execute() {
-		receiver.sendSelectedDirectoryChannel(this);
+		switch (this.com) {
+		case OPEN_DIRECTORY: {
+			receiver.sendSelectedDirectoryChannel(this.getPathString());
+			break;
+		}
+		}
 	}
 
 	public COMMAND getCom() {
@@ -49,7 +59,5 @@ public class GUICommand implements ICommand{
 	public void setPathString(String pathString) {
 		this.pathString = pathString;
 	}
-	
-	
-	
+
 }

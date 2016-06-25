@@ -84,6 +84,9 @@ function(StompClient, $q, $log) {
 		subUpdate : function() {
 			return stompClient.subscribe("/index/update");
 		},
+		subGuiDirectory : function() {
+			return stompClient.subscribe("/gui/directory");
+		},
 		sendStartIndex : function() {
 			return stompClient.send("/handyfinder/command/index/start", {}, '');
 			// JSON.stringify(tradeOrder));
@@ -95,6 +98,9 @@ function(StompClient, $q, $log) {
 		sendUpdateIndex : function() {
 			return stompClient.send("/handyfinder/command/index/update", {}, '');
 			//JSON.stringify(tradeOrder));
+		},
+		openDirectoryDialog : function(){
+			return stompClient.send("/handyfinder/command/index/openAndSelectDirectory", {}, '');
 		},
 		isConnected : function(){
 			return stompClient.isConnected();

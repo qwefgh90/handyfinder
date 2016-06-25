@@ -69,7 +69,7 @@ public class RootService {
 	public List<Directory> getDirectories() throws SQLException {
 		return indexProperty.selectDirectory();
 	}
-
+	
 	/**
 	 * 
 	 * @param list
@@ -246,6 +246,9 @@ public class RootService {
 			handler.stopIndex();
 			break;
 		}
+		case OPEN_AND_SEND_DIRECTORY:{
+			this.openAndSendDirectory(); //async
+		}
 		default: {
 			break;
 		}
@@ -286,5 +289,10 @@ public class RootService {
 			}
 
 		}
+	}
+	
+
+	private void openAndSendDirectory(){
+		invokerForCommand.openAndSendSelectedDirectory();
 	}
 }

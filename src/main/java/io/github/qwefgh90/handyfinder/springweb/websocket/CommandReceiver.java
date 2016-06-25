@@ -9,7 +9,6 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
-import io.github.qwefgh90.handyfinder.springweb.websocket.GUICommand.COMMAND;
 import javafx.stage.DirectoryChooser;
 
 @Service
@@ -37,20 +36,8 @@ public class CommandReceiver implements ICommandReceiver {
 	}
 
 	@Override
-	public void sendSelectedDirectoryChannel(GUICommand obj) {
-		if (obj.getCom() == COMMAND.OPEN_DIRECTORY) {
-			String result = "";
-			try {
-				final DirectoryChooser directoryChooser = new DirectoryChooser();
-				final File selectedDirectory = directoryChooser.showDialog(AppStartupConfig.primaryStage);
-				if (selectedDirectory != null) {
-					result = selectedDirectory.getAbsolutePath();
-				}
-			} catch (Exception e) {
-				System.out.println(e.toString());
-			}
-			messaging.convertAndSend("/gui/directory", result);
-		}
+	public void sendSelectedDirectoryChannel(String pathString) {
+		messaging.convertAndSend("/gui/directory", pathString);
 	}
 
 	@Override

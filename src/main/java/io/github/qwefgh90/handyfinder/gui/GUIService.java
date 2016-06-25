@@ -2,10 +2,11 @@ package io.github.qwefgh90.handyfinder.gui;
 
 import java.io.File;
 
+import javafx.stage.DirectoryChooser;
+import javafx.application.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javafx.stage.DirectoryChooser;
 
 public class GUIService {
 
@@ -19,16 +20,19 @@ public class GUIService {
 	}
 
 	public String openDialogAndSelectDirectory() {
-		try {
-			DirectoryChooser directoryChooser = new DirectoryChooser();
-			File selectedDirectory = directoryChooser.showDialog(AppStartupConfig.primaryStage);
-			AppStartupConfig.primaryStage.show();
-			if (selectedDirectory != null) {
-				return selectedDirectory.getAbsolutePath();
+		Platform.runLater(() -> {
+			try {
+				DirectoryChooser directoryChooser = new DirectoryChooser();
+				File selectedDirectory = directoryChooser.showDialog(AppStartupConfig.primaryStage);
+				AppStartupConfig.primaryStage.show();
+				if (selectedDirectory != null) {
+					LOG.info("path : " + selectedDirectory.getAbsolutePath());
+				}
+			} catch (Exception e) {
+				System.out.println(e.toString());
 			}
-		} catch (Exception e) {
-			System.out.println(e.toString());
-		}
+			//return "";
+		});
 		return "";
 	}
 }

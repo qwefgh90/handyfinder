@@ -4,6 +4,6 @@ public interface ICommandReceiver {
 	void sendToProgressChannel(ProgressCommand obj);
 	void startProgressChannel(ProgressCommand obj);
 	void terminateProgressChannel(ProgressCommand obj);
-	void sendSelectedDirectoryChannel(GUICommand obj);
+	void sendSelectedDirectoryChannel(String pathString);
 	void sendToUpdateSummary(UpdateSummaryCommand obj);
 }

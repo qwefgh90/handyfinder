@@ -32,6 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -47,6 +49,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @WebAppConfiguration
 @ContextConfiguration(classes = { ServletContextTest.class, RootContext.class,
 		AppDataConfig.class })
+@DirtiesContext(classMode = ClassMode.AFTER_CLASS)
 public class ControllerTest {
 	private final static Logger LOG = LoggerFactory
 			.getLogger(ControllerTest.class);
