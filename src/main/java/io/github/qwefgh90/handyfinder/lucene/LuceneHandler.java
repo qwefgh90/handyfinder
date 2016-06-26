@@ -615,19 +615,18 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 									if (Files.size(file) / (1000 * 1000) <= option.basicOption
 											.getMaximumDocumentMBSize()
 											&& !isExists(file.toAbsolutePath()
-													.toString()))
+													.toString())){
 										index(file);
-									else
+										synchronized (this) {
+											currentProgress++; // STATE UPDATE
+											invokerForCommand
+													.updateProgress(currentProgress,
+															file, totalProcess); // STATE
+										}
+									}else
 										LOG.debug("skip " + file.toString());
 								} catch (Exception e) {
 									LOG.warn(ExceptionUtils.getStackTrace(e));
-								}
-
-								synchronized (this) {
-									currentProgress++; // STATE UPDATE
-									invokerForCommand
-											.updateProgress(currentProgress,
-													file, totalProcess); // STATE
 								}
 							});
 
