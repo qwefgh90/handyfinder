@@ -162,27 +162,42 @@ public class RootService {
 	public int getDocumentCount(){
 		return handler.getDocumentCount();
 	}
+	
+	public Optional<String> search(String keyword, String pathString){
+		try {
+			Optional<Map.Entry<String, String>> result = handler.highlight(pathString, keyword).call();
+			if(!result.isPresent())
+				return Optional.empty();
+			return Optional.of(result.get().getValue());
+		} catch (ParseException | IOException | InvalidTokenOffsetsException
+				| QueryNodeException
+				| com.qwefgh90.io.jsearch.JSearch.ParseException e) {
+			LOG.warn(ExceptionUtils.getStackTrace(e));
+		} catch (Exception e) {
+			LOG.warn(ExceptionUtils.getStackTrace(e));
+		}
+		return Optional.empty();
+	}
 
 	public Optional<List<DocumentDto>> search(String keyword) {
-		HashMap<String, DocumentDto> docMap = new HashMap<>();
+//		HashMap<String, DocumentDto> docMap = new HashMap<>();
 		List<DocumentDto> list = new ArrayList<>();
-		List<Callable<Optional<Map.Entry<String, String>>>> functionList = new ArrayList<>();
+//		List<Callable<Optional<Map.Entry<String, String>>>> functionList = new ArrayList<>();
 		try {
 			TopDocs docs = handler.search(keyword);
-			ExecutorService executor = Executors.newWorkStealingPool();
+//			ExecutorService executor = Executors.newWorkStealingPool();
 			for (int i = 0; i < docs.scoreDocs.length; i++) {
 				Document document = handler.getDocument(docs.scoreDocs[i].doc);
 				DocumentDto dto = new DocumentDto();
 				String pathString = document.get("pathString");
 				Path path = Paths.get(pathString);
-				Callable<Optional<Map.Entry<String, String>>> getHightlightContent;
+//				Callable<Optional<Map.Entry<String, String>>> getHightlightContent;
 				if(Files.exists(path)){
 					dto.setExist(true);
 					dto.setModifiedTime(Files.getLastModifiedTime(path).toMillis());
 					dto.setFileSize(Files.size(path));
-					try {
-						getHightlightContent = handler.highlight(docs.scoreDocs[i].doc,
-								keyword);
+					/*try {
+						getHightlightContent = handler.highlight(docs.scoreDocs[i].doc, keyword);
 						functionList.add(getHightlightContent);
 					} catch (ParseException e) {
 						LOG.warn(e.toString());
@@ -196,7 +211,7 @@ public class RootService {
 					} catch (IOException e) {
 						LOG.warn(e.toString());
 						continue;
-					}
+					}*/
 				}else{
 					dto.setExist(false);
 					dto.setModifiedTime(document.getField("lastModifiedTime").numericValue().longValue());
@@ -206,14 +221,15 @@ public class RootService {
 				dto.setCreatedTime(document.getField("createdTime")
 						.numericValue().longValue());
 				dto.setTitle(document.get("title"));
-				dto.setContents("");
+				dto.setContents("<br> content is loading...</br>");
 				dto.setPathString(document.get("pathString"));
 				dto.setParentPathString(Paths.get(document.get("pathString"))
 						.getParent().toAbsolutePath().toString());
 				dto.setMimeType(document.get("mimeType"));
-				docMap.put(dto.getPathString(), dto);
+//				docMap.put(dto.getPathString(), dto);
 				list.add(dto);
 			}
+			/*
 			try {
 				List<Future<Optional<Map.Entry<String, String>>>> futureList = executor.invokeAll(functionList);
 				futureList.parallelStream().forEach(future -> {
@@ -233,7 +249,7 @@ public class RootService {
 			} catch (InterruptedException e) {
 				LOG.warn(e.toString());
 			}
-			executor.shutdown();
+			executor.shutdown();*/
 			return Optional.of(list);
 		} catch (QueryNodeException e) {
 			LOG.info(ExceptionUtils.getStackTrace(e));

@@ -44,6 +44,7 @@ function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIServi
 		$scope.searchModel.searchFlag = true;
 		$scope.searchModel.searchTryCount = $scope.searchModel.searchTryCount + 1;
 		var promise = apiService.search(keyword);
+		var savedKeyword = keyword;
 		promise.then(function(json){
 			var toMiliseconds = (new Date).getTime();
 			$scope.searchModel.searchResult = [];
@@ -52,6 +53,7 @@ function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIServi
 				var document = new Document(data.createdTime, data.modifiedTime, data.title, data.pathString
 						, data.contents, data.parentPathString, data.fileSize, data.mimeType, data.exist);
 				$scope.searchModel.searchResult.push(document);
+				$scope.lazyLoadDocumentContent(document, keyword);
 			}
 			$scope.searchModel.searchTime = (toMiliseconds * 1.0 - milliseconds * 1.0) / 1000
 			$scope.searchModel.searchFlag = false;
@@ -64,6 +66,14 @@ function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIServi
 			var toMiliseconds = (new Date).getTime();
 			$scope.searchModel.searchFlag = false;
 			$scope.searchModel.searchTime = (toMiliseconds * 1.0 - milliseconds * 1.0) / 1000});
+	};
+	
+	$scope.lazyLoadDocumentContent = function(document, keyword){
+		var promiseDocumentContent = apiService.getDocumentContent(document.pathString, keyword);
+		promiseDocumentContent.then(function(content){
+			document.contents = content;
+			$log.log('path : '+ document.pathString + ", content : " + content);
+		}, function(){$log.log('getDocumentContent failed');},function(){})
 	};
 
 	$scope.initGUIService = function(){

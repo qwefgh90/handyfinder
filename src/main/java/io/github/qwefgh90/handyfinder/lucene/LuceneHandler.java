@@ -20,10 +20,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -100,7 +98,6 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	// reader / searcher
 	private DirectoryReader indexReader;
 	private IndexSearcher searcher;
-	private StandardQueryParser parser;
 
 	// indexing state (startIndex(), stopIndex() use state)
 	public enum INDEX_WRITE_STATE {
@@ -200,8 +197,6 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			indexReader = DirectoryReader.open(dir); // commit() is important
 			// for real-time search
 			searcher = new IndexSearcher(indexReader);
-			parser = new StandardQueryParser();
-			parser.setAllowLeadingWildcard(true);
 		} catch (IOException e) {
 			throw new RuntimeException(
 					"lucene IndexWriter initialization is failed"
@@ -297,7 +292,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		// if (INDEX_WRITE_STATE.PROGRESS == writeState)
 		// throw new IndexException("now indexing");
 		checkDirectoryReader();
-
+		StandardQueryParser parser = new StandardQueryParser();	//not thread safe, object is known as lightweight thing
+		parser.setAllowLeadingWildcard(true);
+		
 		Query q1 = parser.parse(addBiWildcardString(fullString), "pathString");
 		Query q2 = parser.parse(addWildcardString(fullString), "contents");
 
@@ -318,6 +315,23 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	public Document getDocument(int docid) throws IOException {
 		checkDirectoryReader();
 		return searcher.doc(docid);
+	}
+
+	/**
+	 * 
+	 * @param pathString
+	 * @return document id in lucene
+	 * @throws IOException
+	 */
+	public Optional<Integer> getDocument(String pathString) throws IOException{
+		checkDirectoryReader();
+		TopDocs results = searcher.search(new TermQuery(new Term("pathString",
+				pathString)), 1);
+		if (results.totalHits == 0) {
+			return Optional.empty();
+
+		}
+		return Optional.of(Integer.valueOf(results.scoreDocs[0].doc));
 	}
 
 	/**
@@ -373,15 +387,33 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	}
 
 	/**
-	 * highlight best summary to be returned
-	 * 
-	 * @param docid
+	 * highlight content of document. return null, if path is not valid
+	 * @param pathString
 	 * @param queryString
 	 * @return
 	 * @throws org.apache.lucene.queryparser.classic.ParseException
 	 * @throws IOException
 	 * @throws InvalidTokenOffsetsException
 	 * @throws QueryNodeException
+	 * @throws ParseException
+	 */
+	public Callable<Optional<Map.Entry<String, String>>> highlight(String pathString, String queryString) throws org.apache.lucene.queryparser.classic.ParseException, IOException, InvalidTokenOffsetsException, QueryNodeException, ParseException{
+		Optional<Integer> docResult = getDocument(pathString);
+		if(!docResult.isPresent()){
+			return null;
+		}
+		return highlight(docResult.get(), queryString);
+	}
+	/**
+	 * return null, if docid is not valid ,otherwise return callable function
+	 * @param docid
+	 * @param queryString
+	 * @return
+	 * @throws org.apache.lucene.queryparser.classic.ParseException
+	 * @throws IOException lucene low level error
+	 * @throws InvalidTokenOffsetsException
+	 * @throws QueryNodeException
+	 * @throws ParseException
 	 */
 	public Callable<Optional<Map.Entry<String, String>>> highlight(int docid, String queryString)
 			throws org.apache.lucene.queryparser.classic.ParseException,
@@ -389,7 +421,12 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			ParseException {
 		checkDirectoryReader();
 		StringBuilder sb = new StringBuilder();
-		final Document doc = searcher.doc(docid);
+		
+		if(docid >= indexReader.maxDoc() || docid < 0){
+			return null;
+		}
+		
+		final Document doc = getDocument(docid);
 		Query query = getBooleanQuery(queryString);
 		SimpleHTMLFormatter htmlFormatter = new SimpleHTMLFormatter();
 		Highlighter highlighter = new Highlighter(htmlFormatter,
@@ -615,7 +652,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		}
 		return true;
 	}
-
+	
 	/**
 	 * 
 	 * @return live documents
@@ -927,7 +964,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 
 	private BooleanQuery getBooleanQuery(String fullString)
 			throws QueryNodeException {
-
+		StandardQueryParser parser = new StandardQueryParser();	//not thread safe, object is known as lightweight thing
+		parser.setAllowLeadingWildcard(true);
+		
 		Query q1 = parser.parse(addBiWildcardString(fullString), "pathString");
 		Query q2 = parser.parse(addWildcardString(fullString), "contents");
 
@@ -938,7 +977,6 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	}
 
 	private String addWildcardString(String fullString) {
-
 		String[] partialQuery = fullString.split(" ");
 		StringBuilder sb = new StringBuilder();
 		for (String element : partialQuery) {

@@ -79,6 +79,16 @@ public class RootController {
 		return new ResponseEntity<Integer>(count, HttpStatus.OK);
 	}
 	
+	@RequestMapping(value = "/document/content", method = RequestMethod.GET)
+	public ResponseEntity<String> search(@RequestParam String pathString, @RequestParam String keyword){
+		Optional<String> contentResult = rootService.search(keyword, pathString);
+		if(contentResult.isPresent()){
+			return new ResponseEntity<String>(contentResult.get(), HttpStatus.OK);
+		}else{
+			return new ResponseEntity<String>("can't load content on your disk", HttpStatus.OK);
+		}
+	}
+	
 	@RequestMapping(value = "/supportType", method = RequestMethod.POST)
 	public ResponseEntity<String> updateIndexType(@RequestBody SupportTypeDto supportType) {
 		try {
