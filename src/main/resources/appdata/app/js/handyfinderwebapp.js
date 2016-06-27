@@ -256,6 +256,15 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 	$scope.run = function() {
 		var promise = $scope.save();
 		promise.then(function(){
+			if($scope.indexModel.running != 'READY'){
+				$log.log('it is running on index');
+				return;
+			}
+			if($scope.indexModel.intervalStopObject != undefined){
+				$log.log('it is just the start');
+				return;
+			}
+				
 			progressService.sendStartIndex();
 			$scope.indexModel.intervalStopObject = $interval(function(){
 				if($scope.indexModel.intervalTurn % 2 == 0){
@@ -284,13 +293,19 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 	};
 	
 	$scope.stop = function(){
-		if($scope.indexModel.intervalStopObject != undefined){
-			$log.log('stopping index...');
-			$interval.cancel($scope.indexModel.intervalStopObject);
-			$scope.indexModel.intervalStopObject = undefined;
-			$scope.indexModel.running = 'WAITING';
-			progressService.sendStopIndex();
+		if($scope.indexModel.intervalStopObject == undefined){
+			$log.log('not started yet');
+			return;
 		}
+		if($scope.indexModel.running != 'RUNNING'){
+			$log.log('illegal state. not running');
+			return;
+		}
+		$log.log('stopping index...');
+		$interval.cancel($scope.indexModel.intervalStopObject);
+		$scope.indexModel.intervalStopObject = undefined;
+		$scope.indexModel.running = 'WAITING';		// change state
+		progressService.sendStopIndex();
 	}
 	
 	$scope.updateType = function(obj) {
