@@ -1,5 +1,6 @@
 package io.github.qwefgh90.handyfinder.springweb.service;
 
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler.INDEX_WRITE_STATE;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
@@ -15,6 +16,7 @@ import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 import java.awt.Desktop;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -74,7 +76,7 @@ public class RootService {
 	public List<Directory> getDirectories() throws SQLException {
 		return indexProperty.selectDirectory();
 	}
-	
+
 	/**
 	 * 
 	 * @param list
@@ -158,15 +160,16 @@ public class RootService {
 	public void closeAppLucene() throws IOException {
 		handler.close();
 	}
-	
-	public int getDocumentCount(){
+
+	public int getDocumentCount() {
 		return handler.getDocumentCount();
 	}
-	
-	public Optional<String> search(String keyword, String pathString){
+
+	public Optional<String> search(String keyword, String pathString) {
 		try {
-			Optional<Map.Entry<String, String>> result = handler.highlight(pathString, keyword).call();
-			if(!result.isPresent())
+			Optional<Map.Entry<String, String>> result = handler.highlight(
+					pathString, keyword).call();
+			if (!result.isPresent())
 				return Optional.empty();
 			return Optional.of(result.get().getValue());
 		} catch (ParseException | IOException | InvalidTokenOffsetsException
@@ -180,44 +183,43 @@ public class RootService {
 	}
 
 	public Optional<List<DocumentDto>> search(String keyword) {
-//		HashMap<String, DocumentDto> docMap = new HashMap<>();
+		// HashMap<String, DocumentDto> docMap = new HashMap<>();
 		List<DocumentDto> list = new ArrayList<>();
-//		List<Callable<Optional<Map.Entry<String, String>>>> functionList = new ArrayList<>();
+		// List<Callable<Optional<Map.Entry<String, String>>>> functionList =
+		// new ArrayList<>();
 		try {
 			TopDocs docs = handler.search(keyword);
-//			ExecutorService executor = Executors.newWorkStealingPool();
+			// ExecutorService executor = Executors.newWorkStealingPool();
 			for (int i = 0; i < docs.scoreDocs.length; i++) {
 				Document document = handler.getDocument(docs.scoreDocs[i].doc);
 				DocumentDto dto = new DocumentDto();
 				String pathString = document.get("pathString");
 				Path path = Paths.get(pathString);
-//				Callable<Optional<Map.Entry<String, String>>> getHightlightContent;
-				if(Files.exists(path)){
+				// Callable<Optional<Map.Entry<String, String>>>
+				// getHightlightContent;
+				if (Files.exists(path)) {
 					dto.setExist(true);
-					dto.setModifiedTime(Files.getLastModifiedTime(path).toMillis());
+					dto.setModifiedTime(Files.getLastModifiedTime(path)
+							.toMillis());
 					dto.setFileSize(Files.size(path));
-					/*try {
-						getHightlightContent = handler.highlight(docs.scoreDocs[i].doc, keyword);
-						functionList.add(getHightlightContent);
-					} catch (ParseException e) {
-						LOG.warn(e.toString());
-						continue;
-					} catch (InvalidTokenOffsetsException e) {
-						LOG.warn(e.toString());
-						continue;
-					} catch (com.qwefgh90.io.jsearch.JSearch.ParseException e) {
-						LOG.warn(e.toString());
-						continue;
-					} catch (IOException e) {
-						LOG.warn(e.toString());
-						continue;
-					}*/
-				}else{
+					/*
+					 * try { getHightlightContent =
+					 * handler.highlight(docs.scoreDocs[i].doc, keyword);
+					 * functionList.add(getHightlightContent); } catch
+					 * (ParseException e) { LOG.warn(e.toString()); continue; }
+					 * catch (InvalidTokenOffsetsException e) {
+					 * LOG.warn(e.toString()); continue; } catch
+					 * (com.qwefgh90.io.jsearch.JSearch.ParseException e) {
+					 * LOG.warn(e.toString()); continue; } catch (IOException e)
+					 * { LOG.warn(e.toString()); continue; }
+					 */
+				} else {
 					dto.setExist(false);
-					dto.setModifiedTime(document.getField("lastModifiedTime").numericValue().longValue());
+					dto.setModifiedTime(document.getField("lastModifiedTime")
+							.numericValue().longValue());
 					dto.setFileSize(-1);
 				}
-				
+
 				dto.setCreatedTime(document.getField("createdTime")
 						.numericValue().longValue());
 				dto.setTitle(document.get("title"));
@@ -226,30 +228,22 @@ public class RootService {
 				dto.setParentPathString(Paths.get(document.get("pathString"))
 						.getParent().toAbsolutePath().toString());
 				dto.setMimeType(document.get("mimeType"));
-//				docMap.put(dto.getPathString(), dto);
+				// docMap.put(dto.getPathString(), dto);
 				list.add(dto);
 			}
 			/*
-			try {
-				List<Future<Optional<Map.Entry<String, String>>>> futureList = executor.invokeAll(functionList);
-				futureList.parallelStream().forEach(future -> {
-					try {
-						Optional<Map.Entry<String, String>> result = future.get();
-						if(!result.isPresent()){
-							return;
-						}
-						String pathString = result.get().getKey();
-						String contents = result.get().getValue();
-						docMap.get(pathString).setContents(contents);
-					} catch (Exception e) {
-						LOG.warn(e.toString());
-					}
-					
-				});
-			} catch (InterruptedException e) {
-				LOG.warn(e.toString());
-			}
-			executor.shutdown();*/
+			 * try { List<Future<Optional<Map.Entry<String, String>>>>
+			 * futureList = executor.invokeAll(functionList);
+			 * futureList.parallelStream().forEach(future -> { try {
+			 * Optional<Map.Entry<String, String>> result = future.get();
+			 * if(!result.isPresent()){ return; } String pathString =
+			 * result.get().getKey(); String contents = result.get().getValue();
+			 * docMap.get(pathString).setContents(contents); } catch (Exception
+			 * e) { LOG.warn(e.toString()); }
+			 * 
+			 * }); } catch (InterruptedException e) { LOG.warn(e.toString()); }
+			 * executor.shutdown();
+			 */
 			return Optional.of(list);
 		} catch (QueryNodeException e) {
 			LOG.info(ExceptionUtils.getStackTrace(e));
@@ -265,7 +259,7 @@ public class RootService {
 		case START_INDEXING: {
 			try {
 				List<Directory> list = indexProperty.selectDirectory();
-				if(handler.getWriteState() == INDEX_WRITE_STATE.READY)
+				if (handler.getWriteState() == INDEX_WRITE_STATE.READY)
 					handler.startIndex(list);
 				return;
 			} catch (SQLException e) {
@@ -279,7 +273,7 @@ public class RootService {
 			List<Directory> list;
 			try {
 				list = indexProperty.selectDirectory();
-				if(handler.getWriteState() == INDEX_WRITE_STATE.READY)
+				if (handler.getWriteState() == INDEX_WRITE_STATE.READY)
 					handler.updateIndexedDocuments(list);
 			} catch (SQLException e) {
 				LOG.info(ExceptionUtils.getStackTrace(e));
@@ -290,8 +284,8 @@ public class RootService {
 			handler.stopIndex();
 			break;
 		}
-		case OPEN_AND_SEND_DIRECTORY:{
-			this.openAndSendDirectory(); //async
+		case OPEN_AND_SEND_DIRECTORY: {
+			this.openAndSendDirectory(); // async
 		}
 		default: {
 			break;
@@ -308,6 +302,18 @@ public class RootService {
 				} catch (IOException e) {
 					LOG.warn(e.toString());
 				}
+			}
+		}
+	}
+
+	public void openHomeURL() {
+		Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop()
+				: null;
+		if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
+			try {
+				desktop.browse(URI.create(AppStartupConfig.homeUrl));
+			} catch (Exception e) {
+				LOG.warn(e.toString());
 			}
 		}
 	}
@@ -331,12 +337,10 @@ public class RootService {
 			} catch (IOException e) {
 				LOG.warn(ExceptionUtils.getStackTrace(e));
 			}
-
 		}
 	}
-	
 
-	private void openAndSendDirectory(){
+	private void openAndSendDirectory() {
 		invokerForCommand.openAndSendSelectedDirectory();
 	}
 }

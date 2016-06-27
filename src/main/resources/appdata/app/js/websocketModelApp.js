@@ -132,6 +132,9 @@ function(StompClient, $q, $log) {
 		openFile : function(path) {
 			stompClient.send("/handyfinder/command/gui/open-file", {}, JSON.stringify({path:path}));
 		},
+		openHome : function() {
+			stompClient.send("/handyfinder/command/gui/open-home", {}, JSON.stringify({path:''}));
+		},
 		isConnected : function(){
 			return stompClient.isConnected();
 		}

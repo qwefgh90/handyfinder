@@ -404,6 +404,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		}
 		return highlight(docResult.get(), queryString);
 	}
+	
 	/**
 	 * return null, if docid is not valid ,otherwise return callable function
 	 * @param docid

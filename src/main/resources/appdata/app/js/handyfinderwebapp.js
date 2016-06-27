@@ -20,8 +20,8 @@ app.config(function($routeProvider) {
 	});
 	//otherwise 메소드를 통하여 브라우저의 URL이 $routeProivder에서 정의되지 않은 URL일 경우에 해당하는 설정을 할 수 있다. 여기선 ‘/home’으로 이동시키고 있다.
 });
-app.controller('mainApplicationController', ['$location', '$scope', 'apiService',
-function($location, $scope, apiService) {
+app.controller('mainApplicationController', ['$location', '$scope', 'apiService','GUIService', '$log',
+function($location, $scope, apiService, GUIService, $log) {
 	$scope.path = '';
 	$scope.go = function(path) {
 		$location.path(path);
@@ -29,6 +29,34 @@ function($location, $scope, apiService) {
 	$scope.$on('$routeChangeStart', function(next, current) {
 		$scope.path = $location.path().substring(1);
 	});
+	
+
+	$scope.initGUIService = function(){
+		if(GUIService.isConnected() == false){
+			var promiseArray = GUIService.connect();
+			var promise = promiseArray[0];
+			promise.then(function(frame) {
+				$log.log('[handy]'+frame);
+				$scope.openHome = function(){
+					GUIService.openHome();
+				};
+			}, function(error) {
+				$log.log('[handy]'+error);
+			}, function(noti) {
+				$log.log('[handy]'+noti);
+			});
+			var failPromise = promiseArray[1];
+			failPromise.then(function(){},function(){$timeout(function() {
+				$scope.initGUIService(); //connect again
+			}, 2000);
+			},function(){});
+		}else{
+			$scope.openHome = function(){
+				GUIService.openHome();
+			};
+		}
+	};
+	$scope.initGUIService();
 }]);
 
 app.controller('searchController', ['$location','$log', '$scope', '$timeout', 'apiService', 'Document','$sce', 'GUIService', 'SearchModel',
@@ -452,11 +480,13 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 		$scope.indexModel.select_toggle = true;
 	}, true);
 	
-	$scope.$watch('indexModel.running + indexModel.state + indexModel.updateSummary.state', function () {
-		if($scope.indexModel.running == 'WAITING' && $scope.indexModel.state == 'TERMINATE' && $scope.indexModel.updateSummary.state == 'TERMINATE'){
+	$scope.$watch('indexModel.running + indexModel.state + indexModel.updateSummary.state + indexModel.intervalStopObject', function () {
+		if($scope.indexModel.running == 'WAITING' && $scope.indexModel.state == 'TERMINATE' && $scope.indexModel.updateSummary.state == 'TERMINATE'
+			&& $scope.indexModel.intervalStopObject == undefined){
 			$log.log('INDEX WRTIE TERMINATE');
 			$scope.indexModel.running = 'READY';
-		}else if($scope.indexModel.running != 'WAITING' && ($scope.indexModel.state != 'TERMINATE' || $scope.indexModel.updateSummary.state != 'TERMINATE')){
+		}else if($scope.indexModel.running != 'WAITING' && ($scope.indexModel.state != 'TERMINATE' || $scope.indexModel.updateSummary.state != 'TERMINATE')
+				&& $scope.indexModel.intervalStopObject != undefined){
 			$log.log('INDEX WRTIE START');
 			$scope.indexModel.running = 'RUNNING';
 		}

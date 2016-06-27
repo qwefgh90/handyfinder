@@ -164,6 +164,8 @@ public class RootController {
 			rootService.openDirectory(path.getPath());
 		if (command.equals("open-file"))
 			rootService.openFile(path.getPath());
+		if (command.equals("open-home"))
+			rootService.openHomeURL();
 	}
 
 	private static class OpenCommand {
