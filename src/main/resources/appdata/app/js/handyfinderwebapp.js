@@ -44,6 +44,7 @@ function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIServi
 		$scope.searchModel.searchFlag = true;
 		$scope.searchModel.searchTryCount = $scope.searchModel.searchTryCount + 1;
 		var promise = apiService.search(keyword);
+		var savedKeyword = keyword;
 		promise.then(function(json){
 			var toMiliseconds = (new Date).getTime();
 			$scope.searchModel.searchResult = [];
@@ -52,6 +53,7 @@ function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIServi
 				var document = new Document(data.createdTime, data.modifiedTime, data.title, data.pathString
 						, data.contents, data.parentPathString, data.fileSize, data.mimeType, data.exist);
 				$scope.searchModel.searchResult.push(document);
+				$scope.lazyLoadDocumentContent(document, keyword);
 			}
 			$scope.searchModel.searchTime = (toMiliseconds * 1.0 - milliseconds * 1.0) / 1000
 			$scope.searchModel.searchFlag = false;
@@ -64,6 +66,14 @@ function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIServi
 			var toMiliseconds = (new Date).getTime();
 			$scope.searchModel.searchFlag = false;
 			$scope.searchModel.searchTime = (toMiliseconds * 1.0 - milliseconds * 1.0) / 1000});
+	};
+	
+	$scope.lazyLoadDocumentContent = function(document, keyword){
+		var promiseDocumentContent = apiService.getDocumentContent(document.pathString, keyword);
+		promiseDocumentContent.then(function(content){
+			document.contents = content;
+			$log.log('path : '+ document.pathString + ", content : " + content);
+		}, function(){$log.log('getDocumentContent failed');},function(){})
 	};
 
 	$scope.initGUIService = function(){
@@ -246,6 +256,15 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 	$scope.run = function() {
 		var promise = $scope.save();
 		promise.then(function(){
+			if($scope.indexModel.running != 'READY'){
+				$log.log('it is running on index');
+				return;
+			}
+			if($scope.indexModel.intervalStopObject != undefined){
+				$log.log('it is just the start');
+				return;
+			}
+				
 			progressService.sendStartIndex();
 			$scope.indexModel.intervalStopObject = $interval(function(){
 				if($scope.indexModel.intervalTurn % 2 == 0){
@@ -274,13 +293,19 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 	};
 	
 	$scope.stop = function(){
-		if($scope.indexModel.intervalStopObject != undefined){
-			$log.log('stopping index...');
-			$interval.cancel($scope.indexModel.intervalStopObject);
-			$scope.indexModel.intervalStopObject = undefined;
-			$scope.indexModel.running = 'WAITING';
-			progressService.sendStopIndex();
+		if($scope.indexModel.intervalStopObject == undefined){
+			$log.log('not started yet');
+			return;
 		}
+		if($scope.indexModel.running != 'RUNNING'){
+			$log.log('illegal state. not running');
+			return;
+		}
+		$log.log('stopping index...');
+		$interval.cancel($scope.indexModel.intervalStopObject);
+		$scope.indexModel.intervalStopObject = undefined;
+		$scope.indexModel.running = 'WAITING';		// change state
+		progressService.sendStopIndex();
 	}
 	
 	$scope.updateType = function(obj) {

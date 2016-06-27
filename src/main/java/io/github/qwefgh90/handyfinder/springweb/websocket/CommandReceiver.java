@@ -44,4 +44,9 @@ public class CommandReceiver implements ICommandReceiver {
 	public void sendToUpdateSummary(UpdateSummaryCommand obj) {
 		messaging.convertAndSend("/index/update", obj);
 	}
+
+	@Override
+	public void sendToDocumentContent(DocumentContentCommand obj) {
+		messaging.convertAndSend("/search/document", obj);
+	}
 }

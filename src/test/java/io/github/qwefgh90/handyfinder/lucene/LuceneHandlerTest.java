@@ -170,9 +170,9 @@ public class LuceneHandlerTest {
 			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc,
 					"자바 고언어");
-			LOG.info(exp.toString());
+//			LOG.info(exp.toString());
 
-			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "자바 고언어"));
+//			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "자바 고언어"));
 		}
 		assertTrue(docs.scoreDocs.length == 7);
 

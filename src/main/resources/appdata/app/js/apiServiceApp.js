@@ -1,7 +1,7 @@
 var app = angular.module('apiServiceApp',[]);
 
 
-app.factory('apiService', ['$http', '$q', function($http, $q){
+app.factory('apiService', ['$http', '$q', '$log', function($http, $q, $log){
 	var getDirectories = function() {
 		var deferred = $q.defer();
 		
@@ -209,7 +209,36 @@ app.factory('apiService', ['$http', '$q', function($http, $q){
 			deferred.reject(response.data);
 		});
 		return deferred.promise;
+	};
+
+	var getDocumentContent = function(pathString, keyword){
+		var deferred = $q.defer();
 		
+		// ajax $http
+		var headers = {
+			'Accept' : 'application/json'
+		};
+		var params = {
+			keyword : keyword,
+			pathString : pathString
+		};
+		var config = {
+			params : params,
+			headers : headers
+		};
+
+		$http.get(url = '/document/content', config).then(function(response) {
+			if (response.status == 200) {
+				deferred.resolve(response.data);
+			} else {
+				deferred.reject(response.data);
+			}
+		}, function(response) {
+			deferred.reject(response.data);
+		}, function(response) {
+			deferred.reject(response.data);
+		});
+		return deferred.promise;
 	};
 
 	var getOptions = function() {
@@ -280,5 +309,6 @@ app.factory('apiService', ['$http', '$q', function($http, $q){
 			,updateSupportTypeList : updateSupportTypeList
 			,updateOptions : updateOptions
 			,getOptions : getOptions
-			,getDocumentCount : getDocumentCount};
+			,getDocumentCount : getDocumentCount
+			,getDocumentContent : getDocumentContent};
 }]);

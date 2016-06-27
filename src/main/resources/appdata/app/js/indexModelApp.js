@@ -123,16 +123,16 @@ app.factory("IndexModel",['$rootScope', function($rootScope){
 				processIndex : 0,
 				totalProcessCount : 100,
 				processPath : '',
-				state : 'TERMINATE',
+				state : 'TERMINATE', //START PROGRESS TERMINATE
 				updateSummary : {
 					countOfDeleted : 0,
 					countOfExcluded : 0,
 					countOfModified : 0,
-					state : 'TERMINATE'
+					state : 'TERMINATE' //START TERMINATE
 				},
 				intervalStopObject : undefined,
 				intervalTurn : 0,
-				running : 'READY' //READY RUNNING WAITING
+				running : 'READY' //READY RUNNING WAITING (ONLY FORM RUNNING TO WAITING STATE IN SCRIPT)
 			},
 
 	        SaveState: function () {
