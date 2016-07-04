@@ -79,11 +79,12 @@ public class LuceneHandlerTest {
 		assertTrue(handler == handler2);
 		handler.deleteAllIndexesFromFileSystem();
 
-		testpath = AppStartupConfig.deployedPath.resolve("index-test-files");
 
-		testpath2 = testpath.resolve("temp2.txt");
-		fileForUpdate = testpath.resolve("text.txt");
-		testpath = testpath.resolve("temp.txt");
+		Path parent = AppStartupConfig.deployedPath.resolve("index-test-files");
+
+		testpath2 = parent.resolve("temp2.txt");
+		fileForUpdate = parent.resolve("text.txt");
+		testpath = parent.resolve("temp.txt");
 
 		try (BufferedOutputStream os = new BufferedOutputStream(
 				new FileOutputStream(testpath.toFile()))) {
@@ -165,7 +166,7 @@ public class LuceneHandlerTest {
 		handler.indexDirectory(
 				AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 
-		TopDocs docs = handler.search("자바 고언어");
+		TopDocs docs = handler.search("java python");
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
 			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc,
@@ -174,36 +175,7 @@ public class LuceneHandlerTest {
 
 //			LOG.info(handler.highlight(docs.scoreDocs[i].doc, "자바 고언어"));
 		}
-		assertTrue(docs.scoreDocs.length == 7);
-
-		docs = handler.search("HTTP");
-		for (int i = 0; i < docs.scoreDocs.length; i++) {
-			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
-			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc,
-					"HTTP");
-			// LOG.info(exp.toString());
-
-			// LOG.info(handler.highlight(docs.scoreDocs[i].doc, "HTTP"));
-		}
-		assertTrue(docs.scoreDocs.length == 1);
-
-		docs = handler.search("부트로더 Proto");
-		for (int i = 0; i < docs.scoreDocs.length; i++) {
-			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
-
-			String info = "[" + docs.scoreDocs[i].score + "]"
-					+ doc.get("pathString") + " : \n" + doc.get("contents")
-					+ "\n";
-			// LOG.info(info);
-
-			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc,
-					"부트로더 Proto");
-			// / LOG.info(exp.toString());
-
-			// LOG.info(handler.highlight(docs.scoreDocs[i].doc, "부트로더 Proto"));
-		}
-		assertTrue(docs.scoreDocs.length == 2);
-
+		assertTrue(docs.scoreDocs.length == 4);
 	}
 
 	@Test
@@ -214,22 +186,11 @@ public class LuceneHandlerTest {
 		handler.indexDirectory(
 				AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 
-		TopDocs docs = handler.search("부트로더");
+		TopDocs docs = handler.search("http");
 		for (int i = 0; i < docs.scoreDocs.length; i++) {
 			Document doc = handler.getDocument(docs.scoreDocs[i].doc);
-
-			// String info = "[" + docs.scoreDocs[i].score + "]" +
-			// doc.get("pathString") + " : \n" + doc.get("contents")
-			// .substring(0, doc.get("contents").length() > 100 ? 100 :
-			// doc.get("contents").length()) + "\n";
-			// log.info(info);
-
 			Explanation exp = handler.getExplanation(docs.scoreDocs[i].doc,
 					"/depth/ homec/choe");
-			// LOG.info(exp.toString());
-
-			// LOG.info(handler.highlight(docs.scoreDocs[i].doc,
-			// "/depth/ homec/choe"));
 		}
 		assertTrue(docs.scoreDocs.length > 0);
 	}
