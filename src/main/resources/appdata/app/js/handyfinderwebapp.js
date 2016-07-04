@@ -284,15 +284,16 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 	$scope.run = function() {
 		var promise = $scope.save();
 		promise.then(function(){
-			if($scope.indexModel.running != 'READY'){
-				$log.log('it is running on index');
-				return;
-			}
-			if($scope.indexModel.intervalStopObject != undefined){
-				$log.log('it is just the start');
-				return;
-			}
-				
+//			if($scope.indexModel.running != 'READY'){
+//				$log.log('it is running on index');
+//				return;
+//			}
+//			if($scope.indexModel.intervalStopObject != undefined){
+//				$log.log('it is just the start');
+//				return;
+//			}
+			
+			$scope.indexModel.running = 'RUNNING'
 			progressService.sendStartIndex();
 			$scope.indexModel.intervalStopObject = $interval(function(){
 				if($scope.indexModel.intervalTurn % 2 == 0){
@@ -332,7 +333,7 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 		$log.log('stopping index...');
 		$interval.cancel($scope.indexModel.intervalStopObject);
 		$scope.indexModel.intervalStopObject = undefined;
-		$scope.indexModel.running = 'WAITING';		// change state
+		$scope.indexModel.running = 'READY';		// change state
 		progressService.sendStopIndex();
 	}
 	
@@ -480,17 +481,17 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 		$scope.indexModel.select_toggle = true;
 	}, true);
 	
-	$scope.$watch('indexModel.running + indexModel.state + indexModel.updateSummary.state + indexModel.intervalStopObject', function () {
-		if($scope.indexModel.running == 'WAITING' && $scope.indexModel.state == 'TERMINATE' && $scope.indexModel.updateSummary.state == 'TERMINATE'
-			&& $scope.indexModel.intervalStopObject == undefined){
-			$log.log('INDEX WRTIE TERMINATE');
-			$scope.indexModel.running = 'READY';
-		}else if($scope.indexModel.running != 'WAITING' && ($scope.indexModel.state != 'TERMINATE' || $scope.indexModel.updateSummary.state != 'TERMINATE')
-				&& $scope.indexModel.intervalStopObject != undefined){
-			$log.log('INDEX WRTIE START');
-			$scope.indexModel.running = 'RUNNING';
-		}
-	});
+//	$scope.$watch('indexModel.running + indexModel.state + indexModel.updateSummary.state + indexModel.intervalStopObject', function () {
+//		if($scope.indexModel.running == 'WAITING' && $scope.indexModel.state == 'TERMINATE' && $scope.indexModel.updateSummary.state == 'TERMINATE'
+//			&& $scope.indexModel.intervalStopObject == undefined){
+//			$log.log('INDEX WRTIE TERMINATE');
+//			$scope.indexModel.running = 'READY';
+//		}else if($scope.indexModel.running != 'WAITING' && ($scope.indexModel.state != 'TERMINATE' || $scope.indexModel.updateSummary.state != 'TERMINATE')
+//				&& $scope.indexModel.intervalStopObject != undefined){
+//			$log.log('INDEX WRTIE START');
+//			$scope.indexModel.running = 'RUNNING';
+//		}
+//	});
 	
 	$scope.refreshCount();
 }]);

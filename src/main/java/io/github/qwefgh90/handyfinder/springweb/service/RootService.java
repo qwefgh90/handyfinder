@@ -320,8 +320,7 @@ public class RootService {
 
 	public void openFile(String pathStr) {
 		Path path = Paths.get(pathStr);
-		if (Files.exists(path) && Files.isRegularFile(path)
-				&& !Files.isExecutable(path)) {
+		if (Files.exists(path) && Files.isRegularFile(path)) {
 			try {
 				MediaType mime = FileExtension.getContentType(path.toFile(),
 						path.getFileName().toString());
