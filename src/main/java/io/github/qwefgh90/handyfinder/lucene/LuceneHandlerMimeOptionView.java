@@ -34,51 +34,19 @@ import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
  * @author choechangwon
  *
  */
-public final class TikaMimeXmlObject implements ILuceneHandlerMimeOption {
-	private final static Logger LOG = LoggerFactory.getLogger(TikaMimeXmlObject.class);
+public final class LuceneHandlerMimeOptionView implements
+		ILuceneHandlerMimeOptionView {
+	private final static Logger LOG = LoggerFactory
+			.getLogger(LuceneHandlerMimeOptionView.class);
 
-	private TikaMimeXmlObject() {
+	private LuceneHandlerMimeOptionView() {
 	}
 
 	private Map<String, Set<String>> mimeToGlobListMap = new HashMap<>();
 	private Map<String, Boolean> globMap = new TreeMap<>();
 
-	public Iterator<String> getMimeIterator() {
-		return mimeToGlobListMap.keySet().iterator();
-	}
-
-	public Iterator<String> getGlobIterator(String mime) {
-		Set<String> str = mimeToGlobListMap.get(mime);
-		if(str == null)
-			return null;
-		return str.iterator();
-	}
-
-	public Iterator<String> getGlobIterator() {
-		return globMap.keySet().iterator();
-	}
-
-	public Map<String, Boolean> getGlobMap() {
+	public Map<String, Boolean> getImmutableGlobMap() {
 		return Collections.unmodifiableMap(globMap);
-	}
-
-	/**
-	 * if already exist, no change in globMap
-	 * 
-	 * @param mimetype
-	 * @param glob
-	 */
-	public void addGlobType(String mimetype, String glob) {
-		if (!globMap.containsKey(glob))
-			globMap.put(glob, Boolean.TRUE); // if not exist, put True into map
-
-		if (!mimeToGlobListMap.keySet().contains(mimetype)) {
-			Set<String> values = new TreeSet<String>();
-			values.add(glob);
-			mimeToGlobListMap.put(mimetype, values);
-		} else {
-			mimeToGlobListMap.get(mimetype).add(glob);
-		}
 	}
 
 	public void setGlob(String glob, boolean b) {
@@ -90,31 +58,9 @@ public final class TikaMimeXmlObject implements ILuceneHandlerMimeOption {
 		globMap.put(glob, value);
 	}
 
-	public Boolean getGlobUsing(String glob) {
-		return globMap.get(glob);
-	}
-
-	public int getCountofGlob() {
-		return globMap.size();
-	}
-
-	/**
-	 * get mimetype count from glob
-	 * 
-	 * @param glob
-	 * @return -1 if not exist.
-	 */
-	public int getCountofGlob(String mime) {
-		if (!mimeToGlobListMap.keySet().contains(mime)) {
-			return -1;
-		} else {
-			return mimeToGlobListMap.get(mime).size();
-		}
-	}
-
-	public void initGlobTrue(){
+	public void initGlobTrue() {
 		Iterator<String> iter = globMap.keySet().iterator();
-		while(iter.hasNext()){
+		while (iter.hasNext()) {
 			globMap.put(iter.next(), Boolean.TRUE);
 		}
 	}
@@ -122,7 +68,7 @@ public final class TikaMimeXmlObject implements ILuceneHandlerMimeOption {
 	@Override
 	public boolean isAllowMime(String mime) {
 		Iterator<String> iter = getGlobIterator(mime);
-		if(iter == null)
+		if (iter == null)
 			return true;
 		while (iter.hasNext()) {
 			Boolean used = getGlobUsing(iter.next());
@@ -138,7 +84,8 @@ public final class TikaMimeXmlObject implements ILuceneHandlerMimeOption {
 	 * @throws IOException
 	 * @throws FileNotFoundException
 	 */
-	public void updateGlobPropertiesFile() throws FileNotFoundException, IOException {
+	public void updateGlobPropertiesFile() throws FileNotFoundException,
+			IOException {
 		Properties properties = new Properties();
 		Iterator<String> iter = getGlobIterator();
 		while (iter.hasNext()) {
@@ -150,11 +97,61 @@ public final class TikaMimeXmlObject implements ILuceneHandlerMimeOption {
 			Files.delete(propertiesPath);
 		}
 
-		try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(propertiesPath.toFile()))) {
+		try (BufferedOutputStream bos = new BufferedOutputStream(
+				new FileOutputStream(propertiesPath.toFile()))) {
 			properties.store(bos, String.valueOf(System.currentTimeMillis()));
 		}
 	}
-	
+
+	Boolean getGlobUsing(String glob) {
+		return globMap.get(glob);
+	}
+
+	int getCountofGlob() {
+		return globMap.size();
+	}
+
+	/**
+	 * get glob count
+	 * 
+	 * @param mime
+	 * @return -1 if not exist.
+	 */
+	@Override
+	public Set<String> getGlobSet(String mime) {
+		return Collections.unmodifiableSet(mimeToGlobListMap.get(mime));
+	}
+
+	Iterator<String> getGlobIterator(String mime) {
+		Set<String> str = mimeToGlobListMap.get(mime);
+		if (str == null)
+			return null;
+		return str.iterator();
+	}
+
+	Iterator<String> getGlobIterator() {
+		return globMap.keySet().iterator();
+	}
+
+	/**
+	 * if already exist, no change in globMap
+	 * 
+	 * @param mimetype
+	 * @param glob
+	 */
+	void addGlobType(String mimetype, String glob) {
+		if (!globMap.containsKey(glob))
+			globMap.put(glob, Boolean.TRUE); // if not exist, put True into map
+
+		if (!mimeToGlobListMap.keySet().contains(mimetype)) {
+			Set<String> values = new TreeSet<String>();
+			values.add(glob);
+			mimeToGlobListMap.put(mimetype, values);
+		} else {
+			mimeToGlobListMap.get(mimetype).add(glob);
+		}
+	}
+
 	private Path propertiesPath;
 
 	/**
@@ -164,18 +161,19 @@ public final class TikaMimeXmlObject implements ILuceneHandlerMimeOption {
 	 *
 	 */
 	public static class TikaMimeXmlObjectFactory {
-		private static Map<String, TikaMimeXmlObject> container = new HashMap<String, TikaMimeXmlObject>();
+		private static Map<String, LuceneHandlerMimeOptionView> container = new HashMap<String, LuceneHandlerMimeOptionView>();
 
 		private TikaMimeXmlObjectFactory() {
-
 		}
 
-		public static TikaMimeXmlObject getInstanceFromXml(String xmlPath, Path propertiesPath, Path customTikaGlobPropertiesPath)
+		public static LuceneHandlerMimeOptionView getInstanceFromXml(
+				String xmlPath, Path propertiesPath,
+				Path customTikaGlobPropertiesPath)
 				throws ParserConfigurationException, SAXException, IOException {
 			if (container.keySet().contains(xmlPath)) {
 				return container.get(xmlPath);
 			}
-			TikaMimeXmlObject obj = new TikaMimeXmlObject();
+			LuceneHandlerMimeOptionView obj = new LuceneHandlerMimeOptionView();
 			obj.propertiesPath = propertiesPath;
 
 			Properties p = new Properties();
@@ -187,7 +185,8 @@ public final class TikaMimeXmlObject implements ILuceneHandlerMimeOption {
 					Iterator<Object> iter = p.keySet().iterator();
 					while (iter.hasNext()) {
 						String key = (String) iter.next();
-						obj.globMap.put(key, Boolean.valueOf(p.getProperty(key)));
+						obj.globMap.put(key,
+								Boolean.valueOf(p.getProperty(key)));
 					}
 				} catch (IOException e) {
 					LOG.info(e.toString());
@@ -205,13 +204,17 @@ public final class TikaMimeXmlObject implements ILuceneHandlerMimeOption {
 			return obj;
 		}
 
-		private static void addCustomMimeAndGlob(TikaMimeXmlObject obj, Path customTikaGlobPropertiesPath) {
+		private static void addCustomMimeAndGlob(
+				LuceneHandlerMimeOptionView obj,
+				Path customTikaGlobPropertiesPath) {
 			try {
 				Properties p = new Properties();
-				InputStream is = new FileInputStream(customTikaGlobPropertiesPath.toFile());
+				InputStream is = new FileInputStream(
+						customTikaGlobPropertiesPath.toFile());
 				p.load(is);
 				for (Map.Entry<Object, Object> entry : p.entrySet()) {
-					obj.addGlobType((String) entry.getKey(), (String) entry.getValue());
+					obj.addGlobType((String) entry.getKey(),
+							(String) entry.getValue());
 				}
 			} catch (FileNotFoundException e) {
 				LOG.info(e.toString());

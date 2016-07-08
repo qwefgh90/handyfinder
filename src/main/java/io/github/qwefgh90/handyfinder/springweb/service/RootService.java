@@ -4,7 +4,7 @@ import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler.INDEX_WRITE_STATE;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
-import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerMimeOptionView;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.model.COMMAND;
 import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
@@ -62,7 +62,7 @@ public class RootService {
 	LuceneHandler handler;
 
 	@Autowired
-	TikaMimeXmlObject tikaMimeObject;
+	LuceneHandlerMimeOptionView tikaMimeObject;
 
 	@Autowired
 	LuceneHandlerBasicOptionView globalAppData;
@@ -119,7 +119,7 @@ public class RootService {
 	 * @return list of support type
 	 */
 	public List<SupportTypeDto> getSupportType() {
-		Map<String, Boolean> map = tikaMimeObject.getGlobMap();
+		Map<String, Boolean> map = tikaMimeObject.getImmutableGlobMap();
 		List<SupportTypeDto> result = new ArrayList<>();
 		Iterator<Entry<String, Boolean>> iter = map.entrySet().iterator();
 		while (iter.hasNext()) {

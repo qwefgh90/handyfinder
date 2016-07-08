@@ -10,37 +10,30 @@ import org.xml.sax.SAXException;
 
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
-import io.github.qwefgh90.handyfinder.lucene.ILuceneHandlerBasicOption;
-import io.github.qwefgh90.handyfinder.lucene.ILuceneHandlerMimeOption;
+import io.github.qwefgh90.handyfinder.lucene.ILuceneHandlerBasicOptionView;
+import io.github.qwefgh90.handyfinder.lucene.ILuceneHandlerMimeOptionView;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerOption;
-import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
-import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject.TikaMimeXmlObjectFactory;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerMimeOptionView;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerMimeOptionView.TikaMimeXmlObjectFactory;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
 @Configuration
 public class AppDataConfig {
 
 	@Bean
-	public LuceneHandler luceneHandler(CommandInvoker invoker, LuceneHandlerOption option) {
+	public LuceneHandler luceneHandler(CommandInvoker invoker, LuceneHandlerBasicOptionView basicOption
+			,LuceneHandlerMimeOptionView mimeOption) {
 		return LuceneHandler
-				.getInstance(AppStartupConfig.pathForIndex, invoker, option);
+				.getInstance(AppStartupConfig.pathForIndex, invoker, basicOption, mimeOption);
 	}
 
 	@Bean
-	public LuceneHandlerOption luceneHandlerOption(ILuceneHandlerBasicOption basicOption,
-			ILuceneHandlerMimeOption mimeOption){
-		return new LuceneHandlerOption(basicOption, mimeOption);
-	}
-	
-	@Bean
-	public LuceneHandlerBasicOptionView globalAppDataView() {
-		LuceneHandlerBasicOptionView view =  LuceneHandlerBasicOptionView.getInstance();
-		return view;
+	public LuceneHandlerBasicOptionView luceneHandlerBasicOptionView(){
+		return LuceneHandlerBasicOptionView.getInstance();
 	}
 
 	@Bean
-	public TikaMimeXmlObject tikaMimeXmlObject() throws ParserConfigurationException, SAXException, IOException {
+	public LuceneHandlerMimeOptionView tikaMimeXmlObject() throws ParserConfigurationException, SAXException, IOException {
 		return TikaMimeXmlObjectFactory.getInstanceFromXml(AppStartupConfig.tikaXmlFilePath.toAbsolutePath().toString()
 				,AppStartupConfig.propertiesPath, AppStartupConfig.customTikaGlobPropertiesPath);
 	}

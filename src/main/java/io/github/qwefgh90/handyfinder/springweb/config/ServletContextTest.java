@@ -2,11 +2,6 @@ package io.github.qwefgh90.handyfinder.springweb.config;
 
 import java.util.List;
 
-import javax.sql.DataSource;
-
-import org.apache.derby.jdbc.EmbeddedDataSource;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -19,9 +14,6 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
-import io.github.qwefgh90.handyfinder.springweb.repository.Query;
 
 /**
  * for Test Servlet Context
@@ -47,15 +39,6 @@ public class ServletContextTest extends WebMvcConfigurerAdapter {
 	
 	MappingJackson2HttpMessageConverter jsonMessageConverter() {
 		return new MappingJackson2HttpMessageConverter();
-	}
-	
-	@Bean(name="dataSource")
-	public DataSource dataSource(){
-		EmbeddedDataSource ds = new EmbeddedDataSource();
-		ds.setDatabaseName("target/testdb");
-		ds.setCreateDatabase("create");
-		LOG.info(ds.toString());
-		return ds;
 	}
 	
 	@Bean(name="objectMapper")

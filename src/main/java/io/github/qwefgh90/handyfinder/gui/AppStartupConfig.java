@@ -1,6 +1,7 @@
 package io.github.qwefgh90.handyfinder.gui;
 
 import static io.github.qwefgh90.handyfinder.gui.Java2JavascriptUtils.connectBackendObject;
+import io.github.qwefgh90.handyfinder.exception.TomcatInitFailException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,6 +24,15 @@ import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.event.EventHandler;
+import javafx.scene.Scene;
+import javafx.scene.web.WebEvent;
+import javafx.scene.web.WebView;
+import javafx.stage.Stage;
+
 import javax.servlet.ServletException;
 
 import org.apache.catalina.Context;
@@ -37,22 +47,12 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.james.mime4j.codec.EncoderUtil.Usage;
 import org.apache.tika.mime.MimeTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.context.WebApplicationContext;
 import org.w3c.dom.Document;
-
-import javafx.application.Application;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.event.EventHandler;
-import javafx.scene.Scene;
-import javafx.scene.web.WebEvent;
-import javafx.scene.web.WebView;
-import javafx.stage.Stage;
 
 /**
  * local file contents search engine with javafx webview and spring restful api
@@ -319,33 +319,7 @@ public class AppStartupConfig extends Application {
 		}
 	}
 
-	static class TomcatInitFailException extends IllegalStateException {
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = 1L;
-
-		public TomcatInitFailException() {
-			super();
-			// TODO Auto-generated constructor stub
-		}
-
-		public TomcatInitFailException(String message, Throwable cause) {
-			super(message, cause);
-			// TODO Auto-generated constructor stub
-		}
-
-		public TomcatInitFailException(String s) {
-			super(s);
-			// TODO Auto-generated constructor stub
-		}
-
-		public TomcatInitFailException(Throwable cause) {
-			super(cause);
-			// TODO Auto-generated constructor stub
-		}
-	}
-
+	
 	/**
 	 * Returns a free port number on localhost, or throw runtime exception if
 	 * unable to find a free port.

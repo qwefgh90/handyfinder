@@ -1,4 +1,4 @@
-package handyfinder;
+package io.github.qwefgh90.handyfinder.lucene;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -6,7 +6,9 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.Iterator;
 
+import org.hamcrest.Matchers;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,6 +19,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
+import io.github.qwefgh90.handyfinder.lucene.ILuceneHandlerBasicOptionView;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
@@ -27,23 +30,23 @@ import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = { ServletContextTest.class, RootContext.class,
-		AppDataConfig.class, RootWebSocketConfig.class})
+		AppDataConfig.class, RootWebSocketConfig.class })
 @DirtiesContext(classMode = ClassMode.AFTER_CLASS)
-public class AppDataTest {
-	
-	@Autowired
-	LuceneHandlerBasicOptionView globalAppDataView;
+public class LuceneHandlerBasicOptionViewTest {
 
-	Directory d;
+	@Autowired
+	ILuceneHandlerBasicOptionView globalAppDataView;
+
+	private Directory testDir;
 
 	@Before
 	public void setup() throws IOException {
 		globalAppDataView.deleteAppDataFromDisk();
 		globalAppDataView.deleteDirectories();
-		d = new Directory();
-		d.setPathString("hello path");
-		d.setRecursively(false);
-		d.setUsed(false);
+		testDir = new Directory();
+		testDir.setPathString("hello path");
+		testDir.setRecursively(false);
+		testDir.setUsed(false);
 	}
 
 	@After
@@ -53,25 +56,35 @@ public class AppDataTest {
 	}
 
 	@Test
-	public void test() {
+	public void methodTest() {
+		globalAppDataView.addDirectory(testDir);
+		Assert.assertThat(globalAppDataView.getDirectoryList().size(),
+				Matchers.is(1));
 		
-		globalAppDataView.addDirectory(d);
-		globalAppDataView.setLimitCountOfResult(100);
-		assertTrue(globalAppDataView.getLimitCountOfResult() == 100);
-		Iterator<Directory> iter = globalAppDataView.getDirectoryList().iterator();
-		Directory tmp = iter.next();
-		assertTrue(tmp.getPathString().equals("hello path"));
-		assertTrue(false == tmp.isUsed());
-		assertFalse(iter.hasNext());
+		globalAppDataView.deleteDirectories();
+		Assert.assertThat(globalAppDataView.getDirectoryList().size(),
+				Matchers.is(0));
 
-		d.setUsed(true);
-		globalAppDataView.setDirectory(d);
-		iter = globalAppDataView.getDirectoryList().iterator();
-		tmp = iter.next();
-		assertTrue(true == tmp.isUsed());
-		assertFalse(iter.hasNext());
+		globalAppDataView.addDirectory(testDir);
+		globalAppDataView.deleteDirectory(testDir);
+		Assert.assertThat(globalAppDataView.getDirectoryList().size(),
+				Matchers.is(0));
 
-		globalAppDataView.writeAppDataToDisk();
-
+		globalAppDataView.addDirectory(testDir);
+		testDir.setPathString("modified");
+		globalAppDataView.setDirectory(testDir);
+		Assert.assertThat(globalAppDataView.getDirectoryList().size(),
+				Matchers.is(1));
+		Assert.assertThat(globalAppDataView.getDirectoryList().get(0).getPathString()
+				,Matchers.is("modified"));
+		
+		globalAppDataView.setMaximumDocumentMBSize(1);
+		Assert.assertThat(1,
+				Matchers.is(globalAppDataView.getMaximumDocumentMBSize()));
+		
+		globalAppDataView.setLimitCountOfResult(1);
+		Assert.assertThat(1,
+				Matchers.is(globalAppDataView.getLimitCountOfResult()));
 	}
+
 }

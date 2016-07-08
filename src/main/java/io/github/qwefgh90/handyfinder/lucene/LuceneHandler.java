@@ -109,7 +109,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	private int currentProgress = 0; // indexed documents count
 	private int totalProcess = 0; // total documents count to be indexed
 	private CommandInvoker invokerForCommand; // for command to client
-	private LuceneHandlerOption option;
+	private ILuceneHandlerBasicOptionView basicOption;
+	private ILuceneHandlerMimeOptionView mimeOption;
+
 
 	/**
 	 * manage state private API
@@ -155,7 +157,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @return object identified by path
 	 */
 	public static LuceneHandler getInstance(Path indexWriterPath,
-			CommandInvoker invoker, LuceneHandlerOption option) {
+			CommandInvoker invoker, 
+			 ILuceneHandlerBasicOptionView basicOption,
+			 ILuceneHandlerMimeOptionView mimeOption) {
 		if (Files.isDirectory(indexWriterPath.getParent())
 				&& Files.isWritable(indexWriterPath.getParent())) {
 			String pathString = indexWriterPath.toAbsolutePath().toString();
@@ -163,7 +167,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 				LuceneHandler newInstance = new LuceneHandler();
 				newInstance.writerInit(indexWriterPath);
 				newInstance.invokerForCommand = invoker;
-				newInstance.option = option;
+				newInstance.basicOption = basicOption;
+				newInstance.mimeOption = mimeOption;
 				map.put(pathString, newInstance);
 			}
 			return map.get(pathString);
@@ -301,7 +306,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		BooleanQuery query = new BooleanQuery.Builder().add(q1, Occur.SHOULD)
 				.add(q2, Occur.SHOULD).build();
 		TopDocs docs = searcher.search(query,
-				option.basicOption.getLimitCountOfResult());
+				basicOption.getLimitCountOfResult());
 		return docs;
 	}
 
@@ -613,7 +618,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 								}
 								// check file size
 								try {
-									if (Files.size(file) / (1000 * 1000) <= option.basicOption
+									if (Files.size(file) / (1000 * 1000) <= basicOption
 											.getMaximumDocumentMBSize()
 											&& !isExists(file.toAbsolutePath()
 													.toString())){
@@ -734,12 +739,12 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 								MediaType type = FileExtension.getContentType(
 										path.toFile(), path.toAbsolutePath()
 												.toString());
-								if (false == option.mimeOption.isAllowMime(type
+								if (false == mimeOption.isAllowMime(type
 										.toString()))
 									return true;
 								long size = Files.size(path);
 
-								if (size / (1000 * 1000) > option.basicOption
+								if (size / (1000 * 1000) > basicOption
 										.getMaximumDocumentMBSize()) {
 									return true;
 								}
@@ -836,7 +841,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		checkIndexWriter();
 		MediaType mimeType = FileExtension.getContentType(path.toFile(), path
 				.getFileName().toString());
-		if (!option.mimeOption.isAllowMime(mimeType.toString()))
+		if (!mimeOption.isAllowMime(mimeType.toString()))
 			return;
 
 		Document doc = new Document();

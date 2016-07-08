@@ -18,23 +18,26 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
-@JsonIgnoreProperties(value = { "singleton", "om", "LOG" },ignoreUnknown = true)
+
+@JsonIgnoreProperties(value = { "singleton", "om", "LOG","_limitCountOfResult","_maximumDocumentMBSize"},ignoreUnknown = true)
 class LuceneHandlerBasicOption {
 	private final static Logger LOG = LoggerFactory
 			.getLogger(LuceneHandlerBasicOption.class);
 
+	private final int _limitCountOfResult = 100;
+	private final int _maximumDocumentMBSize = 100;
+	
 	private static LuceneHandlerBasicOption singleton;
 	private static ObjectMapper om = new ObjectMapper();
 
 	private List<Directory> directoryList;
 	private int limitCountOfResult;
 	private int maximumDocumentMBSize;
-
 	private LuceneHandlerBasicOption() throws JsonParseException, JsonMappingException,
 			IOException {
 		this.directoryList = new ArrayList<Directory>();
-		this.limitCountOfResult = ILuceneHandlerBasicOption.limitCountOfResult;
-		this.maximumDocumentMBSize = ILuceneHandlerBasicOption.maximumDocumentMBSize;
+		this.limitCountOfResult = _limitCountOfResult;
+		this.maximumDocumentMBSize = _maximumDocumentMBSize;
 	}
 
 	//for Object to JSON public visibility

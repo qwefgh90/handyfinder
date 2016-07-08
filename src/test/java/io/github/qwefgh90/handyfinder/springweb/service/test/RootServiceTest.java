@@ -1,6 +1,11 @@
-package handyfinder;
+package io.github.qwefgh90.handyfinder.springweb.service.test;
 
 import static org.junit.Assert.assertTrue;
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
+import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
+import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -8,7 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.cli.ParseException;
+import org.hamcrest.Matchers;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,37 +28,18 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
-import io.github.qwefgh90.handyfinder.lucene.model.Directory;
-import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
-import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
-import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 // ApplicationContext will be loaded from
 // "classpath:/com/example/OrderServiceTest-context.xml"
 @ContextConfiguration(classes = { ServletContextTest.class, RootContext.class })
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
-public class RepositoryTest {
-	private final static Logger LOG = LoggerFactory.getLogger(RepositoryTest.class);
+public class RootServiceTest {
+	private final static Logger LOG = LoggerFactory.getLogger(RootServiceTest.class);
 	@Autowired
 	MetaRespository indexProperty;
 	Directory dir1;
 	Directory dir2;
-	List<Directory> list = new ArrayList<>();
-
-	static {
-		try {
-			AppStartupConfig.parseArguments(null);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
 	
 	@Before
 	public void setup() throws SQLException, IOException {
@@ -64,8 +52,6 @@ public class RepositoryTest {
 		dir2.setPathString("path2");
 		dir2.setUsed(true);
 		dir2.setRecursively(false);
-		list.add(dir1);
-		list.add(dir2);
 	}
 	
 	@After
@@ -89,17 +75,20 @@ public class RepositoryTest {
 		indexProperty.saveOne(dir);
 		indexProperty.saveOne(dir);
 		indexProperty.saveOne(dir);
-		assertTrue(indexProperty.selectDirectory().size() == 1);
+		Assert.assertThat(indexProperty.selectDirectory().size(),Matchers.is(1));
 		indexProperty.deleteDirectories();
-		assertTrue(indexProperty.selectDirectory().size() == 0);
+		Assert.assertThat(indexProperty.selectDirectory().size(),Matchers.is(0));
 	}
 
 	@Test
 	public void directoryTest2() throws SQLException {
+		List<Directory> list = new ArrayList<>();
+		list.add(dir1);
+		list.add(dir2);
 		indexProperty.save(list);
-		assertTrue(indexProperty.selectDirectory().size() == 2);
+		Assert.assertThat(indexProperty.selectDirectory().size(),Matchers.is(2));
 
 		indexProperty.deleteDirectories();
-		assertTrue(indexProperty.selectDirectory().size() == 0);
+		Assert.assertThat(indexProperty.selectDirectory().size(),Matchers.is(0));
 	}
 }

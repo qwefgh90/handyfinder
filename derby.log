@@ -1,7 +1,7 @@
 ----------------------------------------------------------------
-Mon Jul 04 23:29:54 KST 2016:
-Booting Derby version The Apache Software Foundation - Apache Derby - 10.12.1.1 - (1704137): instance a816c00e-0155-b650-c25f-00000b6e1668 
-on database directory /Users/cheochangwon/Documents/WorkspaceJava/handyfinder/target/test-classes/test-db with class loader sun.misc.Launcher$AppClassLoader@45ee12a7 
+Fri Jul 08 18:40:54 KST 2016:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.12.1.1 - (1704137): instance a816c00e-0155-c9e1-9c10-000005ed23b8 
+on database directory /Users/cheochangwon/Documents/WorkspaceJava/handyfinder/target/test-classes/test-db with class loader sun.misc.Launcher$AppClassLoader@7591083d 
 Loaded from file:/Users/cheochangwon/.m2/repository/org/apache/derby/derby/10.12.1.1/derby-10.12.1.1.jar
 java.vendor=Oracle Corporation
 java.runtime.version=1.8.0_25-b17

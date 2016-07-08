@@ -11,13 +11,14 @@ import org.slf4j.LoggerFactory;
 
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
-public class LuceneHandlerBasicOptionView implements ILuceneHandlerBasicOption{
+public class LuceneHandlerBasicOptionView implements
+		ILuceneHandlerBasicOptionView {
 	private final static Logger LOG = LoggerFactory
 			.getLogger(LuceneHandlerBasicOptionView.class);
 
 	private LuceneHandlerBasicOption app;
 
-	private LuceneHandlerBasicOptionView(){
+	private LuceneHandlerBasicOptionView() {
 		try {
 			app = LuceneHandlerBasicOption.getInstance();
 		} catch (IOException e) {
@@ -25,11 +26,11 @@ public class LuceneHandlerBasicOptionView implements ILuceneHandlerBasicOption{
 			throw new RuntimeException(e.toString());
 		}
 	}
-	
+
 	private static LuceneHandlerBasicOptionView singleton = null;
-	
-	public static LuceneHandlerBasicOptionView getInstance(){
-		if(singleton==null)
+
+	public static LuceneHandlerBasicOptionView getInstance() {
+		if (singleton == null)
 			singleton = new LuceneHandlerBasicOptionView();
 		return singleton;
 	}
@@ -57,8 +58,8 @@ public class LuceneHandlerBasicOptionView implements ILuceneHandlerBasicOption{
 			}
 		}
 	}
-	
-	public void deleteDirectories(){
+
+	public void deleteDirectories() {
 		app.getDirectoryList().clear();
 	}
 
@@ -70,14 +71,14 @@ public class LuceneHandlerBasicOptionView implements ILuceneHandlerBasicOption{
 		app.deleteAppDataFromDisk();
 	}
 
-	public void setMaximumDocumentMBSize(int size){
+	public void setMaximumDocumentMBSize(int size) {
 		app.setMaximumDocumentMBSize(size);
 	}
-	
-	public void setLimitCountOfResult(int limit){
+
+	public void setLimitCountOfResult(int limit) {
 		app.setLimitCountOfResult(limit);
 	}
-	
+
 	@Override
 	public int getMaximumDocumentMBSize() {
 		return app.getMaximumDocumentMBSize();

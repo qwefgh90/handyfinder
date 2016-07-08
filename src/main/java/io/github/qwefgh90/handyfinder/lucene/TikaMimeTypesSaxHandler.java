@@ -27,11 +27,11 @@ class TikaMimeTypesSaxHandler extends DefaultHandler {
 	 * </mime-type>
 	 */
 	
-	public TikaMimeTypesSaxHandler(TikaMimeXmlObject xmlObject){
+	public TikaMimeTypesSaxHandler(LuceneHandlerMimeOptionView xmlObject){
 		this.xmlObject = xmlObject;
 	}
 	
-	TikaMimeXmlObject xmlObject;
+	LuceneHandlerMimeOptionView xmlObject;
 	
 	private enum TikaMimeEnum{
 		MIME_TYPE_TAG("mime-type",Boolean.TRUE),

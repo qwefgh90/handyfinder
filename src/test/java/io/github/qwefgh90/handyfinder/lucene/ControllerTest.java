@@ -9,9 +9,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
 import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
 import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
 import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
+import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
 import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
 import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
@@ -25,6 +28,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,7 +59,6 @@ public class ControllerTest {
 			.getLogger(ControllerTest.class);
 	@Autowired
 	WebApplicationContext wac;
-	MockMvc mvc;
 
 	@Autowired
 	CommandInvoker invoker;
@@ -64,10 +67,16 @@ public class ControllerTest {
 	LuceneHandler handler;
 
 	@Autowired
-	LuceneHandlerBasicOptionView view;
+	LuceneHandlerBasicOptionView basicOption;
+	@Autowired
+	LuceneHandlerMimeOptionView mimeOption;
 
+	MockMvc mvc;
+	
 	@Before
 	public void setup() throws IOException {
+		mimeOption.initGlobTrue();
+		handler.deleteAllIndexesFromFileSystem();
 		handler.indexDirectory(
 				AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 		mvc = MockMvcBuilders.webAppContextSetup(wac).build();
@@ -75,7 +84,6 @@ public class ControllerTest {
 
 	@After
 	public void clean() throws IOException {
-		view.deleteAppDataFromDisk();
 	}
 
 	ObjectMapper om = new ObjectMapper();
@@ -96,62 +104,23 @@ public class ControllerTest {
 
 		String modifiedJsonString = om.writeValueAsString(option1);
 		OptionDto option2 = om.readValue(modifiedJsonString, OptionDto.class);
-		assertTrue(option1.getLimitCountOfResult() == option2
-				.getLimitCountOfResult());
-		assertTrue(option1.getMaximumDocumentMBSize() == option2
-				.getMaximumDocumentMBSize());
+		assertThat(option1.getLimitCountOfResult(), Matchers.is(option2
+				.getLimitCountOfResult()));
+		assertThat(option1.getMaximumDocumentMBSize(), Matchers.is(option2
+				.getMaximumDocumentMBSize()));
 	}
 
 	@Test
 	public void searchTest() throws Exception {
-		mvc.perform(
+		MvcResult mvcResult = mvc.perform(
 				get("/documents").contentType(MediaType.APPLICATION_JSON_UTF8)
-						.param("keyword", "자바 고언어 파이썬"))
-				.andExpect(status().isOk())
-				.andDo(MockMvcResultHandlers.print());
-	}
-
-	@Test
-	public void supportTypeTest2() throws Exception {
-
-		MvcResult result = mvc
-				.perform(
-						get("/supportTypes").contentType(
-								MediaType.APPLICATION_JSON_UTF8))
+						.param("keyword", "java"))
 				.andExpect(status().isOk())
 				.andDo(MockMvcResultHandlers.print()).andReturn();
-
-		String responseString = result.getResponse().getContentAsString();
-
-		List<SupportTypeDto> list = new ArrayList<SupportTypeDto>();
-		// response to json
-		JSONArray arr = (JSONArray) new JSONParser().parse(responseString);
-		for (int i = 0; i < arr.size(); i++) {
-			SupportTypeDto dto = new SupportTypeDto();
-			dto.setType(((JSONObject) arr.get(i)).get("type").toString());
-			dto.setUsed(false);
-			list.add(dto);
-		}
-		String json = om.writeValueAsString(list);
-
-		mvc.perform(
-				post("/supportTypes").contentType(
-						MediaType.APPLICATION_JSON_UTF8).content(json))
-				.andExpect(status().isOk());
 		
-		result = mvc
-				.perform(
-						get("/supportTypes").contentType(
-								MediaType.APPLICATION_JSON_UTF8))
-				.andExpect(status().isOk())
-				.andDo(MockMvcResultHandlers.print()).andReturn();
-
-		responseString = result.getResponse().getContentAsString();
-		arr = (JSONArray) new JSONParser().parse(responseString);
-		for (int i = 0; i < arr.size(); i++) {
-			assertFalse(Boolean.valueOf(((JSONObject) arr.get(i)).get("used").toString()));
-		}
-
+		String responseString = mvcResult.getResponse().getContentAsString();
+		List<DocumentDto> list = om.readValue(responseString, List.class);
+		Assert.assertThat(list.size(), Matchers.is(4));
 	}
 
 	@Test
@@ -213,4 +182,47 @@ public class ControllerTest {
 								Matchers.is(Boolean.valueOf(dto.isUsed()))));
 
 	}
+	
+	@Test
+	public void supportTypeTest2() throws Exception {
+
+		MvcResult result = mvc
+				.perform(
+						get("/supportTypes").contentType(
+								MediaType.APPLICATION_JSON_UTF8))
+				.andExpect(status().isOk())
+				.andDo(MockMvcResultHandlers.print()).andReturn();
+
+		String responseString = result.getResponse().getContentAsString();
+
+		List<SupportTypeDto> list = new ArrayList<SupportTypeDto>();
+		// response to json
+		JSONArray arr = (JSONArray) new JSONParser().parse(responseString);
+		for (int i = 0; i < arr.size(); i++) {
+			SupportTypeDto dto = new SupportTypeDto();
+			dto.setType(((JSONObject) arr.get(i)).get("type").toString());
+			dto.setUsed(false);
+			list.add(dto);
+		}
+		String json = om.writeValueAsString(list);
+
+		mvc.perform(
+				post("/supportTypes").contentType(
+						MediaType.APPLICATION_JSON_UTF8).content(json))
+				.andExpect(status().isOk());
+		
+		result = mvc
+				.perform(
+						get("/supportTypes").contentType(
+								MediaType.APPLICATION_JSON_UTF8))
+				.andExpect(status().isOk())
+				.andDo(MockMvcResultHandlers.print()).andReturn();
+
+		responseString = result.getResponse().getContentAsString();
+		arr = (JSONArray) new JSONParser().parse(responseString);
+		for (int i = 0; i < arr.size(); i++) {
+			assertFalse(Boolean.valueOf(((JSONObject) arr.get(i)).get("used").toString()));
+		}
+	}
+
 }

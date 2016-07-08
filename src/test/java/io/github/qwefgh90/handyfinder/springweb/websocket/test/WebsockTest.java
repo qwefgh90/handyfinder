@@ -1,4 +1,4 @@
-package intergration.websocket.test;
+package io.github.qwefgh90.handyfinder.springweb.websocket.test;
 
 import static org.junit.Assert.fail;
 import static org.junit.Assert.assertTrue;
@@ -44,7 +44,7 @@ import org.springframework.web.socket.sockjs.client.Transport;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
-import io.github.qwefgh90.handyfinder.lucene.TikaMimeXmlObject;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerMimeOptionView;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
 import io.github.qwefgh90.handyfinder.springweb.service.RootService;
@@ -56,7 +56,7 @@ public class WebsockTest {
 	
 	RootService rootService;
 	MetaRespository metaRepo;
-	TikaMimeXmlObject xmlObject;
+	LuceneHandlerMimeOptionView xmlObject;
 	List<Directory> list = new ArrayList<>();
 
 	@Before
@@ -65,7 +65,7 @@ public class WebsockTest {
 
 		rootService = AppStartupConfig.getBean(RootService.class);
 		metaRepo = AppStartupConfig.getBean(MetaRespository.class);
-		xmlObject = AppStartupConfig.getBean(TikaMimeXmlObject.class);
+		xmlObject = AppStartupConfig.getBean(LuceneHandlerMimeOptionView.class);
 		xmlObject.initGlobTrue();
 		Directory dir = new Directory();
 		dir.setRecursively(true);
