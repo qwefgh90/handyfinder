@@ -85,18 +85,18 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
-			<version>4.2.6.RELEASE</version>
+			<version>${spring.webmvc.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-websocket</artifactId>
-			<version>4.2.6.RELEASE</version>
+			<version>${spring.webmvc.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-messaging</artifactId>
-			<version>4.2.6.RELEASE</version>
+			<version>${spring.webmvc.version}</version>
 		</dependency>
 
 		<dependency>

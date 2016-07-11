@@ -60,9 +60,9 @@ public class WebsockTest {
 	List<Directory> list = new ArrayList<>();
 
 	@Before
-	public void setup() throws LifecycleException, ServletException, IOException, URISyntaxException, SQLException, ParseException {
+	public void setup() throws LifecycleException, ServletException, IOException, URISyntaxException, SQLException, ParseException, InterruptedException {
 		AppStartupConfig.main(new String[] { "--no-gui"});
-
+		AppStartupConfig.getWasThread().join();
 		rootService = AppStartupConfig.getBean(RootService.class);
 		metaRepo = AppStartupConfig.getBean(MetaRespository.class);
 		xmlObject = AppStartupConfig.getBean(LuceneHandlerMimeOptionView.class);
@@ -81,7 +81,7 @@ public class WebsockTest {
 	public void clean() throws Exception {
 		rootService.closeAppLucene();
 		metaRepo.deleteDirectories();
-		AppStartupConfig.terminateApp();
+		AppStartupConfig.terminateProgram();
 	}
 
 	@Test
