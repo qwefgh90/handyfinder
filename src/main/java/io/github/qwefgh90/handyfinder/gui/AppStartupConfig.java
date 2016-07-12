@@ -40,6 +40,7 @@ import javafx.scene.web.WebEvent;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 
 import org.apache.catalina.Context;
@@ -55,6 +56,11 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.tika.mime.MimeTypes;
+import org.apache.tomcat.JarScanFilter;
+import org.apache.tomcat.JarScanType;
+import org.apache.tomcat.JarScannerCallback;
+import org.apache.tomcat.util.scan.StandardJarScanFilter;
+import org.apache.tomcat.util.scan.StandardJarScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
@@ -188,25 +194,28 @@ public class AppStartupConfig extends Application {
 	static {
 		was = new Thread(() -> {
 			// local tomcat server initializing...
-			try {
-				AppStartupConfig.paragrahQueue.put("server initialzing..."); 
-				Tomcat tomcat = new Tomcat();
-				AppStartupConfig.tomcat = tomcat;
-				tomcat.getConnector().setAttribute("address", address);
-				tomcat.getConnector().setAttribute("port", port);
+				try {
+					AppStartupConfig.paragrahQueue.put("server initialzing...");
+					Tomcat tomcat = new Tomcat();
+
+					AppStartupConfig.tomcat = tomcat;
+					tomcat.getConnector().setAttribute("address", address);
+					tomcat.getConnector().setAttribute("port", port);
 
 					Context context = tomcat.addWebapp("", pathForAppdata
 							.toAbsolutePath().toString());
 					// https://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/catalina/startup/Tomcat.html#addWebapp(org.apache.catalina.Host,%20java.lang.String,%20java.lang.String)
 
+				context.setJarScanner(new FastJarScanner());
 				context.addWelcomeFile(REDIRECT_PAGE);
 				tomcat.init();
-				AppStartupConfig.paragrahQueue.put("server startup..."); 
+				AppStartupConfig.paragrahQueue.put("server startup...");
 				tomcat.start();
-				AppStartupConfig.paragrahQueue.put("server health checking..."); 
+				AppStartupConfig.paragrahQueue.put("server health checking...");
 				healthCheck();
 				if (SERVER_ONLY == false) {
-					Platform.runLater(() -> AppStartupConfig.app.showUI(AppStartupConfig.app::setWebviewAfterLoading));
+					Platform.runLater(() -> AppStartupConfig.app
+							.showUI(AppStartupConfig.app::setWebviewAfterLoading));
 				}
 				LOG.info("tomcat started completely : " + homeUrl);
 			} catch (Exception e) {
@@ -217,7 +226,7 @@ public class AppStartupConfig extends Application {
 					AppStartupConfig.paragrahQueue.put("");
 				} catch (Exception e) {
 					LOG.error(e.toString());
-				} 
+				}
 			}
 		});
 	}
@@ -288,25 +297,30 @@ public class AppStartupConfig extends Application {
 		});
 		LOG.info("javafx is initialized ");
 		showUI(this::setWebviewBeforeLoading);
-		Thread pragraphWorker = new Thread(() -> {
-			while (true) {
-				try {
-					final String pragraph = AppStartupConfig.paragrahQueue.take();
-					if(pragraph.equals(""))
-						break;
-					if (SERVER_ONLY == false) {
-						Platform.runLater(() -> {setLoadingParagraph(pragraph);});
+		Thread pragraphWorker = new Thread(
+				() -> {
+					while (true) {
+						try {
+							final String pragraph = AppStartupConfig.paragrahQueue
+									.take();
+							if (pragraph.equals(""))
+								break;
+							if (SERVER_ONLY == false) {
+								Platform.runLater(() -> {
+									setLoadingParagraph(pragraph);
+								});
+							}
+						} catch (Exception e) {
+							LOG.error(e.toString());
+							break;
+						}
 					}
-				} catch (Exception e) {
-					LOG.error(e.toString());
-					break;
-				}
-			}
-		});
+				});
 		pragraphWorker.start();
 	}
 
 	private WebView currentView = null;
+
 	private void showUI(Supplier<WebView> run) {
 		if (AppStartupConfig.primaryStage == null
 				|| AppStartupConfig.app == null || SERVER_ONLY == true)
@@ -315,20 +329,24 @@ public class AppStartupConfig extends Application {
 		currentView = run.get();
 		primaryStage.show();
 	}
-	
+
 	/**
 	 * 
 	 * @param paragraph
-	 * @throws IllegalStateException if not called setWebviewBeforeLoading() or if setWebviewAfterLoading() is already called
+	 * @throws IllegalStateException
+	 *             if not called setWebviewBeforeLoading() or if
+	 *             setWebviewAfterLoading() is already called
 	 */
-	private void setLoadingParagraph(String paragraph){
-		if(currentView == null){
+	private void setLoadingParagraph(String paragraph) {
+		if (currentView == null) {
 			throw new IllegalStateException("currentView is not initializaed");
 		}
 		WebEngine eg = currentView.getEngine();
-		Element element = (Element) eg.executeScript("document.getElementById('loading')");
-		if(element == null){
-			throw new IllegalStateException("can't set paragraph. setWebviewAfterLoading() is already called.");
+		Element element = (Element) eg
+				.executeScript("document.getElementById('loading')");
+		if (element == null) {
+			throw new IllegalStateException(
+					"can't set paragraph. setWebviewAfterLoading() is already called.");
 		}
 		element.setTextContent(paragraph);
 	}
@@ -340,13 +358,13 @@ public class AppStartupConfig extends Application {
 				AppStartupConfig.class.getResource(RESOURCE_LOADING_PAGE)
 						.toExternalForm());
 		Scene scene = new Scene(webView);
-		
+
 		primaryStage.setScene(scene);
 		primaryStage.setTitle("Loading...");
 		primaryStage.setWidth(300);
 		primaryStage.setHeight(330);
 		primaryStage.centerOnScreen();
-		
+
 		return webView;
 	}
 
@@ -694,6 +712,31 @@ public class AppStartupConfig extends Application {
 	public static void setServletAppContext(
 			WebApplicationContext servletAppContext) {
 		AppStartupConfig.servletAppContext = servletAppContext;
+	}
+
+	/**
+	 * Fast Jar Scanner scans one kind of jar like handyfinder.jar
+	 * 
+	 * @author cheochangwon
+	 *
+	 */
+	private static class FastJarScanner extends StandardJarScanner {
+		@Override
+		public void scan(JarScanType scanType, ServletContext context,
+				JarScannerCallback callback) {
+			StandardJarScanFilter filter = new StandardJarScanFilter();
+			filter.setDefaultTldScan(false);
+			filter.setPluggabilitySkip("*.jar");
+			filter.setPluggabilityScan("*handyfinder*");
+			setJarScanFilter(filter);
+
+			super.scan(scanType, context, callback);
+		}
+
+		@Override
+		public void setJarScanFilter(JarScanFilter jarScanFilter) {
+			super.setJarScanFilter(jarScanFilter);
+		}
 	}
 
 }
