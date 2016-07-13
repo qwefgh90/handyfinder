@@ -75,6 +75,8 @@ public class ControllerTest {
 	
 	@Before
 	public void setup() throws IOException {
+		basicOption.setLimitCountOfResult(100);
+		basicOption.setMaximumDocumentMBSize(100);
 		mimeOption.initGlobTrue();
 		handler.deleteAllIndexesFromFileSystem();
 		handler.indexDirectory(
@@ -114,7 +116,7 @@ public class ControllerTest {
 	public void searchTest() throws Exception {
 		MvcResult mvcResult = mvc.perform(
 				get("/documents").contentType(MediaType.APPLICATION_JSON_UTF8)
-						.param("keyword", "java"))
+						.param("keyword", "javageeks"))
 				.andExpect(status().isOk())
 				.andDo(MockMvcResultHandlers.print()).andReturn();
 		

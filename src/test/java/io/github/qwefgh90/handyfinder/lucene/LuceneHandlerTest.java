@@ -43,6 +43,7 @@ import com.qwefgh90.io.jsearch.JSearch.ParseException;
 @ContextConfiguration(classes = { ServletContextTest.class, RootContext.class,
 		AppDataConfig.class })
 @DirtiesContext(classMode = ClassMode.AFTER_CLASS)
+
 public class LuceneHandlerTest {
 	private final static Logger LOG = LoggerFactory
 			.getLogger(LuceneHandlerTest.class);
@@ -139,7 +140,7 @@ public class LuceneHandlerTest {
 		handler.indexDirectory(
 				testFilesPath, true);
 
-		TopDocs docs = handler.search("java python");
+		TopDocs docs = handler.search("javageeks");
 		Assert.assertThat(docs.scoreDocs.length, Matchers.is(4));
 	}
 	

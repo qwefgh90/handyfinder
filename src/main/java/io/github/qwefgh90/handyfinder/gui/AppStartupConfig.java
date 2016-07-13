@@ -426,7 +426,9 @@ public class AppStartupConfig extends Application {
 			was.join();
 			if (AppStartupConfig.app != null) {
 				app.stop();
-			} else {
+			}
+			if (AppStartupConfig.tomcat != null) {
+
 				AppStartupConfig.tomcat.stop();
 			}
 		} catch (Exception e) {

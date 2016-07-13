@@ -81,7 +81,9 @@ public class WebsockTest {
 	public void clean() throws Exception {
 		rootService.closeAppLucene();
 		metaRepo.deleteDirectories();
-		AppStartupConfig.terminateProgram();
+		//AppStartupConfig.terminateProgram();
+		//DON'T TERMINATE. "MVN TEST" IS FAILED IN UBUNTU. AFTER TOMCAT CLOSE, WHEN EXECUTE RESOURCE CODE,
+		//THROW "Illegal access: this web application instance has been stopped already. Could not load"
 	}
 
 	@Test
