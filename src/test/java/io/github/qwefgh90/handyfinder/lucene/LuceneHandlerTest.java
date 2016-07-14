@@ -140,8 +140,8 @@ public class LuceneHandlerTest {
 		handler.indexDirectory(
 				testFilesPath, true);
 
-		TopDocs docs = handler.search("javageeks");
-		Assert.assertThat(docs.scoreDocs.length, Matchers.is(4));
+		TopDocs docs = handler.search("javageeks _javageeks");
+		Assert.assertThat(docs.scoreDocs.length, Matchers.is(5));
 	}
 	
 	@Test

@@ -30,6 +30,7 @@ import javax.activity.InvalidActivityException;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -191,7 +192,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		try {
 			indexWriterPath = path;
 			dir = FSDirectory.open(path);
-			analyzer = new StandardAnalyzer();
+			analyzer = new WhitespaceAnalyzer();
 			iwc = new IndexWriterConfig(analyzer);
 			writer = new IndexWriter(dir, iwc);
 			if (writer.numDocs() == 0)
