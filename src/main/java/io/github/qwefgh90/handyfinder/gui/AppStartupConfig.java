@@ -287,6 +287,7 @@ public class AppStartupConfig extends Application {
 		} catch (InterruptedException e1) {
 			LOG.error(e1.toString());
 		}
+		
 		primaryStage.setOnCloseRequest(event -> {
 			Preferences userPrefs = Preferences
 					.userNodeForPackage(AppStartupConfig.class);
@@ -294,7 +295,9 @@ public class AppStartupConfig extends Application {
 			userPrefs.putDouble("stage.y", primaryStage.getY());
 			userPrefs.putDouble("stage.width", primaryStage.getWidth());
 			userPrefs.putDouble("stage.height", primaryStage.getHeight());
+			terminateProgram();
 		});
+		
 		LOG.info("javafx is initialized ");
 		showUI(this::setWebviewBeforeLoading);
 		Thread pragraphWorker = new Thread(
