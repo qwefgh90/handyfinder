@@ -20,7 +20,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
@@ -33,6 +34,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.concurrent.Task;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.web.WebEngine;
@@ -105,7 +107,18 @@ public class AppStartupConfig extends Application {
 			+ "/index.html";
 	public final static String REDIRECT_PAGE = "/" + WEB_APP_DIRECTORY_NAME
 			+ "/redirect.html";
+	private static enum STATE {BEFORE_LOADING("Loading..."), AFTER_LOADING("Your Assistant");
+		String title;
+		STATE(String title){
+			this.title = title;
+		};
+		String getTitle(){
+			return this.title;
+		}
+	}
+	
 	public static AppStartupConfig app;
+	private static Tomcat tomcat;
 	public static Stage primaryStage;
 	private static boolean SERVER_ONLY = false;
 	private final static Logger LOG = LoggerFactory
@@ -190,46 +203,40 @@ public class AppStartupConfig extends Application {
 	}
 
 	private static BlockingQueue<String> paragrahQueue = new LinkedBlockingQueue<>();
-	final private static Thread was;
-	static {
-		was = new Thread(() -> {
-			// local tomcat server initializing...
-				try {
-					AppStartupConfig.paragrahQueue.put("server initialzing...");
-					Tomcat tomcat = new Tomcat();
 
-					AppStartupConfig.tomcat = tomcat;
-					tomcat.getConnector().setAttribute("address", address);
-					tomcat.getConnector().setAttribute("port", port);
+	private ExecutorService webAppThread = Executors.newSingleThreadExecutor();
+	public ExecutorService getWebAppThread(){return webAppThread;}
+	private Task<Boolean> webApp = new Task<Boolean>() {
+		@Override
+		protected Boolean call() throws Exception {
+			try {
+				Platform.runLater( ()-> setLoadingParagraphBeforeLoading("server initialzing..."));
+				
+				Tomcat tomcat = new Tomcat();
+				AppStartupConfig.tomcat = tomcat;
+				tomcat.getConnector().setAttribute("address", address);
+				tomcat.getConnector().setAttribute("port", port);
 
-					Context context = tomcat.addWebapp("", pathForAppdata
-							.toAbsolutePath().toString());
-					// https://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/catalina/startup/Tomcat.html#addWebapp(org.apache.catalina.Host,%20java.lang.String,%20java.lang.String)
+				Context context = tomcat.addWebapp("", pathForAppdata
+						.toAbsolutePath().toString());
+				// https://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/catalina/startup/Tomcat.html#addWebapp(org.apache.catalina.Host,%20java.lang.String,%20java.lang.String)
 
 				context.setJarScanner(new FastJarScanner());
 				context.addWelcomeFile(REDIRECT_PAGE);
 				tomcat.init();
-				AppStartupConfig.paragrahQueue.put("server startup...");
+				Platform.runLater( ()-> setLoadingParagraphBeforeLoading("server startup..."));
 				tomcat.start();
-				AppStartupConfig.paragrahQueue.put("server health checking...");
+				Platform.runLater( ()-> setLoadingParagraphBeforeLoading("server health checking..."));
 				healthCheck();
-				if (SERVER_ONLY == false) {
-					Platform.runLater(() -> AppStartupConfig.app
-							.showUI(AppStartupConfig.app::setWebviewAfterLoading));
-				}
+				Platform.runLater(() -> showUI(AppStartupConfig.this::setWebviewAfterLoading));
 				LOG.info("tomcat started completely : " + homeUrl);
 			} catch (Exception e) {
 				LOG.error(e.toString());
-				terminateProgram();
-			} finally {
-				try {
-					AppStartupConfig.paragrahQueue.put("");
-				} catch (Exception e) {
-					LOG.error(e.toString());
-				}
+				return false;
 			}
-		});
-	}
+			return true;
+		}
+	};
 
 	/**
 	 * this method must be called in main() method
@@ -268,26 +275,15 @@ public class AppStartupConfig extends Application {
 			InterruptedException {
 		if (!parseArguments(args))
 			return; // failed
-
-		was.start();
-
-		if (SERVER_ONLY == false) {
-			launch(args); // sync function // can't bean in spring container.
-			was.join();
-			tomcat.stop();
-		}
+		launch(args); // sync function // can't bean in spring container.
 	}
 
 	@Override
 	public void start(Stage primaryStage) {
 		AppStartupConfig.primaryStage = primaryStage;
 		AppStartupConfig.app = this;
-		try {
-			AppStartupConfig.paragrahQueue.put("GUI initialzing...");
-		} catch (InterruptedException e1) {
-			LOG.error(e1.toString());
-		}
-		
+		Platform.runLater( ()-> setLoadingParagraphBeforeLoading("GUI initialzing..."));
+
 		primaryStage.setOnCloseRequest(event -> {
 			Preferences userPrefs = Preferences
 					.userNodeForPackage(AppStartupConfig.class);
@@ -295,42 +291,25 @@ public class AppStartupConfig extends Application {
 			userPrefs.putDouble("stage.y", primaryStage.getY());
 			userPrefs.putDouble("stage.width", primaryStage.getWidth());
 			userPrefs.putDouble("stage.height", primaryStage.getHeight());
+			AppStartupConfig.app = null;
 			terminateProgram();
 		});
-		
-		LOG.info("javafx is initialized ");
+
 		showUI(this::setWebviewBeforeLoading);
-		Thread pragraphWorker = new Thread(
-				() -> {
-					while (true) {
-						try {
-							final String pragraph = AppStartupConfig.paragrahQueue
-									.take();
-							if (pragraph.equals(""))
-								break;
-							if (SERVER_ONLY == false) {
-								Platform.runLater(() -> {
-									setLoadingParagraph(pragraph);
-								});
-							}
-						} catch (Exception e) {
-							LOG.error(e.toString());
-							break;
-						}
-					}
-				});
-		pragraphWorker.start();
+		LOG.info("javafx ui is initialized ");
+
+		webAppThread.submit(webApp);
 	}
 
 	private WebView currentView = null;
-
 	private void showUI(Supplier<WebView> run) {
 		if (AppStartupConfig.primaryStage == null
-				|| AppStartupConfig.app == null || SERVER_ONLY == true)
+				|| AppStartupConfig.app == null)
 			throw new IllegalStateException(
 					"Javafx startup is not nomally initialized");
 		currentView = run.get();
-		primaryStage.show();
+		if(!SERVER_ONLY)
+			primaryStage.show();
 	}
 
 	/**
@@ -340,7 +319,7 @@ public class AppStartupConfig extends Application {
 	 *             if not called setWebviewBeforeLoading() or if
 	 *             setWebviewAfterLoading() is already called
 	 */
-	private void setLoadingParagraph(String paragraph) {
+	private void setLoadingParagraphBeforeLoading(String paragraph) {
 		if (currentView == null) {
 			throw new IllegalStateException("currentView is not initializaed");
 		}
@@ -363,7 +342,7 @@ public class AppStartupConfig extends Application {
 		Scene scene = new Scene(webView);
 
 		primaryStage.setScene(scene);
-		primaryStage.setTitle("Loading...");
+		primaryStage.setTitle(STATE.BEFORE_LOADING.getTitle());
 		primaryStage.setWidth(300);
 		primaryStage.setHeight(330);
 		primaryStage.centerOnScreen();
@@ -371,8 +350,7 @@ public class AppStartupConfig extends Application {
 		return webView;
 	}
 
-	private WebView setWebviewAfterLoading() {//
-		// create the JavaFX webview
+	private WebView setWebviewAfterLoading() {
 		final WebView webView = new WebView();
 		// show "alert" Javascript messages in stdout (useful to debug)
 		webView.getEngine().setOnAlert(new EventHandler<WebEvent<String>>() {
@@ -397,7 +375,7 @@ public class AppStartupConfig extends Application {
 				});
 
 		primaryStage.setScene(new Scene(webView));
-		primaryStage.setTitle("Your Assistant");
+		primaryStage.setTitle(STATE.AFTER_LOADING.getTitle());
 
 		Preferences userPrefs = Preferences
 				.userNodeForPackage(AppStartupConfig.class);
@@ -405,8 +383,8 @@ public class AppStartupConfig extends Application {
 		// width=400, height=400 as default
 		double x = userPrefs.getDouble("stage.x", 100);
 		double y = userPrefs.getDouble("stage.y", 100);
-		double w = userPrefs.getDouble("stage.width", 400);
-		double h = userPrefs.getDouble("stage.height", 400);
+		double w = userPrefs.getDouble("stage.width", 500);
+		double h = userPrefs.getDouble("stage.height", 500);
 		primaryStage.setX(x);
 		primaryStage.setY(y);
 		primaryStage.setWidth(w);
@@ -419,30 +397,20 @@ public class AppStartupConfig extends Application {
 
 	/**
 	 * terminate application
-	 * 
-	 * @throws Exception
 	 */
-	private static Tomcat tomcat;
-
 	public static void terminateProgram() {
 		try {
-			was.join();
 			if (AppStartupConfig.app != null) {
-				app.stop();
+				app.stop(); //second terminate is ignored.
 			}
 			if (AppStartupConfig.tomcat != null) {
-
 				AppStartupConfig.tomcat.stop();
 			}
 		} catch (Exception e) {
 			LOG.error(e.toString());
 		}
 	}
-
-	public static Thread getWasThread() {
-		return was;
-	}
-
+	
 	public static void healthCheck() throws TomcatInitFailException {
 		String strUrl = "http://" + address + ":" + port + "/health";
 

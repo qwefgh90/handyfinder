@@ -22,6 +22,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,7 @@ import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.Transport;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
+import javafx.application.Platform;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerMimeOptionView;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
@@ -52,17 +54,33 @@ import io.github.qwefgh90.handyfinder.springweb.websocket.ProgressCommand;
 import io.github.qwefgh90.handyfinder.springweb.websocket.ProgressCommand.STATE;
 
 public class WebsockTest {
-	private final static Logger LOG = LoggerFactory.getLogger(WebsockTest.class);
-	
+	private final static Logger LOG = LoggerFactory
+			.getLogger(WebsockTest.class);
+
 	RootService rootService;
 	MetaRespository metaRepo;
 	LuceneHandlerMimeOptionView xmlObject;
 	List<Directory> list = new ArrayList<>();
+	static Thread th;
+	@BeforeClass
+	public static void before() {
+		th = new Thread(() -> {
+			try {
+				AppStartupConfig.main(new String[] { "--no-gui" });
+			} catch (Exception e) {
+
+			}
+		});
+		th.start();
+	}
 
 	@Before
-	public void setup() throws LifecycleException, ServletException, IOException, URISyntaxException, SQLException, ParseException, InterruptedException {
-		AppStartupConfig.main(new String[] { "--no-gui"});
-		AppStartupConfig.getWasThread().join();
+	public void setup() throws LifecycleException, ServletException,
+			IOException, URISyntaxException, SQLException, ParseException,
+			InterruptedException {
+		Thread.sleep(5000);
+		AppStartupConfig.app.getWebAppThread().awaitTermination(20,
+				TimeUnit.SECONDS);
 		rootService = AppStartupConfig.getBean(RootService.class);
 		metaRepo = AppStartupConfig.getBean(MetaRespository.class);
 		xmlObject = AppStartupConfig.getBean(LuceneHandlerMimeOptionView.class);
@@ -70,20 +88,23 @@ public class WebsockTest {
 		Directory dir = new Directory();
 		dir.setRecursively(true);
 		dir.setUsed(true);
-		dir.setPathString(Paths.get(new ClassPathResource("").getFile().getAbsolutePath()).resolve("index-test-files")
-				.toAbsolutePath().toString());
+		dir.setPathString(Paths
+				.get(new ClassPathResource("").getFile().getAbsolutePath())
+				.resolve("index-test-files").toAbsolutePath().toString());
 		list.add(dir);
 		rootService.updateDirectories(list);
-		LOG.trace("test directory to be updated: "+dir.getPathString());
+		LOG.trace("test directory to be updated: " + dir.getPathString());
 	}
 
 	@After
 	public void clean() throws Exception {
 		rootService.closeAppLucene();
 		metaRepo.deleteDirectories();
-		//AppStartupConfig.terminateProgram();
-		//DON'T TERMINATE. "MVN TEST" IS FAILED IN UBUNTU. AFTER TOMCAT CLOSE, WHEN EXECUTE RESOURCE CODE,
-		//THROW "Illegal access: this web application instance has been stopped already. Could not load"
+		// AppStartupConfig.terminateProgram();
+		// DON'T TERMINATE. "MVN TEST" IS FAILED IN UBUNTU. AFTER TOMCAT CLOSE,
+		// WHEN EXECUTE RESOURCE CODE,
+		// THROW
+		// "Illegal access: this web application instance has been stopped already. Could not load"
 	}
 
 	@Test
@@ -98,7 +119,8 @@ public class WebsockTest {
 		WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
 		List<Transport> transports = new ArrayList<>();
 		transports.add(new WebSocketTransport(new StandardWebSocketClient()));
-		RestTemplateXhrTransport xhrTransport = new RestTemplateXhrTransport(new RestTemplate());
+		RestTemplateXhrTransport xhrTransport = new RestTemplateXhrTransport(
+				new RestTemplate());
 		xhrTransport.setRequestHeaders(headers);
 		transports.add(xhrTransport);
 
@@ -106,12 +128,14 @@ public class WebsockTest {
 		taskScheduler.afterPropertiesSet();
 
 		SockJsClient sockJsClient = new SockJsClient(transports);
-		WebSocketStompClient stompClient = new WebSocketStompClient(sockJsClient);
+		WebSocketStompClient stompClient = new WebSocketStompClient(
+				sockJsClient);
 		stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 		stompClient.setTaskScheduler(taskScheduler);
 		stompClient.setDefaultHeartbeat(new long[] { 0, 0 });
-		stompClient.connect("ws://" + AppStartupConfig.address + ":" + AppStartupConfig.port + "/endpoint", headers,
-				handler, AppStartupConfig.port);
+		stompClient.connect("ws://" + AppStartupConfig.address + ":"
+				+ AppStartupConfig.port + "/endpoint", headers, handler,
+				AppStartupConfig.port);
 
 		if (failure.get() != null) {
 			throw new AssertionError("", failure.get());
@@ -136,14 +160,15 @@ public class WebsockTest {
 		public void sendMsg() {
 			try {
 				session.send("/handyfinder/hello", "hello");
-				session.send("/handyfinder/command/index/start","");
+				session.send("/handyfinder/command/index/start", "");
 			} catch (Exception e) {
 				LOG.info(ExceptionUtils.getStackTrace(e));
 			}
 		}
 
 		@Override
-		public void afterConnected(final StompSession session, StompHeaders connectedHeaders) {
+		public void afterConnected(final StompSession session,
+				StompHeaders connectedHeaders) {
 			this.session = session;
 
 			session.subscribe("/index/progress", new StompFrameHandler() {
@@ -158,13 +183,13 @@ public class WebsockTest {
 					LOG.info("Got " + ToStringBuilder.reflectionToString(json));
 					if (json.getState() == STATE.PROGRESS.TERMINATE) {
 
-						 session.disconnect();
-						 try {
-						 Thread.sleep(100);
-						 } catch (InterruptedException e) {
-						 LOG.info(ExceptionUtils.getStackTrace(e));
-						 }
-						 latch.countDown();
+						session.disconnect();
+						try {
+							Thread.sleep(100);
+						} catch (InterruptedException e) {
+							LOG.info(ExceptionUtils.getStackTrace(e));
+						}
+						latch.countDown();
 					}
 					try {
 					} catch (Throwable t) {
@@ -192,12 +217,13 @@ public class WebsockTest {
 					}
 				}
 			});
-			
-			sendMsg();//send test msg
+
+			sendMsg();// send test msg
 		}
 	};
 
-	private static abstract class AbstractTestSessionHandler extends StompSessionHandlerAdapter {
+	private static abstract class AbstractTestSessionHandler extends
+			StompSessionHandlerAdapter {
 
 		private final AtomicReference<Throwable> failure;
 
@@ -212,7 +238,8 @@ public class WebsockTest {
 		}
 
 		@Override
-		public void handleException(StompSession s, StompCommand c, StompHeaders h, byte[] p, Throwable ex) {
+		public void handleException(StompSession s, StompCommand c,
+				StompHeaders h, byte[] p, Throwable ex) {
 			LOG.error("Handler exception", ex);
 			this.failure.set(ex);
 		}
