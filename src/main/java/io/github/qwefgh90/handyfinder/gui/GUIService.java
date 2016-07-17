@@ -18,21 +18,4 @@ public class GUIService {
 	public int sum(int a, int b) {
 		return a + b;
 	}
-
-	public String openDialogAndSelectDirectory() {
-		Platform.runLater(() -> {
-			try {
-				DirectoryChooser directoryChooser = new DirectoryChooser();
-				File selectedDirectory = directoryChooser.showDialog(AppStartupConfig.primaryStage);
-				AppStartupConfig.primaryStage.show();
-				if (selectedDirectory != null) {
-					LOG.info("path : " + selectedDirectory.getAbsolutePath());
-				}
-			} catch (Exception e) {
-				System.out.println(e.toString());
-			}
-			//return "";
-		});
-		return "";
-	}
 }

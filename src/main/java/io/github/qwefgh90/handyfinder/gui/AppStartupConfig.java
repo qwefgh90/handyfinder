@@ -1,15 +1,10 @@
 package io.github.qwefgh90.handyfinder.gui;
 
-import static io.github.qwefgh90.handyfinder.gui.Java2JavascriptUtils.connectBackendObject;
-import io.github.qwefgh90.handyfinder.exception.TomcatInitFailException;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -19,33 +14,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
-import java.util.prefs.Preferences;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javafx.application.*;
 
-import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.event.EventHandler;
-import javafx.scene.Scene;
-import javafx.scene.web.WebEngine;
-import javafx.scene.web.WebEvent;
-import javafx.scene.web.WebView;
-import javafx.stage.Stage;
-
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 
-import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
-import org.apache.catalina.startup.Tomcat;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -56,25 +33,19 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.tika.mime.MimeTypes;
-import org.apache.tomcat.JarScanFilter;
-import org.apache.tomcat.JarScanType;
-import org.apache.tomcat.JarScannerCallback;
-import org.apache.tomcat.util.scan.StandardJarScanFilter;
-import org.apache.tomcat.util.scan.StandardJarScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.context.WebApplicationContext;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+
+import javafx.application.*;
 
 /**
  * local file contents search engine with javafx webview and spring restful api
  * 
  * @author choechangwon
  */
-@SuppressWarnings("restriction")
-public class AppStartupConfig extends Application {
+public class AppStartupConfig{
 
 	// initial variable
 	public static boolean TEST_MODE = false;
@@ -105,9 +76,7 @@ public class AppStartupConfig extends Application {
 			+ "/index.html";
 	public final static String REDIRECT_PAGE = "/" + WEB_APP_DIRECTORY_NAME
 			+ "/redirect.html";
-	public static AppStartupConfig app;
-	public static Stage primaryStage;
-	private static boolean SERVER_ONLY = false;
+	
 	private final static Logger LOG = LoggerFactory
 			.getLogger(AppStartupConfig.class);
 
@@ -189,48 +158,20 @@ public class AppStartupConfig extends Application {
 		 */
 	}
 
-	private static BlockingQueue<String> paragrahQueue = new LinkedBlockingQueue<>();
-	final private static Thread was;
-	static {
-		was = new Thread(() -> {
-			// local tomcat server initializing...
-				try {
-					AppStartupConfig.paragrahQueue.put("server initialzing...");
-					Tomcat tomcat = new Tomcat();
-
-					AppStartupConfig.tomcat = tomcat;
-					tomcat.getConnector().setAttribute("address", address);
-					tomcat.getConnector().setAttribute("port", port);
-
-					Context context = tomcat.addWebapp("", pathForAppdata
-							.toAbsolutePath().toString());
-					// https://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/catalina/startup/Tomcat.html#addWebapp(org.apache.catalina.Host,%20java.lang.String,%20java.lang.String)
-
-				context.setJarScanner(new FastJarScanner());
-				context.addWelcomeFile(REDIRECT_PAGE);
-				tomcat.init();
-				AppStartupConfig.paragrahQueue.put("server startup...");
-				tomcat.start();
-				AppStartupConfig.paragrahQueue.put("server health checking...");
-				healthCheck();
-				if (SERVER_ONLY == false) {
-					Platform.runLater(() -> AppStartupConfig.app
-							.showUI(AppStartupConfig.app::setWebviewAfterLoading));
-				}
-				LOG.info("tomcat started completely : " + homeUrl);
-			} catch (Exception e) {
-				LOG.error(e.toString());
-				terminateProgram();
-			} finally {
-				try {
-					AppStartupConfig.paragrahQueue.put("");
-				} catch (Exception e) {
-					LOG.error(e.toString());
-				}
-			}
-		});
+	public static GUIApplication getGuiApp(){return GUIApplication.getSingleton();}
+	private static boolean parameterInit = false;
+	private static boolean SERVER_ONLY = false;
+	/**
+	 * lazy init.. warning
+	 * @return
+	 */
+	public static boolean getServerOnlyMode() {
+		//
+		if(parameterInit == false)
+			throw new IllegalStateException("SERVER_ONLY variable is not initialized");
+		return SERVER_ONLY;
 	}
-
+	
 	/**
 	 * this method must be called in main() method
 	 * 
@@ -260,209 +201,32 @@ public class AppStartupConfig extends Application {
 				SERVER_ONLY = true;
 			}
 		}
+		
 		return true;
 	}
-
+	
 	public static void main(String[] args) throws LifecycleException,
 			ServletException, IOException, URISyntaxException, ParseException,
 			InterruptedException {
 		if (!parseArguments(args))
 			return; // failed
+		else
+			parameterInit = true;
 
-		was.start();
-
-		if (SERVER_ONLY == false) {
-			launch(args); // sync function // can't bean in spring container.
-			was.join();
-			tomcat.stop();
-		}
-	}
-
-	@Override
-	public void start(Stage primaryStage) {
-		AppStartupConfig.primaryStage = primaryStage;
-		AppStartupConfig.app = this;
-		try {
-			AppStartupConfig.paragrahQueue.put("GUI initialzing...");
-		} catch (InterruptedException e1) {
-			LOG.error(e1.toString());
-		}
-		
-		primaryStage.setOnCloseRequest(event -> {
-			Preferences userPrefs = Preferences
-					.userNodeForPackage(AppStartupConfig.class);
-			userPrefs.putDouble("stage.x", primaryStage.getX());
-			userPrefs.putDouble("stage.y", primaryStage.getY());
-			userPrefs.putDouble("stage.width", primaryStage.getWidth());
-			userPrefs.putDouble("stage.height", primaryStage.getHeight());
-			terminateProgram();
-		});
-		
-		LOG.info("javafx is initialized ");
-		showUI(this::setWebviewBeforeLoading);
-		Thread pragraphWorker = new Thread(
-				() -> {
-					while (true) {
-						try {
-							final String pragraph = AppStartupConfig.paragrahQueue
-									.take();
-							if (pragraph.equals(""))
-								break;
-							if (SERVER_ONLY == false) {
-								Platform.runLater(() -> {
-									setLoadingParagraph(pragraph);
-								});
-							}
-						} catch (Exception e) {
-							LOG.error(e.toString());
-							break;
-						}
-					}
-				});
-		pragraphWorker.start();
-	}
-
-	private WebView currentView = null;
-
-	private void showUI(Supplier<WebView> run) {
-		if (AppStartupConfig.primaryStage == null
-				|| AppStartupConfig.app == null || SERVER_ONLY == true)
-			throw new IllegalStateException(
-					"Javafx startup is not nomally initialized");
-		currentView = run.get();
-		primaryStage.show();
+		getGuiApp().start(args); // sync function // can't bean in spring container.
 	}
 
 	/**
-	 * 
-	 * @param paragraph
-	 * @throws IllegalStateException
-	 *             if not called setWebviewBeforeLoading() or if
-	 *             setWebviewAfterLoading() is already called
+	 * Handy finder App API
+	 * terminate applicationf
 	 */
-	private void setLoadingParagraph(String paragraph) {
-		if (currentView == null) {
-			throw new IllegalStateException("currentView is not initializaed");
-		}
-		WebEngine eg = currentView.getEngine();
-		Element element = (Element) eg
-				.executeScript("document.getElementById('loading')");
-		if (element == null) {
-			throw new IllegalStateException(
-					"can't set paragraph. setWebviewAfterLoading() is already called.");
-		}
-		element.setTextContent(paragraph);
-	}
-
-	private WebView setWebviewBeforeLoading() {
-		// create the JavaFX webview
-		final WebView webView = new WebView();
-		webView.getEngine().load(
-				AppStartupConfig.class.getResource(RESOURCE_LOADING_PAGE)
-						.toExternalForm());
-		Scene scene = new Scene(webView);
-
-		primaryStage.setScene(scene);
-		primaryStage.setTitle("Loading...");
-		primaryStage.setWidth(300);
-		primaryStage.setHeight(330);
-		primaryStage.centerOnScreen();
-
-		return webView;
-	}
-
-	private WebView setWebviewAfterLoading() {//
-		// create the JavaFX webview
-		final WebView webView = new WebView();
-		// show "alert" Javascript messages in stdout (useful to debug)
-		webView.getEngine().setOnAlert(new EventHandler<WebEvent<String>>() {
-			@Override
-			public void handle(WebEvent<String> arg0) {
-				System.err.println("alertwb1: " + arg0.getData());
-			}
-		});
-
-		// load index.html
-		// webView.getEngine().load(getClass().getResource(page).toExternalForm());
-		webView.getEngine().load(homeUrl);
-		webView.getEngine().documentProperty()
-				.addListener(new ChangeListener<Document>() {
-					@Override
-					public void changed(
-							ObservableValue<? extends Document> prop,
-							Document oldDoc, Document newDoc) {
-						connectBackendObject(webView.getEngine(), "guiService",
-								new GUIService(), true);
-					}
-				});
-
-		primaryStage.setScene(new Scene(webView));
-		primaryStage.setTitle("Your Assistant");
-
-		Preferences userPrefs = Preferences
-				.userNodeForPackage(AppStartupConfig.class);
-		// get window location from user preferences: use x=100, y=100,
-		// width=400, height=400 as default
-		double x = userPrefs.getDouble("stage.x", 100);
-		double y = userPrefs.getDouble("stage.y", 100);
-		double w = userPrefs.getDouble("stage.width", 400);
-		double h = userPrefs.getDouble("stage.height", 400);
-		primaryStage.setX(x);
-		primaryStage.setY(y);
-		primaryStage.setWidth(w);
-		primaryStage.setHeight(h);
-
-		LOG.info("\nhandyfinder started completely " + "\n"
-				+ "Webengine load: " + homeUrl); // handyfinder
-		return webView;
-	}
-
-	/**
-	 * terminate application
-	 * 
-	 * @throws Exception
-	 */
-	private static Tomcat tomcat;
-
 	public static void terminateProgram() {
 		try {
-			was.join();
-			if (AppStartupConfig.app != null) {
-				app.stop();
-			}
-			if (AppStartupConfig.tomcat != null) {
-
-				AppStartupConfig.tomcat.stop();
+			if (!getGuiApp().isStop()) {
+				Platform.exit();
 			}
 		} catch (Exception e) {
 			LOG.error(e.toString());
-		}
-	}
-
-	public static Thread getWasThread() {
-		return was;
-	}
-
-	public static void healthCheck() throws TomcatInitFailException {
-		String strUrl = "http://" + address + ":" + port + "/health";
-
-		URL url;
-		try {
-			url = new URL(strUrl);
-			HttpURLConnection urlConn = (HttpURLConnection) url
-					.openConnection();
-			urlConn.connect();
-
-			if (HttpURLConnection.HTTP_OK != urlConn.getResponseCode()) {
-				throw new TomcatInitFailException(
-						"tomcat initialization failed.");
-			}
-		} catch (MalformedURLException e) {
-			LOG.error(e.toString());
-			assert false; // dead "-ea" jvm option
-		} catch (IOException e) {
-			LOG.error(e.toString());
-			assert false; // dead "-ea" jvm option
 		}
 	}
 
@@ -719,29 +483,5 @@ public class AppStartupConfig extends Application {
 		AppStartupConfig.servletAppContext = servletAppContext;
 	}
 
-	/**
-	 * Fast Jar Scanner scans one kind of jar like handyfinder.jar
-	 * 
-	 * @author cheochangwon
-	 *
-	 */
-	private static class FastJarScanner extends StandardJarScanner {
-		@Override
-		public void scan(JarScanType scanType, ServletContext context,
-				JarScannerCallback callback) {
-			StandardJarScanFilter filter = new StandardJarScanFilter();
-			filter.setDefaultTldScan(false);
-			filter.setPluggabilitySkip("*.jar");
-			filter.setPluggabilityScan("*handyfinder*");
-			setJarScanFilter(filter);
-
-			super.scan(scanType, context, callback);
-		}
-
-		@Override
-		public void setJarScanFilter(JarScanFilter jarScanFilter) {
-			super.setJarScanFilter(jarScanFilter);
-		}
-	}
 
 }

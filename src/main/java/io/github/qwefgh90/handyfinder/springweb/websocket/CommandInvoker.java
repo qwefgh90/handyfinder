@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.gui.GUIApplication;
 import io.github.qwefgh90.handyfinder.springweb.websocket.GUICommand.COMMAND;
 import io.github.qwefgh90.handyfinder.springweb.websocket.UpdateSummaryCommand.STATE;
 import javafx.stage.DirectoryChooser;
@@ -57,18 +58,8 @@ public class CommandInvoker {
 	}
 
 	public void openAndSendSelectedDirectory() {
-		Platform.runLater(() -> {
-			String result = "";
-			try {
-				final DirectoryChooser directoryChooser = new DirectoryChooser();
-				final File selectedDirectory = directoryChooser.showDialog(AppStartupConfig.primaryStage);
-				if (selectedDirectory != null) {
-					result = selectedDirectory.getAbsolutePath();
-				}
-			} catch (Exception e) {
-				System.out.println(e.toString());
-			}
-			GUICommand comm = GUICommand.createObjectForDirectory(receiver, result);
+		GUIApplication.getSingleton().openAndSelectDirectory((dir) -> {
+			GUICommand comm = GUICommand.createObjectForDirectory(receiver, dir);
 			comm.execute();
 		});
 	}

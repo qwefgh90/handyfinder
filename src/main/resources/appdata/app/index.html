@@ -15,11 +15,11 @@
 		<div class="common-layout header-layout container" >
 			<!-- app title  -->
 			<div class="row text-left " style="">
-				<div class="col-xs-9 top-header">
+				<div class="col-xs-8 top-header">
 					<a href="/app/index.html" role="button" class="h2 title" style="padding-left: 10px"> HandyFinder <span class="glyphicon glyphicon-search"></span></a>
 					<span href="" class="h4" style="color: #347AA7"> {{path}} </span>
 				</div>
-				<div class="text-right col-xs-3">
+				<div class="text-right col-xs-4">
 					<button ng-click="go('/search')" type="button" ng-style="{ 'background-color': path.toLowerCase().indexOf('search') > -1 && false ? '#549AD7' : '' }" class="btn btn-default" aria-label="Left Align" > <!-- uib-popover="Search" popover-trigger="mouseenter"  popover-placement="bottom" -->
 						<span class="glyphicon glyphicon-search" aria-hidden="true"></span>
 					</button>
