@@ -71,7 +71,7 @@ public class GUIApplication extends Application {
 	public boolean isStop(){ return stopped; }
 
 	private ExecutorService webAppThread = Executors.newSingleThreadExecutor();
-	public ExecutorService getWebAppThread() { return webAppThread; }
+	public ExecutorService getWebAppThread() { return webAppThread;}
 
 	private Task<Boolean> webApp = new Task<Boolean>() {
 		@Override
@@ -135,6 +135,7 @@ public class GUIApplication extends Application {
 	public void start(Stage primaryStage) {
 		this.primaryStage = primaryStage;
 		primaryStage.setOnCloseRequest(event -> {
+			stopped = true;
 			LOG.info("javafx onCloseRequest()");
 			Preferences userPrefs = Preferences
 					.userNodeForPackage(AppStartupConfig.class);
@@ -184,10 +185,7 @@ public class GUIApplication extends Application {
 	@Override
 	public void stop() throws Exception {
 		final Callable<Boolean> doServerStop = () -> {
-			if(stopped == true)
-				return true;
 			try {
-				stopped = true;
 				tomcat.stop();
 				LOG.info("tomcat stop()");
 			} catch (Exception e) {

@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.context.WebApplicationContext;
 
-import com.sun.jna.Platform;
+import javafx.application.*;
 
 /**
  * local file contents search engine with javafx webview and spring restful api
@@ -223,7 +223,7 @@ public class AppStartupConfig{
 	public static void terminateProgram() {
 		try {
 			if (!getGuiApp().isStop()) {
-				getGuiApp().stop(); //second terminate is ignored.
+				Platform.exit();
 			}
 		} catch (Exception e) {
 			LOG.error(e.toString());
