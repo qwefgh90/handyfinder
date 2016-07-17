@@ -259,7 +259,7 @@ public class RootService {
 		case START_INDEXING: {
 			try {
 				List<Directory> list = indexProperty.selectDirectory();
-				if (handler.getWriteState() == INDEX_WRITE_STATE.READY)
+				if (handler.isReady())
 					handler.startIndex(list);
 				return;
 			} catch (SQLException e) {
@@ -273,7 +273,7 @@ public class RootService {
 			List<Directory> list;
 			try {
 				list = indexProperty.selectDirectory();
-				if (handler.getWriteState() == INDEX_WRITE_STATE.READY)
+				if (handler.isReady())
 					handler.updateIndexedDocuments(list);
 			} catch (SQLException e) {
 				LOG.info(ExceptionUtils.getStackTrace(e));

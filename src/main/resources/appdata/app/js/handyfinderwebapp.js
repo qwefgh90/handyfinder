@@ -392,6 +392,8 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 				}, function(msg) {
 					$log.log(msg);
 				}, function(summaryObject) {
+					if(summaryObject.state == 'START')
+						return;
 					$scope.indexModel.updateSummary.countOfDeleted = summaryObject.countOfDeleted;
 					$scope.indexModel.updateSummary.countOfExcluded = summaryObject.countOfExcluded;
 					$scope.indexModel.updateSummary.countOfModified = summaryObject.countOfModified;

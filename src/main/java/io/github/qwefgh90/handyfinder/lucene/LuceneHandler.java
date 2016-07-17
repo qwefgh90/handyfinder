@@ -105,47 +105,76 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		PROGRESS, STOPPING, READY
 	}
 
-	private INDEX_WRITE_STATE writeState = INDEX_WRITE_STATE.READY; // current
-																	// state
 	private int currentProgress = 0; // indexed documents count
 	private int totalProcess = 0; // total documents count to be indexed
 	private CommandInvoker invokerForCommand; // for command to client
 	private ILuceneHandlerBasicOptionView basicOption;
 	private ILuceneHandlerMimeOptionView mimeOption;
 
+	private INDEX_WRITE_STATE writeStateInternal = INDEX_WRITE_STATE.READY; // no directly access
 
 	/**
-	 * manage state private API
+	 * update state synchronously
+	 * one thread change value to progress state, other thread change 
+	 * It's private API
 	 * 
 	 * @param state
 	 */
-	private void updateHandlerState(INDEX_WRITE_STATE state) {
+	private synchronized boolean updateWriteState(INDEX_WRITE_STATE state) {
 		// progress
-		if (state == INDEX_WRITE_STATE.PROGRESS)
-			this.writeState = state;
-
-		// terminate
-		if (state == INDEX_WRITE_STATE.READY) {
+		switch(state){			
+		case READY:{
 			currentProgress = 0;
 			totalProcess = 0;
-			this.writeState = state;
+			this.writeStateInternal = state;
+			LOG.debug("LuceneHandler is READY");
+			break;
 		}
 
-		// current progress
-		if (state == LuceneHandler.INDEX_WRITE_STATE.STOPPING) {
-			if (writeState == LuceneHandler.INDEX_WRITE_STATE.PROGRESS) {
-				this.writeState = state;
+		case PROGRESS:{
+			if(writeStateInternal != INDEX_WRITE_STATE.STOPPING){
+				this.writeStateInternal = state;
+				LOG.debug("LuceneHandler is PROGRESS");
 			}
+			else
+				return false;
+			break;
+			
 		}
+		case STOPPING:{
+			if(writeStateInternal != INDEX_WRITE_STATE.READY){
+				this.writeStateInternal = state;
+				LOG.debug("LuceneHandler is STOPPING");
+			}
+			else
+				return false;
+			break;
+		}
+		}
+		return true;
 	}
-
+	
 	/**
-	 * current indexing state
 	 * 
+	 * It's private API
 	 * @return
 	 */
-	public INDEX_WRITE_STATE getWriteState() {
-		return writeState;
+	public synchronized boolean isStopping(){
+		if(writeStateInternal == INDEX_WRITE_STATE.STOPPING)
+			return true;
+		return false;
+	}
+	
+	/**
+	 * 
+	 * It's private API
+	 * @return
+	 */
+	public synchronized boolean isReady(){
+		if(writeStateInternal == INDEX_WRITE_STATE.PROGRESS 
+				||writeStateInternal == INDEX_WRITE_STATE.STOPPING)
+			return false;
+		return true;
 	}
 
 	private static ConcurrentHashMap<String, LuceneHandler> map = new ConcurrentHashMap<>();
@@ -219,17 +248,18 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 *             already start index
 	 */
 	public void startIndex(List<Directory> list) throws IOException {
-		if (INDEX_WRITE_STATE.PROGRESS == writeState)
+		if (!isReady())
 			throw new IllegalStateException("already indexing");
 		// checkIndexWriter();
-		try {
-			totalProcess = sizeOfindexDirectories(list);
-			updateHandlerState(INDEX_WRITE_STATE.PROGRESS);
-			invokerForCommand.startProgress(totalProcess);
-			indexDocuments(list);
-		} finally {
-			updateHandlerState(INDEX_WRITE_STATE.READY);
-			invokerForCommand.terminateProgress(totalProcess);
+		if(updateWriteState(INDEX_WRITE_STATE.PROGRESS)){
+			try {
+				totalProcess = sizeOfindexDirectories(list);
+				invokerForCommand.startProgress(totalProcess);
+				indexDocuments(list);
+			} finally {
+				updateWriteState(INDEX_WRITE_STATE.READY);
+				invokerForCommand.terminateProgress(totalProcess);
+			}
 		}
 	}
 
@@ -240,7 +270,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 *            a list of index directory on top
 	 */
 	public void updateIndexedDocuments(List<Directory> rootIndexDirectory) {
-		if (INDEX_WRITE_STATE.PROGRESS == writeState)
+		if (!isReady())
 			throw new IllegalStateException("already indexing");
 		// checkDirectoryReader();
 		// checkIndexWriter();
@@ -248,27 +278,28 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		int nonPresentCount = 0;
 		int nonContainedCount = 0;
 		int updateCount = 0;
-		try {
-			updateHandlerState(INDEX_WRITE_STATE.PROGRESS);
-			invokerForCommand.startUpdateSummary();
-			Map.Entry<List<Document>, Integer> returnValue;
-
-			// clean non present file
-			List<Document> list = getDocumentList();
-			returnValue = cleanNonPresentInternalIndex(list);
-			list = returnValue.getKey();
-			nonPresentCount = returnValue.getValue();
-			// clean non contained file
-			returnValue = cleanNonContainedInternalIndex(list,
-					rootIndexDirectory);
-			list = returnValue.getKey();
-			nonContainedCount = returnValue.getValue();
-			// update file
-			updateCount = updateContentInternalIndex(list);
-		} finally {
-			updateHandlerState(INDEX_WRITE_STATE.READY);
-			invokerForCommand.terminateUpdateSummary(nonPresentCount,
-					nonContainedCount, updateCount);
+		if(updateWriteState(INDEX_WRITE_STATE.PROGRESS)){
+			try {
+				invokerForCommand.startUpdateSummary();
+				Map.Entry<List<Document>, Integer> returnValue;
+	
+				// clean non present file
+				List<Document> list = getDocumentList();
+				returnValue = cleanNonPresentInternalIndex(list);
+				list = returnValue.getKey();
+				nonPresentCount = returnValue.getValue();
+				// clean non contained file
+				returnValue = cleanNonContainedInternalIndex(list,
+						rootIndexDirectory);
+				list = returnValue.getKey();
+				nonContainedCount = returnValue.getValue();
+				// update file
+				updateCount = updateContentInternalIndex(list);
+			} finally {
+				updateWriteState(INDEX_WRITE_STATE.READY);
+				invokerForCommand.terminateUpdateSummary(nonPresentCount,
+						nonContainedCount, updateCount);
+			}
 		}
 	}
 
@@ -276,7 +307,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * stop indexing
 	 */
 	public void stopIndex() {
-		updateHandlerState(LuceneHandler.INDEX_WRITE_STATE.STOPPING);
+		updateWriteState(LuceneHandler.INDEX_WRITE_STATE.STOPPING);
 	}
 
 	/**
@@ -552,7 +583,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			} else {
 				indexDirectory(tmp, false);
 			}
-			if (writeState == LuceneHandler.INDEX_WRITE_STATE.STOPPING) {
+			if (isStopping()) {
 				break;
 			}
 		}
@@ -586,7 +617,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 									throws IOException {
 								if (attrs.isRegularFile()) {
 									pathList.add(file); // UPDATE
-									if (writeState == LuceneHandler.INDEX_WRITE_STATE.STOPPING) {
+									if (isStopping()) {
 										return FileVisitResult.TERMINATE;
 									}
 								}
@@ -603,7 +634,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 								if (attrs.isRegularFile()) {
 									pathList.add(file);
 									// check file size // UPDATE
-									if (writeState == LuceneHandler.INDEX_WRITE_STATE.STOPPING) {
+									if (isStopping()) {
 										return FileVisitResult.TERMINATE;
 									}
 								}
@@ -614,14 +645,14 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			pathList.parallelStream()
 					.forEach(
 							file -> {
-								if (writeState == LuceneHandler.INDEX_WRITE_STATE.STOPPING) {
+								if (isStopping()) {
 									return;
 								}
 								// check file size
 								try {
 									if (Files.size(file) / (1000 * 1000) <= basicOption
 											.getMaximumDocumentMBSize()
-											&& !isExists(file.toAbsolutePath()
+											&& !isExistsInLuceneIndex(file.toAbsolutePath()
 													.toString())){
 										index(file);
 										synchronized (this) {
@@ -648,7 +679,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @return
 	 * @throws IOException
 	 */
-	boolean isExists(String pathString) throws IOException {
+	boolean isExistsInLuceneIndex(String pathString) throws IOException {
 		checkDirectoryReader();
 		TopDocs results = searcher.search(new TermQuery(new Term("pathString",
 				pathString)), 1);
