@@ -79,7 +79,7 @@ public class WebsockTest {
 			IOException, URISyntaxException, SQLException, ParseException,
 			InterruptedException {
 		Thread.sleep(5000);
-		AppStartupConfig.app.getWebAppThread().awaitTermination(20,
+		AppStartupConfig.getGuiApp().getWebAppThread().awaitTermination(20,
 				TimeUnit.SECONDS);
 		rootService = AppStartupConfig.getBean(RootService.class);
 		metaRepo = AppStartupConfig.getBean(MetaRespository.class);
