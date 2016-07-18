@@ -62,7 +62,6 @@ public class GUIApplication extends Application {
 	private final double WINDOW_LOADING_WIDTH = 300;
 	private final double WINDOW_LOADING_HEIGHT = 330;
 	
-
 	private WebView currentView = null;
 	private Tomcat tomcat;
 	private Stage primaryStage;
@@ -169,7 +168,6 @@ public class GUIApplication extends Application {
 		});
 		
 		showUI(this::setWebviewBeforeLoading);
-		Platform.runLater(() -> setLoadingParagraphBeforeLoading("Graphic initialzing..."));
 		LOG.info("javafx ui is initialized ");
 		
 		webAppThread.submit(webApp);

@@ -68,7 +68,7 @@ public class LuceneHandlerMimeOptionViewTest {
 				jarPathString = jarPathString.substring(1);
 			resourceName = matcher.group(2);
 			File xmlDestFile = new File(getClass().getResource("/").toURI());
-			AppStartupConfig.copyFileInJar(jarPathString, resourceName, xmlDestFile, true);
+			AppStartupConfig.copyFileInJar(jarPathString, resourceName, xmlDestFile, (file) -> !file.exists());
 			LOG.info(getClass().getResource("/tika-mimetypes.xml").toString());
 			LOG.info(jarPathString);
 			LOG.info(resourceName);

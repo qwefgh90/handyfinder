@@ -1,6 +1,7 @@
 package io.github.qwefgh90.handyfinder.gui;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -18,7 +19,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javafx.application.*;
+
+import javafx.application.Platform;
 
 import javax.servlet.ServletException;
 
@@ -32,13 +34,12 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.log4j.xml.DOMConfigurator;
 import org.apache.tika.mime.MimeTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.context.WebApplicationContext;
-
-import javafx.application.*;
 
 /**
  * local file contents search engine with javafx webview and spring restful api
@@ -57,6 +58,7 @@ public class AppStartupConfig{
 	public final static String WEB_APP_DIRECTORY_NAME = "app";
 	public final static Path deployedPath;
 	public final static Path parentOfClassPath;
+	public final static Path pathForLog4j;
 	public final static Path pathForAppdata;
 	public final static Path pathForDatabase;
 	public final static Path pathForIndex;
@@ -85,8 +87,9 @@ public class AppStartupConfig{
 	 */
 	static {
 		// Application Path
-		deployedPath = getCurrentBuildPath();
+		deployedPath = getCurrentBuildPath(); //jar file or classes dir
 		parentOfClassPath = deployedPath.getParent();
+		pathForLog4j = parentOfClassPath.resolve("log4j.xml");
 		pathForAppdata = parentOfClassPath.resolve(APP_DATA_DIR_NAME);
 		pathForDatabase = pathForAppdata.resolve(DB_NAME);
 		pathForIndex = pathForAppdata.resolve(INDEX_DIR_NAME);
@@ -104,7 +107,6 @@ public class AppStartupConfig{
 
 		// create appdata dir
 		if (!Files.isWritable(parentOfClassPath)) {
-			LOG.error("can't write resource classpath");
 			throw new RuntimeException("can't write resource classpath");
 		} else if (Files.exists(pathForAppdata)) {
 			// Pass
@@ -112,7 +114,6 @@ public class AppStartupConfig{
 			try {
 				Files.createDirectory(pathForAppdata);
 			} catch (IOException e) {
-				LOG.error("fail to create resource directory");
 				throw new RuntimeException(ExceptionUtils.getStackTrace(e));
 			}
 		}
@@ -120,13 +121,23 @@ public class AppStartupConfig{
 		// deploy basic files
 		try {
 			if (isJarStart()) { // jar start
+				AppStartupConfig.copyFileInJar(deployedPath.toString(), pathForLog4j.getFileName().toString(),
+						parentOfClassPath.toFile(), (file) -> !file.exists());
+				System.out.println("Initializing log4j with: " + pathForLog4j);
+				DOMConfigurator.configureAndWatch(pathForLog4j.toAbsolutePath().toString());
+				
 				// resources which is in jar copy to appdata deployed.
 				copyDirectoryInJar(deployedPath.toString(), APP_DATA_DIR_NAME,
-						parentOfClassPath.toFile());
+						parentOfClassPath.toFile(), (File file) -> !Files.exists(file.toPath()));
 			} else { // no jar start
 				// all files copied in classpath
-				Path classsPath = deployedPath.getParent().resolve("classes");
-				FileUtils.copyDirectory(classsPath.toFile(),
+				Path classsSourcePath = deployedPath.getParent().resolve("classes");
+				Path log4jSourcePath = classsSourcePath.resolve(pathForLog4j.getFileName().toString());
+				FileUtils.copyFileToDirectory(log4jSourcePath.toFile(), parentOfClassPath.toFile());
+				System.out.println("Initializing log4j with: " + pathForLog4j);
+				DOMConfigurator.configureAndWatch(pathForLog4j.toAbsolutePath().toString());
+				
+				FileUtils.copyDirectory(classsSourcePath.toFile(),
 						parentOfClassPath.toFile());
 			}
 			// tika-mimetypes.xml copy to appdata
@@ -244,7 +255,7 @@ public class AppStartupConfig{
 					jarPath = jarPath.substring(1);
 				resourceName = matcher.group(2);
 				AppStartupConfig.copyFileInJar(jarPath, resourceName,
-						tikaXmlFilePath.getParent().toFile(), true);
+						tikaXmlFilePath.getParent().toFile(), (file) -> !file.exists());
 			}
 		}
 	}
@@ -331,8 +342,10 @@ public class AppStartupConfig{
 	 * @author qwefgh90
 	 */
 	public static void copyDirectoryInJar(String jarPath,
-			String resourceDirInJar, File destinationRoot)
+			String resourceDirInJar, File destinationRoot, FileFilter destFileFilter)
 			throws URISyntaxException, IOException {
+		if(destFileFilter == null)
+			destFileFilter = (file) -> true;
 		if (resourceDirInJar.startsWith("/")) { // jar url start with /
 												// replace to jar
 												// entry style which
@@ -363,18 +376,24 @@ public class AppStartupConfig{
 				LOG.trace("create start : " + entry.getName());
 				Files.createDirectories(new File(destinationRoot, entry
 						.getName()).toPath());
-			} else if (entry.getName().startsWith(resourceDirInJar) // File in
-																	// jar
+			} else if (entry.getName().startsWith(resourceDirInJar) // File in jar
 					&& !entry.getName().endsWith("/")) {
-
-				LOG.trace("copy start : " + entry.getName());
-				File tempFile = extractTempFile(getResourceInputstream(entry
-						.getName()));
-				FileUtils.copyFile(
-						tempFile,
-						new File(destinationRoot.getAbsolutePath(), entry
-								.getName())); // copy
-				tempFile.delete();
+				File destFile = new File(destinationRoot.getAbsolutePath(), entry
+						.getName());
+				
+				if(!destFileFilter.accept(destFile)){
+					LOG.debug("skip copy : " + entry.getName());
+					
+				}else{
+					LOG.debug("copy start : " + entry.getName());
+					File tempFile = extractTempFile(getResourceInputstream(entry
+							.getName()));
+					FileUtils.copyFile(
+							tempFile,
+							new File(destinationRoot.getAbsolutePath(), entry
+									.getName())); // copy
+					tempFile.delete();
+				}
 			}
 			entry = jis.getNextJarEntry();
 		}
@@ -382,11 +401,13 @@ public class AppStartupConfig{
 	}
 
 	public static void copyFileInJar(String jarPath, String resourcePathInJar,
-			File destinationRootDir, boolean ignoreHierarchyOfResource)
+			File destinationRootDir, FileFilter destFileFilter)
 			throws URISyntaxException, IOException {
+		if(destFileFilter == null)
+			destFileFilter = (file) -> true;
 		if (resourcePathInJar.startsWith("/")) { // jar url start with /
 													// replace to jar
-													// entry style which
+													// entry getName() style which
 													// is not start with
 													// '/'
 			resourcePathInJar = resourcePathInJar.substring(1);
@@ -400,25 +421,24 @@ public class AppStartupConfig{
 			if (entry.getName().startsWith(resourcePathInJar) // File in jar
 					&& entry.getName().getBytes()[entry.getName().length() - 1] != File.separator
 							.getBytes()[0]) {
-				File tempFile = extractTempFile(getResourceInputstream(entry
-						.getName()));
-				if (ignoreHierarchyOfResource)
-					FileUtils.copyFile(
-							tempFile,
-							new File(destinationRootDir.getAbsolutePath(),
-									entry.getName().substring(
-											entry.getName().lastIndexOf("/"))));
+				int lastIndex = entry.getName().lastIndexOf("/");
+				String entryName;
+				if (lastIndex != -1)
+					entryName = entry.getName().substring(lastIndex);
 				else
-					FileUtils.copyFile(tempFile,
-							new File(destinationRootDir.getAbsolutePath(),
-									entry.getName())); // copy
-														// from
-														// source
-														// file
-														// to
-														// destination
-														// file
-				tempFile.delete();
+					entryName = entry.getName();
+				File destFile = new File(destinationRootDir.getAbsolutePath(),entryName);
+				
+				if(!destFileFilter.accept(destFile)){
+					LOG.debug("skip copy : " + entry.getName());
+				}else{
+					LOG.debug("copy start : " + entry.getName());
+					File tempFile = extractTempFile(getResourceInputstream(entry
+							.getName()));
+					FileUtils.copyFile(
+								tempFile,destFile); // copy from source file to destination file
+					tempFile.delete();
+				}
 			}
 			entry = jis.getNextJarEntry();
 		}
