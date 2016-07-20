@@ -1,4 +1,7 @@
 # handyfinder
+
+[![Build Status](https://travis-ci.org/qwefgh90/handyfinder.svg?branch=develop)](https://travis-ci.org/qwefgh90/handyfinder)
+
 A handy finder is search program for document indexing and searching on multiple platforms (like : http://file-finder.en.informer.com/Offline-Search-Engine/)
 
 # feature
