@@ -20,7 +20,7 @@
 		<level value="info" />
 	</logger>
 	<logger name="io.github.qwefgh90.handyfinder.gui">
-		<level value="deubg" />
+		<level value="debug" />
 	</logger>
 	<logger name="handyfinder">
 		<level value="trace" />

@@ -31,7 +31,6 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
@@ -43,7 +42,6 @@ import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
@@ -58,7 +56,6 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.search.highlight.Highlighter;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.search.highlight.QueryScorer;
@@ -192,22 +189,23 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			 ILuceneHandlerMimeOptionView mimeOption) {
 		if (Files.isDirectory(indexWriterPath.getParent())
 				&& Files.isWritable(indexWriterPath.getParent())) {
-			String pathString = indexWriterPath.toAbsolutePath().toString();
-			if (!map.containsKey(pathString)) {
+			String indexPathString = indexWriterPath.toAbsolutePath().toString();
+			if (!map.containsKey(indexPathString)) {
 				LuceneHandler newInstance = new LuceneHandler();
 				newInstance.writerInit(indexWriterPath);
 				newInstance.invokerForCommand = invoker;
 				newInstance.basicOption = basicOption;
 				newInstance.mimeOption = mimeOption;
-				map.put(pathString, newInstance);
+				map.put(indexPathString, newInstance);
 			}
-			return map.get(pathString);
+			return map.get(indexPathString);
 		}
 		throw new InvalidParameterException(
 				"invalid path for index writer. \n check directory and write permission.");
 	}
 
 	private LuceneHandler() {
+
 	}
 
 	/**
@@ -330,13 +328,24 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		// throw new IndexException("now indexing");
 		checkDirectoryReader();
 		StandardQueryParser parser = new StandardQueryParser();	//not thread safe, object is known as lightweight thing
+		parser.setAnalyzer(analyzer);
 		parser.setAllowLeadingWildcard(true);
 		
-		Query q1 = parser.parse(addBiWildcardString(fullString), "pathString");
-		Query q2 = parser.parse(addWildcardString(fullString), "contents");
+		BooleanQuery.Builder builder = new BooleanQuery.Builder();
+		
+		List<String> list = getBiWildcardList(fullString);
+		for(String e : list){
+			Query query = parser.parse(e, "lowercasePathString");
+			builder.add(query, Occur.SHOULD);
+		}
+		
+		list = getWildcardList(fullString);
+		for(String e : list){
+			Query query = parser.parse(e, "contents");
+			builder.add(query, Occur.SHOULD);
+		}
 
-		BooleanQuery query = new BooleanQuery.Builder().add(q1, Occur.SHOULD)
-				.add(q2, Occur.SHOULD).build();
+		BooleanQuery query = builder.build();
 		TopDocs docs = searcher.search(query,
 				basicOption.getLimitCountOfResult());
 		return docs;
@@ -401,29 +410,6 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	}
 
 	/**
-	 * if there is no matched Field, return null.
-	 * 
-	 * @param docid
-	 * @param queryString
-	 * @return matched field name
-	 * @throws IOException
-	 */
-	public String getMatchedField(int docid, String queryString)
-			throws IOException {
-		checkDirectoryReader();
-		Document doc = getDocument(docid);
-		for (IndexableField field : doc.getFields()) {
-			Query query = new WildcardQuery(new Term(field.name(),
-					addWildcardString(queryString)));
-			Explanation ex = searcher.explain(query, docid);
-			if (ex.isMatch()) {
-				return field.name();
-			}
-		}
-		return null;
-	}
-
-	/**
 	 * highlight content of document. return null, if path is not valid
 	 * @param pathString
 	 * @param queryString
@@ -436,6 +422,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 */
 	public Callable<Optional<Map.Entry<String, String>>> highlight(String pathString, String queryString) throws org.apache.lucene.queryparser.classic.ParseException, IOException, InvalidTokenOffsetsException, QueryNodeException, ParseException{
 		Optional<Integer> docResult = getDocument(pathString);
+		LOG.trace("highlight : " + pathString);
 		if(!docResult.isPresent()){
 			return null;
 		}
@@ -458,7 +445,6 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			IOException, InvalidTokenOffsetsException, QueryNodeException,
 			ParseException {
 		checkDirectoryReader();
-		StringBuilder sb = new StringBuilder();
 		
 		if(docid >= indexReader.maxDoc() || docid < 0){
 			return null;
@@ -469,39 +455,45 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		SimpleHTMLFormatter htmlFormatter = new SimpleHTMLFormatter();
 		Highlighter highlighter = new Highlighter(htmlFormatter,
 				new QueryScorer(query));
+
 		final String pathString = doc.get("pathString");
+		final String lowercasePathString = doc.get("lowercasePathString");
+		LOG.debug("highlight pathString : " + pathString);
+		
 		if (!Files.exists(Paths.get(pathString)))
 			throw new IOException(pathString + " does not exists.");
 		Callable<Optional<Map.Entry<String, String>>> getHighlightContent = () -> {
+			StringBuilder sb = new StringBuilder();
 			String contents;
 			try {
 				contents = JSearch.extractContentsFromFile(pathString);
 
 				Document tempDocument = new Document();
 				FieldType type = new FieldType();
-				type.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
 				type.setStored(true);
 				Field contentsField = new Field("contents", contents, type);
+				Field lowercasePathStringField = new Field("lowercasePathString", lowercasePathString, type);
 				tempDocument.add(contentsField);
+				tempDocument.add(lowercasePathStringField);
 
-				try (TokenStream tokenStream = TokenSources.getAnyTokenStream(
-						indexReader, docid, "contents", tempDocument, analyzer)) {
+				try (TokenStream tokenStream = TokenSources
+						.getAnyTokenStream(indexReader, docid, "contents", tempDocument, analyzer)) {
 					TextFragment[] frag = highlighter.getBestTextFragments(
-							tokenStream, contents, false, 2);// highlighter.getBestFragments(tokenStream,
+							tokenStream, contents, false, 4);// highlighter.getBestFragments(tokenStream,
 					for (int j = 0; j < frag.length; j++) {
 						if ((frag[j] != null) && (frag[j].getScore() > 0)) {
 							sb.append(frag[j].toString());
 						}
 					}
+					
 				}
 
 				if (sb.length() == 0)
 				{
 					try (TokenStream tokenStream = TokenSources
-							.getAnyTokenStream(indexReader, docid,
-									"pathString", analyzer)) {
+							.getAnyTokenStream(indexReader, docid, "lowercasePathString", tempDocument, analyzer)) {
 						TextFragment[] frag = highlighter.getBestTextFragments(
-								tokenStream, pathString, false, 2);// highlighter.getBestFragments(tokenStream,
+								tokenStream, pathString, false, 4);// highlighter.getBestFragments(tokenStream,
 						for (int j = 0; j < frag.length; j++) {
 							if ((frag[j] != null) && (frag[j].getScore() > 0)) {
 								sb.append(frag[j].toString());
@@ -510,13 +502,16 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 					}
 				}
 			} catch (Exception e) {
-				LOG.info(ExceptionUtils.getStackTrace(e));
+				LOG.warn(ExceptionUtils.getStackTrace(e));
 				return Optional.empty();
 			}
-			sb.append(contents.substring(0,
-					contents.length() < 200 ? contents.length()
-							: 200));
+			//sb.append(contents.substring(0,
+			//		contents.length() < 200 ? contents.length()
+			//				: 200));
 			contents = sb.toString();
+			contents = contents.substring(0,
+							contents.length() < 200 ? contents.length()
+									: 200);
 			Map.Entry<String, String> entry = new AbstractMap.SimpleImmutableEntry<>(pathString, contents);
 			Optional<Map.Entry<String, String>> result = Optional.of(entry);
 			return result;
@@ -884,6 +879,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		type.setStoreTermVectors(true);
 		type.setStoreTermVectorOffsets(true);
 
+		FieldType typeStored = new FieldType(type);
+		typeStored.setStored(true);
+		
 		String contents;
 
 		try {
@@ -909,10 +907,12 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 				"lastModifiedTime", attr.lastModifiedTime().toMillis(),
 				Store.YES);
 
+		Field lowerPathStringField = new Field("lowercasePathString", path.toAbsolutePath().toString().toLowerCase(), typeStored);
 		Field contentsField = new Field("contents", contents, type);
 		doc.add(createdTimeField);
 		doc.add(title);
 		doc.add(pathStringField);
+		doc.add(lowerPathStringField);
 		doc.add(contentsField);
 		doc.add(mimeTypeString);
 		doc.add(lastModifiedTimeField);
@@ -1002,40 +1002,57 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	private BooleanQuery getBooleanQuery(String fullString)
 			throws QueryNodeException {
 		StandardQueryParser parser = new StandardQueryParser();	//not thread safe, object is known as lightweight thing
+		parser.setAnalyzer(analyzer);
 		parser.setAllowLeadingWildcard(true);
 		
-		Query q1 = parser.parse(addBiWildcardString(fullString), "pathString");
-		Query q2 = parser.parse(addWildcardString(fullString), "contents");
+		BooleanQuery.Builder builder = new BooleanQuery.Builder();
+		
+		List<String> list = getBiWildcardList(fullString);
+		for(String e : list){
+			Query query = parser.parse(e, "lowercasePathString");
+			builder.add(query, Occur.SHOULD);
+		}
+		
+		list = getWildcardList(fullString);
+		for(String e : list){
+			Query query = parser.parse(e, "contents");
+			builder.add(query, Occur.SHOULD);
+		}
 
-		BooleanQuery query = new BooleanQuery.Builder().add(q1, Occur.SHOULD)
-				.add(q2, Occur.SHOULD).build();
-		BooleanQuery.setMaxClauseCount(Integer.MAX_VALUE);
+		BooleanQuery query = builder.build();
 		return query;
 	}
 
-	private String addWildcardString(String fullString) {
+	private String getWildcardString(String fullString) {
+		fullString = fullString.replaceAll(" +", " ");
 		String[] partialQuery = fullString.split(" ");
 		StringBuilder sb = new StringBuilder();
 		for (String element : partialQuery) {
-			if (sb.length() != 0)
-				sb.append(' '); // space added for OR SEARHCHING
-			sb.append(QueryParser.escape(element));
-			sb.append("*");
+			if(sb.length() != 0)
+				sb.append(" ");
+			sb.append(QueryParser.escape(element)+"*");
 		}
 		return sb.toString();
 	}
 
-	private String addBiWildcardString(String fullString) {
+	private List<String> getWildcardList(String fullString) {
+		List<String> list = new ArrayList<>();
+		fullString = fullString.replaceAll(" +", " ");
 		String[] partialQuery = fullString.split(" ");
-		StringBuilder sb = new StringBuilder();
 		for (String element : partialQuery) {
-			if (sb.length() != 0)
-				sb.append(' '); // space added for OR SEARHCHING
-			sb.append("*");
-			sb.append(QueryParser.escape(element));
-			sb.append("*");
+			list.add(QueryParser.escape(element)+"*");
 		}
-		return sb.toString();
+		return list;
+	}
+	
+	private List<String> getBiWildcardList(String fullString) {
+		List<String> list = new ArrayList<>();
+		fullString = fullString.replaceAll(" +", " ");
+		String[] partialQuery = fullString.split(" ");
+		for (String element : partialQuery) {
+			list.add("*"+QueryParser.escape(element)+"*");
+		}
+		return list;
 	}
 
 	private Map<String, Integer> getTermFrequenciesFromContents(
