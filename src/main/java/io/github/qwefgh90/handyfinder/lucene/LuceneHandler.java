@@ -1005,6 +1005,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		StandardQueryParser parser = new StandardQueryParser();	//not thread safe, object is known as lightweight thing
 		parser.setAnalyzer(analyzer);
 		parser.setAllowLeadingWildcard(true);
+		parser.setLowercaseExpandedTerms(false);
 		
 		BooleanQuery.Builder builder = new BooleanQuery.Builder();
 		
