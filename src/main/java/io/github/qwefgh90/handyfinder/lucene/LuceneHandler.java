@@ -330,6 +330,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		StandardQueryParser parser = new StandardQueryParser();	//not thread safe, object is known as lightweight thing
 		parser.setAnalyzer(analyzer);
 		parser.setAllowLeadingWildcard(true);
+		parser.setLowercaseExpandedTerms(false);
 		
 		BooleanQuery.Builder builder = new BooleanQuery.Builder();
 		
@@ -879,14 +880,14 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		type.setStoreTermVectors(true);
 		type.setStoreTermVectorOffsets(true);
 
-		FieldType typeStored = new FieldType(type);
-		typeStored.setStored(true);
+		FieldType typeWithStore = new FieldType(type);
+		typeWithStore.setStored(true);
 		
 		String contents;
 
 		try {
 			contents = JSearch.extractContentsFromFile(path.toFile());
-			contents.replaceAll(" +", ""); // erase space
+			contents = contents.replaceAll(" +", " "); // erase space
 		} catch (ParseException e) {
 			LOG.info(ExceptionUtils.getStackTrace(e));
 			return;
@@ -907,7 +908,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 				"lastModifiedTime", attr.lastModifiedTime().toMillis(),
 				Store.YES);
 
-		Field lowerPathStringField = new Field("lowercasePathString", path.toAbsolutePath().toString().toLowerCase(), typeStored);
+		Field lowerPathStringField = new Field("lowercasePathString", path.toAbsolutePath().toString().toLowerCase(), typeWithStore);
 		Field contentsField = new Field("contents", contents, type);
 		doc.add(createdTimeField);
 		doc.add(title);

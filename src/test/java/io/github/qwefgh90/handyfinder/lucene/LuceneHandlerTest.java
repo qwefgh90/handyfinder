@@ -143,6 +143,17 @@ public class LuceneHandlerTest {
 		TopDocs docs = handler.search("javageeks _javageeks");
 		Assert.assertThat(docs.scoreDocs.length, Matchers.is(5));
 	}
+
+	@Test
+	public void searchTest2() throws IOException,
+			org.apache.lucene.queryparser.classic.ParseException,
+			InvalidTokenOffsetsException, QueryNodeException, ParseException {
+		handler.indexDirectory(
+				testFilesPath, true);
+
+		TopDocs docs = handler.search("PageBase");
+		Assert.assertThat(docs.scoreDocs.length, Matchers.is(1));
+	}
 	
 	@Test
 	public void deleteAndUpdateIndexTest() throws IOException {
@@ -180,7 +191,7 @@ public class LuceneHandlerTest {
 		handler.indexDirectory(
 				testFilesPath, true);
 		int count = handler.getDocumentCount();
-		Assert.assertThat(count, Matchers.is(3));
+		Assert.assertThat(count, Matchers.is(4));
 		LOG.info("mime except : " + count);
 	}
 
