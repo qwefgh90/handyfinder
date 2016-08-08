@@ -3,9 +3,13 @@
 	<div class="row">
 		<div class="col-xs-12">
 			<div class="input-group">
-				<input class="form-control" type="search" focus-me="false" placeholder="Java C++" ng-model="searchModel.searchKeyword" ng-keydown="$event.which === 13 && search(searchModel.searchKeyword)" >
+				<input class="form-control" type="search" focus-me="false" placeholder="Java C++" ng-model="searchModel.searchKeyword" ng-keydown="$event.which === 13 && search(searchModel.searchKeyword)" > 
 				<span class="input-group-btn">
-					<input class="btn btn-default searchbt " value="Search" type="submit" ng-click="search(searchModel.searchKeyword)">
+					<button type="button" class="btn btn-default">
+					<span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+					</button>
+					<input class="btn btn-default searchbt " value="Search"
+					type="submit" ng-click="search(searchModel.searchKeyword)">
 				</span>
 			</div>
 		</div>
@@ -17,9 +21,12 @@
 			<p ng-show="searchModel.searchFlag == true">
 				<img alt="Look for documents..." src="/app/image/progress.gif">
 			</p>
-			<p ng-show="searchModel.searchFlag == false && searchModel.searchTryCount > 0">
-				About <b>{{searchModel.searchResult.length}}</b> results (<b>{{searchModel.searchTime}}</b> secs), order of documents to contain more keywords.
+			<p
+				ng-show="searchModel.searchFlag == false && searchModel.searchTryCount > 0">
+				About <b>{{searchModel.searchResult.length}}</b> results (<b>{{searchModel.searchTime}}</b>
+				secs), order of documents to contain more keywords.
 			</p>
+
 			<!-- 
 			<div>
 				<button type="button" class="btn btn-default btn-sm" aria-label="Left Align">
