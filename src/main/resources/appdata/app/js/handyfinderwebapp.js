@@ -59,9 +59,11 @@ function($location, $scope, apiService, GUIService, $log) {
 	$scope.initGUIService();
 }]);
 
-app.controller('searchController', ['$location','$log', '$scope', '$timeout', 'apiService', 'Document','$sce', 'GUIService', 'SearchModel',
-function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIService, SearchModel) {
+app.controller('searchController', ['$location','$log', '$scope', '$timeout', 'apiService', 'Document','$sce', 'GUIService', 'SearchModel','IndexModel',
+function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIService, SearchModel, IndexModel) {
+	$scope.isCollapsed = true;
 	$scope.searchModel = SearchModel.model;
+	$scope.indexModel = IndexModel.model;
 	$scope.search = function(keyword){
 		var milliseconds = (new Date).getTime();
 		if($scope.searchModel.searchFlag == true)

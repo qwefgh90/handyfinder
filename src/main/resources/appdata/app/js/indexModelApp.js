@@ -38,6 +38,7 @@ app.factory("OptionModel",['$rootScope', 'Option', function($rootScope, Option){
 app.factory("IndexModel",['$rootScope', function($rootScope){
 	var service = {
 			model : {
+				keywordMode: 'OR',
 				indexDocumentCount : 0,
 				auto_update_index : false,
 				auto_clean_files : false,

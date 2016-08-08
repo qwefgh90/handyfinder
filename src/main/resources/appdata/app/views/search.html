@@ -5,7 +5,7 @@
 			<div class="input-group">
 				<input class="form-control" type="search" focus-me="false" placeholder="Java C++" ng-model="searchModel.searchKeyword" ng-keydown="$event.which === 13 && search(searchModel.searchKeyword)" > 
 				<span class="input-group-btn">
-					<button type="button" class="btn btn-default">
+					<button type="button" class="btn btn-default" ng-click="isCollapsed = !isCollapsed">
 					<span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
 					</button>
 					<input class="btn btn-default searchbt " value="Search"
@@ -21,12 +21,23 @@
 			<p ng-show="searchModel.searchFlag == true">
 				<img alt="Look for documents..." src="/app/image/progress.gif">
 			</p>
+
+			<div uib-collapse="isCollapsed">
+				<div class="panel panel-default">
+					<div class="panel-body">
+					<div class="btn-group">
+				        <label class="btn btn-success" ng-model="indexModel.keywordMode" uib-btn-radio="'OR'" uncheckable>Or</label>
+				        <label class="btn btn-success" ng-model="indexModel.keywordMode" uib-btn-radio="'AND'" uncheckable>And</label>
+				    </div>
+					</div>
+				</div>
+			</div>
 			<p
 				ng-show="searchModel.searchFlag == false && searchModel.searchTryCount > 0">
 				About <b>{{searchModel.searchResult.length}}</b> results (<b>{{searchModel.searchTime}}</b>
 				secs), order of documents to contain more keywords.
 			</p>
-
+			
 			<!-- 
 			<div>
 				<button type="button" class="btn btn-default btn-sm" aria-label="Left Align">
