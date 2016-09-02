@@ -1,5 +1,17 @@
 var app = angular.module('handyfinderwebapp', ['ngRoute', 'ngSanitize', 'ngAnimate', 'ui.bootstrap', 'apiServiceApp', 'ngContextMenu', 'indexModelApp', 'websocketModelApp']);
-
+app.run(['OptionModel', 'apiService', '$log', function(OptionModel, apiService, $log){
+	var optionPromise = apiService.getOptions();
+	optionPromise.then(function(msg) {
+		OptionModel.option.limitCountOfResult = msg.limitCountOfResult;
+		OptionModel.option.maximumDocumentMBSize = msg.maximumDocumentMBSize;
+		OptionModel.option.keywordMode = msg.keywordMode;
+		$log.log('option loaded ' + OptionModel.option.limitCountOfResult + ', ' + OptionModel.option.maximumDocumentMBSize
+				+ ', ' + OptionModel.option.keywordMode);
+	}, function(msg) {
+		$log.log('option fail to load');
+	}, function(msg) {
+	});
+}]);
 app.config(function($routeProvider) {
 	//Module의 config API를 사용하면 서비스 제공자provider에 접근할 수 있다. 여기선 $route 서비스 제공자를 인자로 받아온다.
 	$routeProvider
@@ -20,8 +32,8 @@ app.config(function($routeProvider) {
 	});
 	//otherwise 메소드를 통하여 브라우저의 URL이 $routeProivder에서 정의되지 않은 URL일 경우에 해당하는 설정을 할 수 있다. 여기선 ‘/home’으로 이동시키고 있다.
 });
-app.controller('mainApplicationController', ['$location', '$scope', 'apiService','GUIService', '$log',
-function($location, $scope, apiService, GUIService, $log) {
+app.controller('mainApplicationController', ['$location', '$scope', 'apiService','GUIService', '$log' , '$timeout',
+function($location, $scope, apiService, GUIService, $log, $timeout) {
 	$scope.path = '';
 	$scope.go = function(path) {
 		$location.path(path);
@@ -59,9 +71,11 @@ function($location, $scope, apiService, GUIService, $log) {
 	$scope.initGUIService();
 }]);
 
-app.controller('searchController', ['$location','$log', '$scope', '$timeout', 'apiService', 'Document','$sce', 'GUIService', 'SearchModel',
-function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIService, SearchModel) {
+app.controller('searchController', ['$location','$log', '$scope', '$timeout', 'apiService', 'Document','$sce', 'GUIService', 'SearchModel','OptionModel',
+function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIService, SearchModel, OptionModel) {
+	$scope.isCollapsed = true;
 	$scope.searchModel = SearchModel.model;
+	$scope.optionModel = OptionModel.model;
 	$scope.search = function(keyword){
 		var milliseconds = (new Date).getTime();
 		if($scope.searchModel.searchFlag == true)
@@ -136,6 +150,21 @@ function($location, $log, $scope, $timeout, apiService, Document, $sce, GUIServi
 			};
 		}
 	};
+	
+	$scope.updateOption = function(){
+		$scope.searchModel.searchFlag = true;
+		var promise = apiService.updateOptions($scope.optionModel.option);
+		promise.then(function() {
+			$log.log('finish to save option.');
+			$scope.searchModel.searchFlag = false;
+		}, function() {
+			$log.log('fail to save option.');
+			$scope.searchModel.searchFlag = false;
+		}, function() {
+			$log.log('fail to save option.');
+			$scope.searchModel.searchFlag = false;
+		});
+	};
 	$scope.initGUIService();
 }]);
 
@@ -147,7 +176,6 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 	$scope.optionModel = OptionModel.model;
 	
 	var directoriesPromise = apiService.getDirectories();	
-	var optionPromise = apiService.getOptions();
 	
 	$scope.indexModel.select_toggle = false;
 	$scope.totalDisplayed = 0;
@@ -284,15 +312,6 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 	$scope.run = function() {
 		var promise = $scope.save();
 		promise.then(function(){
-//			if($scope.indexModel.running != 'READY'){
-//				$log.log('it is running on index');
-//				return;
-//			}
-//			if($scope.indexModel.intervalStopObject != undefined){
-//				$log.log('it is just the start');
-//				return;
-//			}
-			
 			$scope.indexModel.running = 'RUNNING'
 			progressService.sendStartIndex();
 			$scope.indexModel.intervalStopObject = $interval(function(){
@@ -446,16 +465,6 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 		$scope.startWatch();
 	});
 	
-	//option from apiserver
-	optionPromise.then(function(msg) {
-		$scope.optionModel.option.limitCountOfResult = msg.limitCountOfResult;
-		$scope.optionModel.option.maximumDocumentMBSize = msg.maximumDocumentMBSize;
-		$log.log('option loaded ' + $scope.optionModel.option.limitCountOfResult + ', ' + $scope.optionModel.option.maximumDocumentMBSize);
-	}, function(msg) {
-		$log.log('option fail to load');
-	}, function(msg) {
-	});
-
 	var typePromise;
 	
 	//type from apiserver
@@ -463,14 +472,14 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 		typePromise = apiService.getSupportTypes();
 		typePromise.then(function(msg) {
 			$scope.indexModel.supportTypes = msg;
-			$scope.totalDisplayed = 100;	//minimum > 1000 
+			$scope.totalDisplayed = 100;	//minimum < 1000 
 			$log.log('supportTypes loaded : ' + msg.length);
 		}, function(msg) {
 			$log.log('supportTypes fail to load');
 		}, function(msg) {
 		});
 	}else{
-		$scope.totalDisplayed = 100; //minimum > 1000 
+		$scope.totalDisplayed = 100; //minimum < 1000 
 	}
 	
 	$scope.$watch('indexModel.supportTypes', function(){
@@ -483,18 +492,6 @@ function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, pro
 		$scope.indexModel.select_toggle = true;
 	}, true);
 	
-//	$scope.$watch('indexModel.running + indexModel.state + indexModel.updateSummary.state + indexModel.intervalStopObject', function () {
-//		if($scope.indexModel.running == 'WAITING' && $scope.indexModel.state == 'TERMINATE' && $scope.indexModel.updateSummary.state == 'TERMINATE'
-//			&& $scope.indexModel.intervalStopObject == undefined){
-//			$log.log('INDEX WRTIE TERMINATE');
-//			$scope.indexModel.running = 'READY';
-//		}else if($scope.indexModel.running != 'WAITING' && ($scope.indexModel.state != 'TERMINATE' || $scope.indexModel.updateSummary.state != 'TERMINATE')
-//				&& $scope.indexModel.intervalStopObject != undefined){
-//			$log.log('INDEX WRTIE START');
-//			$scope.indexModel.running = 'RUNNING';
-//		}
-//	});
-	
 	$scope.refreshCount();
 }]);
 
@@ -505,30 +502,7 @@ function($location, $scope, apiService) {
 	};
 
 }]);
-/*
-app.directive('focusMe', function($timeout, $parse) {
-	//http://stackoverflow.com/questions/14833326/how-to-set-focus-on-input-field
-	return {
-		//scope: true,   // optionally create a child scope
-		link : function(scope, element, attrs) {
-			var model = $parse(attrs.focusMe);
-			scope.$watch(model, function(value) {
-				console.log('value=', value);
-				if (value === true) {
-					$timeout(function() {
-						element[0].focus();
-					});
-				}
-			});
-			// to address @blesh's comment, set attribute value to 'false'
-			// on blur event:
-			element.bind('blur', function() {
-				console.log('blur');
-				scope.$apply(model.assign(scope, false));
-			});
-		}
-	};
-});*/
+
 app.directive("compileHtml", function($parse, $sce, $compile) {
     return {
         restrict: "A",

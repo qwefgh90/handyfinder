@@ -140,6 +140,7 @@ public class RootService {
 		OptionDto dto = new OptionDto();
 		dto.setLimitCountOfResult(globalAppData.getLimitCountOfResult());
 		dto.setMaximumDocumentMBSize(globalAppData.getMaximumDocumentMBSize());
+		dto.setKeywordMode(globalAppData.getKeywordMode().name());
 		return dto;
 	}
 
@@ -154,6 +155,7 @@ public class RootService {
 		if (dto.getMaximumDocumentMBSize() > 0)
 			globalAppData.setMaximumDocumentMBSize(dto
 					.getMaximumDocumentMBSize());
+		globalAppData.setKeywordMode(dto.getKeywordMode());
 		globalAppData.writeAppDataToDisk();
 	}
 

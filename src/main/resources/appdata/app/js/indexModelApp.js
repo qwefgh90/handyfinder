@@ -159,13 +159,15 @@ app.factory("Option", function() {
 	private int maximumDocumentMBSize;
 	 * 
 	 */
-	function Option(limitCountOfResult, maximumDocumentMBSize) {
+	function Option(limitCountOfResult, maximumDocumentMBSize, keywordMode) {
 		this.limitCountOfResult = limitCountOfResult;
 		this.maximumDocumentMBSize = maximumDocumentMBSize;
+		this.keywordMode = keywordMode;
 	}
 	function Option() {
 		this.limitCountOfResult = -1;
 		this.maximumDocumentMBSize = -1;
+		this.keywordMode = 'OR';
 	}
 
 	// Return constructor - this is what defines the actual

@@ -9,6 +9,7 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOption.KEYWORD_MODE;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
 public class LuceneHandlerBasicOptionView implements
@@ -39,6 +40,19 @@ public class LuceneHandlerBasicOptionView implements
 		return Collections.unmodifiableList(app.getDirectoryList());
 	}
 
+	public KEYWORD_MODE getKeywordMode(){
+		return app.getKeywordMode();
+	}
+	
+	public void setKeywordMode(String keywordMode){
+		for(KEYWORD_MODE mode : KEYWORD_MODE.values()){
+			if(mode.name().equals(keywordMode)){
+				app.setKeywordMode(KEYWORD_MODE.valueOf(keywordMode));
+				break;
+			}
+		}
+	}
+	
 	public void addDirectory(Directory d) {
 		app.getDirectoryList().add(d);
 	}
@@ -48,6 +62,7 @@ public class LuceneHandlerBasicOptionView implements
 		app.getDirectoryList().add(d);
 	}
 
+	
 	public void deleteDirectory(Directory d) {
 		Iterator<Directory> iter = app.getDirectoryList().iterator();
 		while (iter.hasNext()) {
