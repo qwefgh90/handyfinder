@@ -38,7 +38,6 @@ app.factory("OptionModel",['$rootScope', 'Option', function($rootScope, Option){
 app.factory("IndexModel",['$rootScope', function($rootScope){
 	var service = {
 			model : {
-				keywordMode: 'OR',
 				indexDocumentCount : 0,
 				auto_update_index : false,
 				auto_clean_files : false,
@@ -160,13 +159,15 @@ app.factory("Option", function() {
 	private int maximumDocumentMBSize;
 	 * 
 	 */
-	function Option(limitCountOfResult, maximumDocumentMBSize) {
+	function Option(limitCountOfResult, maximumDocumentMBSize, keywordMode) {
 		this.limitCountOfResult = limitCountOfResult;
 		this.maximumDocumentMBSize = maximumDocumentMBSize;
+		this.keywordMode = keywordMode;
 	}
 	function Option() {
 		this.limitCountOfResult = -1;
 		this.maximumDocumentMBSize = -1;
+		this.keywordMode = 'OR';
 	}
 
 	// Return constructor - this is what defines the actual

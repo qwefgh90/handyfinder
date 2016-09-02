@@ -26,6 +26,11 @@ class LuceneHandlerBasicOption {
 
 	private final int _limitCountOfResult = 100;
 	private final int _maximumDocumentMBSize = 100;
+	private final KEYWORD_MODE _keywordMode = KEYWORD_MODE.OR;
+	
+	public enum KEYWORD_MODE{
+		OR, AND
+	};
 	
 	private static LuceneHandlerBasicOption singleton;
 	private static ObjectMapper om = new ObjectMapper();
@@ -33,11 +38,21 @@ class LuceneHandlerBasicOption {
 	private List<Directory> directoryList;
 	private int limitCountOfResult;
 	private int maximumDocumentMBSize;
+	private KEYWORD_MODE keywordMode;
 	private LuceneHandlerBasicOption() throws JsonParseException, JsonMappingException,
 			IOException {
 		this.directoryList = new ArrayList<Directory>();
 		this.limitCountOfResult = _limitCountOfResult;
 		this.maximumDocumentMBSize = _maximumDocumentMBSize;
+		this.keywordMode = _keywordMode;
+	}
+
+	public KEYWORD_MODE getKeywordMode() {
+		return keywordMode;
+	}
+
+	public void setKeywordMode(KEYWORD_MODE keywordMode) {
+		this.keywordMode = keywordMode;
 	}
 
 	//for Object to JSON public visibility
@@ -113,6 +128,7 @@ class LuceneHandlerBasicOption {
 				singleton.directoryList = appData.directoryList;
 				singleton.limitCountOfResult = appData.limitCountOfResult;
 				singleton.maximumDocumentMBSize = appData.maximumDocumentMBSize;
+				singleton.keywordMode = appData.keywordMode;
 			}
 		}
 		return singleton;

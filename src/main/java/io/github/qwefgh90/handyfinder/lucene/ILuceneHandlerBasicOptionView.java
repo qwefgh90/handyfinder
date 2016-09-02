@@ -1,5 +1,6 @@
 package io.github.qwefgh90.handyfinder.lucene;
 
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOption.KEYWORD_MODE;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
 import java.io.IOException;
@@ -27,4 +28,8 @@ public interface ILuceneHandlerBasicOptionView {
 	void addDirectory(Directory d);
 
 	List<Directory> getDirectoryList();
+	
+	KEYWORD_MODE getKeywordMode();
+	
+	void setKeywordMode(String keywordMode);
 }

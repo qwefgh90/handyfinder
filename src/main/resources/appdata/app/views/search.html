@@ -25,10 +25,11 @@
 			<div uib-collapse="isCollapsed">
 				<div class="panel panel-default">
 					<div class="panel-body">
-					<div class="btn-group">
-				        <label class="btn btn-success" ng-model="indexModel.keywordMode" uib-btn-radio="'OR'" uncheckable>Or</label>
-				        <label class="btn btn-success" ng-model="indexModel.keywordMode" uib-btn-radio="'AND'" uncheckable>And</label>
-				    </div>
+						<label>Search mode(applied to content) </label><br>
+						<div class="btn-group">
+					        <label class="btn btn-success" ng-model="optionModel.option.keywordMode" ng-click="updateOption()" uib-btn-radio="'OR'" uncheckable>Or</label>
+					        <label class="btn btn-success" ng-model="optionModel.option.keywordMode" ng-click="updateOption()"uib-btn-radio="'AND'" uncheckable>And</label>
+					    </div>
 					</div>
 				</div>
 			</div>
