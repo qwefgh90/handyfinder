@@ -214,9 +214,72 @@ define(['angular'], function(angular){
 		return service;
 	}]);
 
+	app.constant('INIT_COUNT', 100);
+	app.constant('LOAD_MORE_COUNT', 500);
+	app.factory("SupportTypeUI",['$q', '$http', '$timeout', '$log', 'LOAD_MORE_COUNT', 'INIT_COUNT', function($q, $http, $timeout, $log, LOAD_MORE_COUNT, INIT_COUNT){
+		var SupportTypeUI = function(indexModel){
+			this.searchedTypeKeyword = '';
+			this.totalDisplayed = INIT_COUNT;
+			this.searchedType = '';
+			this.enterHitCount = 0;
+			this.indexModel = indexModel;
+		}
+		
+		SupportTypeUI.prototype.changeSearchKeyword = function(searchedTypeKeyword){
+			this.enterHitCount = 0;
+			if(searchedTypeKeyword == '')
+				return;
+			for(var i = 0; i < this.totalDisplayed; i++){
+				if(this.indexModel.supportTypes[i].type.indexOf(searchedTypeKeyword) > -1){
+					this.searchedType = this.indexModel.supportTypes[i].type;
+					$log.log(this.indexModel.supportTypes[i].type + ' is matched');
+					$log.log('0 hit');
+					return;
+
+				}
+			}
+		};
+		
+
+		SupportTypeUI.prototype.nextSearch = function(searchedTypeKeyword){
+			this.enterHitCount += 1;
+			var searchStack = [];
+			var offsetCounter = 0;
+			var searchedType = '';
+			if(searchedTypeKeyword == '')
+				return;
+			for(var i = 0; i < this.totalDisplayed; i++){
+				//matched
+				if(this.indexModel.supportTypes[i].type.indexOf(searchedTypeKeyword) > -1){
+					searchedType = this.indexModel.supportTypes[i].type;
+					searchStack.push(searchedType);
+				}
+			}
+			//enter overflow
+			if(searchStack.length <= this.enterHitCount){
+				this.searchedType = searchStack[0]
+				this.enterHitCount = 0;
+				$log.log('enter hit overflow');
+				$log.log(this.enterHitCount + ' offset hit');
+			}else{
+				this.searchedType = searchStack[this.enterHitCount];
+				$log.log(this.enterHitCount + ' offset hit');
+			}
+		}
+		SupportTypeUI.prototype.loadMore = function(){
+			this.totalDisplayed = this.totalDisplayed + LOAD_MORE_COUNT;
+			if(this.indexModel.supportTypes.length < this.totalDisplayed){
+				this.totalDisplayed = this.indexModel.supportTypes.length;
+			}
+		}
+		
+		return SupportTypeUI;
+	}]);
+	
 	app.factory("IndexModel",['$rootScope', '$q', '$http', '$log', '$timeout', function($rootScope, $q, $http, $log, $timeout){
 		var service = {
 				model : {
+					searchedType : '',
 					indexDocumentCount : 0,
 					auto_update_index : false,
 					auto_clean_files : false,
@@ -363,7 +426,65 @@ define(['angular'], function(angular){
 					}
 					return deferred.promise;
 				},
+				getDocumentCount: function() {
+					var deferred = $q.defer();
 
+					// ajax $http
+					var headers = {
+							'Accept' : 'application/json',
+							'Content-Type' : 'application/json'
+					};
+					var params = {
+					};
+					var config = {
+							'params' : params,
+							'headers' : headers
+					};
+
+					$http.get(url = '/documents/count', config).then(function(response) {
+						if (response.status == 200) {
+							deferred.resolve(response.data);
+						} else {
+							deferred.reject('getDocumentCount() fail');
+						}
+					}, function(response) {
+						deferred.reject(response.data);
+					}, function(response) {
+						deferred.reject(response.data);
+					});
+					return deferred.promise;
+					// then(successCallback, errorCallback, notifyCallback)
+				},
+				
+				updateSupportType: function(supportTypeDto) {
+					var deferred = $q.defer();
+
+					// ajax $http
+					var headers = {
+							'Accept' : 'application/json',
+							'Content-Type' : 'application/json'
+					};
+					var params = {
+					};
+					var config = {
+							'headers' : headers
+					};
+					var data = JSON.stringify(supportTypeDto);
+
+					$http.post(url = '/supportType', data, config).then(function(response) {
+						if (response.status == 200) {
+							deferred.resolve();
+						} else {
+							deferred.reject();
+						}
+					}, function(response) {
+						deferred.reject();
+					}, function(response) {
+						deferred.reject();
+					});
+					return deferred.promise;
+					// then(successCallback, errorCallback, notifyCallback)
+				},
 				updateSupportTypeList: function() {
 					var list = this.model.supportTypes;
 					
@@ -398,8 +519,70 @@ define(['angular'], function(angular){
 					});
 					return deferred.promise;
 					// then(successCallback, errorCallback, notifyCallback)
+				},
+				
+				getDirectories: function() {
+					var deferred = $q.defer();
+
+					// ajax $http
+					var headers = {
+							'Accept' : 'application/json',
+							'Content-Type' : 'application/json'
+					};
+					var params = {
+					};
+					var config = {
+							'params' : params,
+							'headers' : headers
+					};
+
+					$http.get(url = '/directories', config).then(function(response) {
+						if (response.status == 200) {
+							deferred.resolve(response.data);
+						} else {
+							deferred.reject('getDirectories() fail');
+						}
+					}, function(response) {
+						deferred.reject(response.data);
+					}, function(response) {
+						deferred.reject(response.data);
+					});
+					return deferred.promise;
+					// then(successCallback, errorCallback, notifyCallback)
+				},
+
+				updateDirectories : function() {
+					var deferred = $q.defer();
+
+					// ajax $http
+					var headers = {
+							'Accept' : 'application/json',
+							'Content-Type' : 'application/json'
+					};
+					var params = {
+					};
+					var config = {
+							'headers' : headers
+					};
+					var data = JSON.stringify(this.model.pathList);
+
+					$http.post(url = '/directories', data, config).then(function(response) {
+						if (response.status == 200) {
+							deferred.resolve();
+						} else {
+							deferred.reject();
+						}
+					}, function(response) {
+						deferred.reject();
+					}, function(response) {
+						deferred.reject();
+					});
+					return deferred.promise;
+					// then(successCallback, errorCallback, notifyCallback)
 				}
 
+				
+	
 				// $rootScope.$on("savestate", service.SaveState);
 				// $rootScope.$on("restorestate", service.RestoreState);
 		};

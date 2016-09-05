@@ -122,75 +122,31 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		$scope.initGUIService();
 	}]);
 
-	app.constant('LOAD_MORE_COUNT', 500);
 	app.constant('RUNNING_INTERVAL', 10000);
-	app.controller('indexController', ['$q','$log', '$timeout', '$location', '$scope', '$interval', 'apiService', 'Path', 'ProgressService', 'IndexModel', 'OptionModel', 'LOAD_MORE_COUNT', 'RUNNING_INTERVAL',
-	                                   function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, progressService, IndexModel, OptionModel, LOAD_MORE_COUNT, RUNNING_INTERVAL) {
+	app.controller('indexController', ['$q','$log', '$timeout', '$location', '$scope', '$interval', 'apiService', 'Path', 'ProgressService', 'IndexModel', 'OptionModel', 'SupportTypeUI', 'RUNNING_INTERVAL',
+	                                   function($q, $log, $timeout, $location, $scope, $interval, apiService, Path, progressService, IndexModel, OptionModel, SupportTypeUI, RUNNING_INTERVAL) {
 		$scope.indexModel = IndexModel.model;
 		$scope.optionModel = OptionModel.model;
+		$scope.supportTypeUI = new SupportTypeUI($scope.indexModel);
 
-		var directoriesPromise = apiService.getDirectories();	
+		var directoriesPromise = IndexModel.getDirectories();	
 
 		$scope.indexModel.select_toggle = false;
-		$scope.totalDisplayed = 0;
-		$scope.searchedTypeKeyword = '';
-		$scope.searchedType = '';
-		$scope.enterHitCount = 0;
 		$scope.changeSearchKeyword = function(searchedTypeKeyword){
-			$scope.enterHitCount = 0;
-			if(searchedTypeKeyword == '')
-				return;
-			for(var i = 0; i < $scope.totalDisplayed; i++){
-//				$log.log($scope.indexModel.supportTypes[i].type);
-				if($scope.indexModel.supportTypes[i].type.indexOf(searchedTypeKeyword) > -1){
-					$scope.searchedType = $scope.indexModel.supportTypes[i].type;
-					$log.log($scope.indexModel.supportTypes[i].type + ' is matched');
-					$log.log('0 hit');
-					return;
-
-				}
-			}
-//			$scope.searchedType = $scope.indexModel.supportTypes[i].type;
+			$scope.supportTypeUI.changeSearchKeyword(searchedTypeKeyword);
 		};
 
 		$scope.nextSearch = function(searchedTypeKeyword){
-			$scope.enterHitCount += 1;
-			var enterHitCount = $scope.enterHitCount;
-			var searchStack = [];
-			var offsetCounter = 0;
-			var searchedType = '';
-			if(searchedTypeKeyword == '')
-				return;
-			for(var i = 0; i < $scope.totalDisplayed; i++){
-				//matched
-				if($scope.indexModel.supportTypes[i].type.indexOf(searchedTypeKeyword) > -1){
-					searchedType = $scope.indexModel.supportTypes[i].type;
-					searchStack.push(searchedType);
-				}
-			}
-			//enter overflow
-			if(searchStack.length <= $scope.enterHitCount){
-				$scope.searchedType = searchStack[0]
-				$scope.enterHitCount = 0;
-				$log.log('enter hit overflow');
-				$log.log($scope.enterHitCount + ' offset hit');
-			}else{
-				$scope.searchedType = searchStack[$scope.enterHitCount];
-				$log.log($scope.enterHitCount + ' offset hit');
-			}
-
+			$scope.supportTypeUI.nextSearch(searchedTypeKeyword);
 		}
 
 		$scope.loadMore = function(){
-			$scope.totalDisplayed = $scope.totalDisplayed + LOAD_MORE_COUNT;
-			if($scope.indexModel.supportTypes.length < $scope.totalDisplayed){
-				$scope.totalDisplayed = $scope.indexModel.supportTypes.length;
-			}
+			$scope.supportTypeUI.loadMore();
 		};
 
 		$scope.save = function() {
 			var deferred = $q.defer();
-			var promise = apiService.updateDirectories($scope.indexModel.pathList);
+			var promise = IndexModel.updateDirectories();
 			promise.then(function() {
 				//$scope.indexModel.index_progress_status.addAlertQ(0);
 				deferred.resolve();
@@ -227,7 +183,7 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 				var path = Path.createInstance(returnedPath);
 				$scope.indexModel.pathList.push(path);
 				$scope.save();
-				alert('pushed path');
+				$log.log('pushed path: '+ returnedPath);
 			}
 		};
 
@@ -249,7 +205,7 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		};
 
 		$scope.refreshCount = function(){
-			var countPromise = apiService.getDocumentCount();
+			var countPromise = IndexModel.getDocumentCount();
 			countPromise.then(function(count){
 				$scope.indexModel.indexDocumentCount = count;
 				$log.log('indexed Count : ' + count);
@@ -304,7 +260,7 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		}
 
 		$scope.updateType = function(obj) {
-			var promise = apiService.updateSupportType(obj);
+			var promise = IndexModel.updateSupportType(obj);
 			promise.then(function(){
 				$log.log('successful update '+obj.type + ':' + obj.used);
 			},function(){
@@ -370,12 +326,11 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 
 					var guiDirPromise = progressService.subGuiDirectory();
 					guiDirPromise.then(function(){},
-							function(msg){
-						$log.log(msg);},
-						function(path){
-							$log.log('selected path : ' + path);
-							$scope.addDirectory(path);
-						});
+							function(msg){$log.log(msg);},
+							function(path){
+								$log.log('selected path : ' + path);
+								$scope.addDirectory(path);
+							});
 
 
 				}, function(error) {
@@ -410,12 +365,10 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 
 		var typePromise = IndexModel.getSupportTypes();
 		typePromise.then(function(msg) {
-			$scope.totalDisplayed = 100;	//minimum < 1000 
 			$log.log('supportTypes loaded : ' + msg.length);
 		}, function(msg) {
 			$log.log('supportTypes fail to load');
 		}, function(msg) {
-			$scope.totalDisplayed = 100;	//minimum < 1000 
 			$log.log('supportTypes notify');
 		});
 

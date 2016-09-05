@@ -67,7 +67,7 @@
 			</uib-accordion-heading>
 			<div style="margin-top: 10px;" class="row">
 				<div class="col-xs-4" style="">
-					<b>Support Types ({{totalDisplayed}}/{{indexModel.supportTypes.length}}) </b>
+					<b>Support Types ({{supportTypeUI.totalDisplayed}}/{{indexModel.supportTypes.length}}) </b>
 					<div class="boxes">
 					
 						<div class="checkbox">
@@ -76,15 +76,15 @@
 							</label>
 						</div>
 						<div class="checkbox"
-							ng-repeat="typeObj in indexModel.supportTypes | limitTo:totalDisplayed"
-							scroll-if="typeObj.type == searchedType">
-							<label ng-style="searchedTypeKeyword != '' && typeObj.type.indexOf(searchedTypeKeyword) > -1 && {'font-weight':800}"> <input type="checkbox" ng-model="typeObj.used"
+							ng-repeat="typeObj in indexModel.supportTypes | limitTo:supportTypeUI.totalDisplayed"
+							scroll-if="typeObj.type == supportTypeUI.searchedType">
+							<label ng-style="supportTypeUI.searchedTypeKeyword != '' && typeObj.type.indexOf(supportTypeUI.searchedTypeKeyword) > -1 && {'font-weight':800}"> <input type="checkbox" ng-model="typeObj.used"
 								ng-change="updateType(typeObj)"> {{typeObj.type}}
 							</label>
 						</div>
 					</div>
-					<input type="text" placeholder="*.txt" style="width:100%" ng-change='changeSearchKeyword(searchedTypeKeyword)' ng-model='searchedTypeKeyword'
-					ng-keydown="$event.which === 13 && nextSearch(searchedTypeKeyword)"/>
+					<input type="text" placeholder="*.txt" style="width:100%" ng-change='changeSearchKeyword(supportTypeUI.searchedTypeKeyword)' ng-model='supportTypeUI.searchedTypeKeyword'
+					ng-keydown="$event.which === 13 && nextSearch(supportTypeUI.searchedTypeKeyword)"/>
     				<button ng-click="loadMore()" style="width:100%" type="submit" class="btn btn-default">Read More</button>
 				</div>
 				<div class="col-xs-8 " style="">
