@@ -50,6 +50,7 @@ import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
+import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Explanation;
@@ -331,26 +332,28 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		StandardQueryParser parser = new StandardQueryParser();	//not thread safe, object is known as lightweight thing
 		parser.setAnalyzer(analyzer);
 		parser.setAllowLeadingWildcard(true);
-		parser.setLowercaseExpandedTerms(false);
+		parser.setLowercaseExpandedTerms(true);
 
-		BooleanQuery.Builder builder = new BooleanQuery.Builder();
-
+		BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
 		List<String> list = getBiWildcardList(fullString);
 		for(String e : list){
 			Query query = parser.parse(e, "lowercasePathString");				
-			builder.add(query, Occur.SHOULD);
+			queryBuilder.add(query, Occur.SHOULD);
 		}
-
+		
+		BooleanQuery.Builder contentsQueryBuilder = new BooleanQuery.Builder();
 		list = getWildcardList(fullString);
 		for(String e : list){
 			Query query = parser.parse(e, "contents");
 			if(basicOption.getKeywordMode().equals(KEYWORD_MODE.OR))
-				builder.add(query, Occur.SHOULD);
+				contentsQueryBuilder.add(query, Occur.SHOULD);
 			else
-				builder.add(query, Occur.MUST);
+				contentsQueryBuilder.add(query, Occur.MUST);
 		}
-
-		BooleanQuery query = builder.build();
+		
+		queryBuilder.add(contentsQueryBuilder.build(), Occur.SHOULD);
+		
+		BooleanQuery query = queryBuilder.build();
 		TopDocs docs = searcher.search(query,
 				basicOption.getLimitCountOfResult());
 		return docs;
@@ -476,11 +479,12 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 				Document tempDocument = new Document();
 				FieldType type = new FieldType();
 				type.setStored(true);
-				Field contentsField = new Field("contents", contents, type);
+				Field contentsField = new Field("contents", contents.toString(), type);
 				Field lowercasePathStringField = new Field("lowercasePathString", lowercasePathString, type);
 				tempDocument.add(contentsField);
 				tempDocument.add(lowercasePathStringField);
 
+				//first, lucene find offset of sentence and highlight sentence from file
 				try (TokenStream tokenStream = TokenSources
 						.getAnyTokenStream(indexReader, docid, "contents", tempDocument, analyzer)) {
 					TextFragment[] frag = highlighter.getBestTextFragments(
@@ -510,9 +514,6 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 				LOG.warn(ExceptionUtils.getStackTrace(e));
 				return Optional.empty();
 			}
-			//sb.append(contents.substring(0,
-			//		contents.length() < 200 ? contents.length()
-			//				: 200));
 			contents = sb.toString();
 			contents = contents.substring(0,
 					contents.length() < 200 ? contents.length()
@@ -913,7 +914,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 				Store.YES);
 
 		Field lowerPathStringField = new Field("lowercasePathString", path.toAbsolutePath().toString().toLowerCase(), typeWithStore);
-		Field contentsField = new Field("contents", contents, type);
+		Field contentsField = new Field("contents", contents.toLowerCase(), type);
 		doc.add(createdTimeField);
 		doc.add(title);
 		doc.add(pathStringField);
@@ -1009,23 +1010,28 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		StandardQueryParser parser = new StandardQueryParser();	//not thread safe, object is known as lightweight thing
 		parser.setAnalyzer(analyzer);
 		parser.setAllowLeadingWildcard(true);
-		parser.setLowercaseExpandedTerms(false);
+		parser.setLowercaseExpandedTerms(true);
 
-		BooleanQuery.Builder builder = new BooleanQuery.Builder();
-
+		BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
 		List<String> list = getBiWildcardList(fullString);
 		for(String e : list){
 			Query query = parser.parse(e, "lowercasePathString");
-			builder.add(query, Occur.SHOULD);
+			queryBuilder.add(query, Occur.SHOULD);
 		}
 
+		BooleanQuery.Builder contentsQueryBuilder = new BooleanQuery.Builder();
 		list = getWildcardList(fullString);
 		for(String e : list){
 			Query query = parser.parse(e, "contents");
-			builder.add(query, Occur.SHOULD);
+			if(basicOption.getKeywordMode().equals(KEYWORD_MODE.OR))
+				contentsQueryBuilder.add(query, Occur.SHOULD);
+			else
+				contentsQueryBuilder.add(query, Occur.MUST);
 		}
+		
+		queryBuilder.add(contentsQueryBuilder.build(), Occur.SHOULD);
 
-		BooleanQuery query = builder.build();
+		BooleanQuery query = queryBuilder.build();
 		return query;
 	}
 

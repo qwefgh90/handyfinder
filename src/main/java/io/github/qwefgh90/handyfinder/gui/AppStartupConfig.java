@@ -86,11 +86,20 @@ public class AppStartupConfig{
 	 * application system variable is initialized. deploy resources.
 	 */
 	static {
+		final boolean isProduct = isJarStart();
 		// Application Path
 		deployedPath = getCurrentBuildPath(); //jar file or classes dir
 		parentOfClassPath = deployedPath.getParent();
-		pathForLog4j = parentOfClassPath.resolve("log4j.xml");
-		pathForAppdata = parentOfClassPath.resolve(APP_DATA_DIR_NAME);
+		
+		if (isProduct) {
+			pathForLog4j = parentOfClassPath.resolve("log4j.xml");
+			pathForAppdata = parentOfClassPath.resolve(APP_DATA_DIR_NAME);
+		}
+		else{
+			pathForLog4j = deployedPath.resolve("log4j.xml");
+			pathForAppdata = deployedPath.resolve(APP_DATA_DIR_NAME);
+		}
+		
 		pathForDatabase = pathForAppdata.resolve(DB_NAME);
 		pathForIndex = pathForAppdata.resolve(INDEX_DIR_NAME);
 		tomatLoggingFilePath = pathForAppdata.resolve("catalina.out");
@@ -120,7 +129,7 @@ public class AppStartupConfig{
 
 		// deploy basic files
 		try {
-			if (isJarStart()) { // jar start
+			if (isProduct) { // jar start
 				AppStartupConfig.copyFileInJar(deployedPath.toString(), pathForLog4j.getFileName().toString(),
 						parentOfClassPath.toFile(), (file) -> !file.exists());
 				System.out.println("Initializing log4j with: " + pathForLog4j);
@@ -136,9 +145,8 @@ public class AppStartupConfig{
 				FileUtils.copyFileToDirectory(log4jSourcePath.toFile(), parentOfClassPath.toFile());
 				System.out.println("Initializing log4j with: " + pathForLog4j);
 				DOMConfigurator.configureAndWatch(pathForLog4j.toAbsolutePath().toString());
-				
 				FileUtils.copyDirectory(classsSourcePath.toFile(),
-						parentOfClassPath.toFile());
+						parentOfClassPath.toFile(), (File f) -> !f.getName().endsWith(".class"));
 			}
 			// tika-mimetypes.xml copy to appdata
 			copyTikaXml();

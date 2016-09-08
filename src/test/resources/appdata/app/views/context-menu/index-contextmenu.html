@@ -1,0 +1,12 @@
+<ul class="menu">
+    <li class="title strong">Menu</li>
+    <li ng-click="enableToggle(path)">
+        <a href >{{path.used == true ? 'Not used' : 'Use'}}</a>
+    </li>
+    <li ng-click="recursivelyToggle(path)">
+        <a href >{{path.recursively == true ? 'Not recursively' : 'Recursively'}}</a>
+    </li>
+    <li ng-click="remove(path)">
+        <a href >Delete</a>
+    </li>
+</ul>
