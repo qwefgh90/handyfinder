@@ -50,6 +50,7 @@ import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
+import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Explanation;
@@ -333,24 +334,26 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		parser.setAllowLeadingWildcard(true);
 		parser.setLowercaseExpandedTerms(true);
 
-		BooleanQuery.Builder builder = new BooleanQuery.Builder();
-
+		BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
 		List<String> list = getBiWildcardList(fullString);
 		for(String e : list){
 			Query query = parser.parse(e, "lowercasePathString");				
-			builder.add(query, Occur.SHOULD);
+			queryBuilder.add(query, Occur.SHOULD);
 		}
-
+		
+		BooleanQuery.Builder contentsQueryBuilder = new BooleanQuery.Builder();
 		list = getWildcardList(fullString);
 		for(String e : list){
 			Query query = parser.parse(e, "contents");
 			if(basicOption.getKeywordMode().equals(KEYWORD_MODE.OR))
-				builder.add(query, Occur.SHOULD);
+				contentsQueryBuilder.add(query, Occur.SHOULD);
 			else
-				builder.add(query, Occur.MUST);
+				contentsQueryBuilder.add(query, Occur.MUST);
 		}
-
-		BooleanQuery query = builder.build();
+		
+		queryBuilder.add(contentsQueryBuilder.build(), Occur.SHOULD);
+		
+		BooleanQuery query = queryBuilder.build();
 		TopDocs docs = searcher.search(query,
 				basicOption.getLimitCountOfResult());
 		return docs;
@@ -1009,24 +1012,26 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		parser.setAllowLeadingWildcard(true);
 		parser.setLowercaseExpandedTerms(true);
 
-		BooleanQuery.Builder builder = new BooleanQuery.Builder();
-
+		BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
 		List<String> list = getBiWildcardList(fullString);
 		for(String e : list){
 			Query query = parser.parse(e, "lowercasePathString");
-			builder.add(query, Occur.SHOULD);
+			queryBuilder.add(query, Occur.SHOULD);
 		}
 
+		BooleanQuery.Builder contentsQueryBuilder = new BooleanQuery.Builder();
 		list = getWildcardList(fullString);
 		for(String e : list){
 			Query query = parser.parse(e, "contents");
 			if(basicOption.getKeywordMode().equals(KEYWORD_MODE.OR))
-				builder.add(query, Occur.SHOULD);
+				contentsQueryBuilder.add(query, Occur.SHOULD);
 			else
-				builder.add(query, Occur.MUST);
+				contentsQueryBuilder.add(query, Occur.MUST);
 		}
+		
+		queryBuilder.add(contentsQueryBuilder.build(), Occur.SHOULD);
 
-		BooleanQuery query = builder.build();
+		BooleanQuery query = queryBuilder.build();
 		return query;
 	}
 

@@ -1,0 +1,15 @@
+<ul class="menu">
+    <li class="title">Message Actions:</li>
+    <li ng-click="mc.readMessage()">
+        <img src="../images/sand3.png" />
+        <a href="#">{{mc.label.read}}</a>
+    </li>
+    <li>
+        <img src="../images/bird30.png" />
+        <a href="#" ng-click="replyTo(from)">Reply to {{from}}</a>
+    </li>
+    <li ng-controller="DeleteController as dc">
+        <img src="../images/pie27.png" />
+        <a href="#" ng-click="dc.removeMessage(from)">{{mc.label.delete}}</a>
+    </li>
+</ul>
