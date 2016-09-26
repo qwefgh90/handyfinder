@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>sing</groupId>
 	<artifactId>handyfinder</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.1</version>
 	<properties>
 		<org.apache.tomcat>8.0.33</org.apache.tomcat>
 		<spring.webmvc.version>4.2.5.RELEASE</spring.webmvc.version>
@@ -167,6 +167,12 @@
 				<configuration>
 					<mainClass>io.github.qwefgh90.handyfinder.gui.AppStartupConfig</mainClass>
 					<vendor>com.qwefgh90.io</vendor>
+					<needShortcut>true</needShortcut>
+					<nativeReleaseVersion>0.1</nativeReleaseVersion>
+					<bundleArguments>
+						<identifier>0.1</identifier>
+						<installdirChooser>true</installdirChooser>
+					</bundleArguments>
 				</configuration>
 			</plugin>
 			
