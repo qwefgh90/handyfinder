@@ -8,6 +8,12 @@ A handy finder is search program for document indexing and searching on multiple
 
 - You can download released versions from:  https://github.com/qwefgh90/handyfinder/releases
 
+# usage
+
+1. In index page, add directories you want to index
+2. and then "click run"
+3. In search page, type keyword and search
+
 # functionality
 - graphical interface like web
 - string indexing from files on file systems
