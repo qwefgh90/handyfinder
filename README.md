@@ -36,3 +36,7 @@ A handy finder is search program for document indexing and searching on multiple
 - internal auth token
 - usuful search condition
 - sorting and search in result
+
+# Contribution
+
+We would welcome any thoughts. When you find bugs, you can write issue and PR.
