@@ -336,17 +336,18 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		parser.setLowercaseExpandedTerms(true);
 
 		BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
-		BooleanQuery.Builder pathQueryBuilder = new BooleanQuery.Builder();
-		List<String> list = getBiWildcardList(fullString);
-		for(String e : list){
-			Query query = parser.parse(e, "lowercasePathString");				
-			pathQueryBuilder.add(query, Occur.SHOULD);
+		
+		if(basicOption.isPathMode()){
+			BooleanQuery.Builder pathQueryBuilder = new BooleanQuery.Builder();
+			for(String e : getBiWildcardList(fullString)){
+				Query query = parser.parse(e, "lowercasePathString");				
+				pathQueryBuilder.add(query, Occur.SHOULD);
+			}
+			queryBuilder.add(pathQueryBuilder.build(), Occur.SHOULD);
 		}
-		queryBuilder.add(pathQueryBuilder.build(), Occur.SHOULD);
 		
 		BooleanQuery.Builder contentsQueryBuilder = new BooleanQuery.Builder();
-		list = getWildcardList(fullString);
-		for(String e : list){
+		for(String e : getWildcardList(fullString)){
 			Query query = parser.parse(e, "contents");
 			if(basicOption.getKeywordMode().equals(KEYWORD_MODE.OR))
 				contentsQueryBuilder.add(query, Occur.SHOULD);

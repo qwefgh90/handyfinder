@@ -1,6 +1,7 @@
 package io.github.qwefgh90.handyfinder.lucene;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -19,9 +20,9 @@ public class LuceneHandlerBasicOptionView implements
 
 	private LuceneHandlerBasicOption app;
 
-	private LuceneHandlerBasicOptionView() {
+	private LuceneHandlerBasicOptionView(Path appDataJsonPath) {
 		try {
-			app = LuceneHandlerBasicOption.getInstance();
+			app = LuceneHandlerBasicOption.getInstance(appDataJsonPath);
 		} catch (IOException e) {
 			LOG.error(ExceptionUtils.getStackTrace(e));
 			throw new RuntimeException(e.toString());
@@ -30,9 +31,9 @@ public class LuceneHandlerBasicOptionView implements
 
 	private static LuceneHandlerBasicOptionView singleton = null;
 
-	public static LuceneHandlerBasicOptionView getInstance() {
+	public static LuceneHandlerBasicOptionView getInstance(Path appDataJsonPath) {
 		if (singleton == null)
-			singleton = new LuceneHandlerBasicOptionView();
+			singleton = new LuceneHandlerBasicOptionView(appDataJsonPath);
 		return singleton;
 	}
 
@@ -61,7 +62,6 @@ public class LuceneHandlerBasicOptionView implements
 		deleteDirectory(d);
 		app.getDirectoryList().add(d);
 	}
-
 	
 	public void deleteDirectory(Directory d) {
 		Iterator<Directory> iter = app.getDirectoryList().iterator();
@@ -76,6 +76,14 @@ public class LuceneHandlerBasicOptionView implements
 
 	public void deleteDirectories() {
 		app.getDirectoryList().clear();
+	}
+
+	public boolean isPathMode() {
+		return app.isPathMode();
+	}
+
+	public void setPathMode(boolean pathMode) {
+		app.setPathMode(pathMode);
 	}
 
 	public void writeAppDataToDisk() {

@@ -8,8 +8,12 @@ import java.util.List;
 
 public interface ILuceneHandlerBasicOptionView {
 	int getMaximumDocumentMBSize();
-
+	
 	void setMaximumDocumentMBSize(int size);
+	
+	boolean isPathMode();
+	
+	void setPathMode(boolean pathMode);
 	
 	int getLimitCountOfResult();
 
