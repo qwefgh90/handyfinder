@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>sing</groupId>
 	<artifactId>handyfinder</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.101</version>
 	<properties>
 		<org.apache.tomcat>8.0.33</org.apache.tomcat>
 		<spring.webmvc.version>4.2.5.RELEASE</spring.webmvc.version>
