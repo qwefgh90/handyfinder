@@ -252,6 +252,8 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 			}, function(progressObject) {
 				if (progressObject.state == 'START')
 					$scope.indexModel.index_progress_status.progressBarVisible = true;
+                else if (progressObject.state == 'PROGRESS')
+					$scope.indexModel.index_progress_status.progressBarVisible = true;
 				else if (progressObject.state == 'TERMINATE'){
 					$scope.indexModel.index_progress_status.progressBarVisible = false;
 					$scope.indexModel.index_progress_status.addAlertQ(4);
