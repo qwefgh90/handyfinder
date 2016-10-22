@@ -581,6 +581,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 
 	void indexDocuments(List<Directory> list) throws IOException {
 		for (Directory dir : list) {
+            LOG.debug("indexing :" + dir.getPathString()); 
 			Path tmp = Paths.get(dir.getPathString());
 			if (dir.isRecursively()) {
 				indexDirectory(tmp, true);
