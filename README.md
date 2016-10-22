@@ -39,7 +39,7 @@ A handyfinder is tiny search program working on desktop to support multiple type
 
 - When you want to contribute, use STS
 - When you want to test, type "mvn test"
-- When you want to make native binary, type "mvn jfx:native" 
+- When you want to make native binary, type "mvn jfx:native" (for windows, download Inno from http://www.jrsoftware.org/)
 
 # Contribution
 
