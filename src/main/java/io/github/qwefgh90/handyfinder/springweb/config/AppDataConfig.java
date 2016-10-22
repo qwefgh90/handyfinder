@@ -1,6 +1,7 @@
 package io.github.qwefgh90.handyfinder.springweb.config;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -29,7 +30,7 @@ public class AppDataConfig {
 
 	@Bean
 	public LuceneHandlerBasicOptionView luceneHandlerBasicOptionView(){
-		return LuceneHandlerBasicOptionView.getInstance();
+		return LuceneHandlerBasicOptionView.getInstance(AppStartupConfig.appDataJsonPath);
 	}
 
 	@Bean

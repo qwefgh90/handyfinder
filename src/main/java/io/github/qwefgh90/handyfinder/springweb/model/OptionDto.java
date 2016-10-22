@@ -4,8 +4,21 @@ public class OptionDto {
 	private int limitCountOfResult;
 	private int maximumDocumentMBSize;
 	private String keywordMode;
+	private boolean firstStart;
+	private boolean pathMode;
 	
-	
+	public boolean isPathMode() {
+		return pathMode;
+	}
+	public void setPathMode(boolean pathMode) {
+		this.pathMode = pathMode;
+	}
+	public boolean isFirstStart() {
+		return firstStart;
+	}
+	public void setFirstStart(boolean firstStart) {
+		this.firstStart = firstStart;
+	}
 	public String getKeywordMode() {
 		return keywordMode;
 	}

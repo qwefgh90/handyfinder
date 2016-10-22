@@ -70,6 +70,7 @@ define(['angular','sockjs', 'stomp'], function(angular, SockJS, Stomp){
 	app.factory('ProgressService', ['StompClient', '$q','$log',
 	                                function(StompClient, $q, $log) {
 		var stompClient = new StompClient();
+		var cache = {'subProgressPromise': undefined, 'subUpdatePromise': undefined, 'subDirectoryPromise' : undefined};
 		return {
 			connect : function() {
 				stompClient.init("/endpoint");
@@ -78,15 +79,24 @@ define(['angular','sockjs', 'stomp'], function(angular, SockJS, Stomp){
 			},
 			disconnect : function() {
 				stompClient.disconnect();
+				cache.subProgressPromise = undefined;
+				cache.subUpdatePromise = undefined;
+				cache.subDirectoryPromise = undefined;
 			},
 			subProgress : function() {
-				return stompClient.subscribe("/index/progress");
+				if(cache.subProgressPromise == undefined)
+					cache.subProgressPromise = stompClient.subscribe("/index/progress");
+				return cache.subProgressPromise;
 			},
 			subUpdate : function() {
-				return stompClient.subscribe("/index/update");
+				if(cache.subUpdatePromise == undefined)
+					cache.subUpdatePromise = stompClient.subscribe("/index/update");
+				return cache.subUpdatePromise;
 			},
 			subGuiDirectory : function() {
-				return stompClient.subscribe("/gui/directory");
+				if(cache.subDirectoryPromise == undefined)
+					cache.subDirectoryPromise = stompClient.subscribe("/gui/directory");
+				return cache.subDirectoryPromise;
 			},
 			sendStartIndex : function() {
 				return stompClient.send("/handyfinder/command/index/start", {}, '');

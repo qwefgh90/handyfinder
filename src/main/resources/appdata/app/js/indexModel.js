@@ -1,6 +1,6 @@
-define(['angular'], function(angular){
-	var app = angular.module('IndexModel', []);
-	app.factory("IndexModel",['$rootScope', '$q', '$http', '$log', '$timeout', function($rootScope, $q, $http, $log, $timeout){
+define(['angular', 'webSocketModel'], function(angular){
+	var app = angular.module('IndexModel', ['WebSocketModel']);
+	app.factory("IndexModel",['$rootScope', '$q', '$http', '$log', '$timeout', '$interval', 'ProgressService', function($rootScope, $q, $http, $log, $timeout, $interval, progressService){
 		var service = {
 				model : {
 					searchedType : '',
@@ -98,7 +98,46 @@ define(['angular'], function(angular){
 					},
 					intervalStopObject : undefined,
 					intervalTurn : 0,
-					running : 'READY' //READY RUNNING WAITING (ONLY FORM RUNNING TO WAITING STATE IN SCRIPT)
+					intervalTime : 10000,
+					running : 'READY', //READY RUNNING
+					connect : function(){
+						return progressService.connect();
+					},
+					indexControllerSubscribed : false,
+					run : function(){	//schedule to index 
+						var self = this;
+						self.running = 'RUNNING'
+							progressService.sendStartIndex();
+						self.intervalStopObject = $interval(function(){
+							if(self.intervalTurn % 2 == 0){
+								$log.debug('try update index...');
+								progressService.sendUpdateIndex();
+							}else{
+								$log.debug('try start index...');
+								progressService.sendStartIndex();
+							}
+
+							self.intervalTurn = self.intervalTurn + 1;
+							if(self.intervalTurn == 100)
+								self.intervalTurn = 0;
+						}, self.intervalTime);
+					},
+					stop : function(){	//stop to index
+						var self = this;
+						if(self.intervalStopObject == undefined){
+							$log.info('not started yet');
+							return;
+						}
+						if(self.running != 'RUNNING'){
+							$log.error('illegal state. not running');
+							return;
+						}
+						$log.info('stopping index...');
+						$interval.cancel(self.intervalStopObject);
+						self.intervalStopObject = undefined;
+						self.running = 'READY';		// change state
+						progressService.sendStopIndex();
+					}
 				},
 
 				SaveState: function () {
@@ -124,8 +163,10 @@ define(['angular'], function(angular){
 							'headers' : headers
 					};
 
+					var self = this;
 					$http.get(url = '/documents/count', config).then(function(response) {
 						if (response.status == 200) {
+							self.model.indexDocumentCount = response.data
 							deferred.resolve(response.data);
 						} else {
 							deferred.reject('getDocumentCount() fail');
@@ -138,110 +179,6 @@ define(['angular'], function(angular){
 					return deferred.promise;
 					// then(successCallback, errorCallback, notifyCallback)
 				},
-				/*
-				getSupportTypes: function() {
-					var deferred = $q.defer();
-
-					// ajax $http
-					var headers = {
-							'Accept' : 'application/json',
-							'Content-Type' : 'application/json'
-					};
-					var params = {
-					};
-					var config = {
-							'params' : params,
-							'headers' : headers
-					};
-
-					var self = this;
-
-					if(this.model.supportTypes.length == 0){
-						$http.get(url = '/supportTypes', config).then(function(response) {
-							if (response.status == 200) {
-								var msg = response.data;
-								self.model.supportTypes = msg;
-								deferred.resolve(response.data);
-							} else {
-								deferred.reject('supportTypes() fail');
-							}
-						}, function(response) {
-							deferred.reject(response.data);
-						}, function(response) {
-							deferred.reject(response.data);
-						});
-					}else{
-						$log.log('already supportTypes loaded');
-						$timeout(function(){deferred.notify('already supportTypes loaded!!!');}, 100);
-					}
-					return deferred.promise;
-				},
-				updateSupportType: function(supportTypeDto) {
-					var deferred = $q.defer();
-
-					// ajax $http
-					var headers = {
-							'Accept' : 'application/json',
-							'Content-Type' : 'application/json'
-					};
-					var params = {
-					};
-					var config = {
-							'headers' : headers
-					};
-					var data = JSON.stringify(supportTypeDto);
-
-					$http.post(url = '/supportType', data, config).then(function(response) {
-						if (response.status == 200) {
-							deferred.resolve();
-						} else {
-							deferred.reject();
-						}
-					}, function(response) {
-						deferred.reject();
-					}, function(response) {
-						deferred.reject();
-					});
-					return deferred.promise;
-					// then(successCallback, errorCallback, notifyCallback)
-				},
-				
-				updateSupportTypeList: function() {
-					var list = this.model.supportTypes;
-					
-					var deferred = $q.defer();
-
-					// ajax $http
-					var headers = {
-							'Accept' : 'application/json',
-							'Content-Type' : 'application/json'
-					};
-					var params = {
-					};
-					var config = {
-							'headers' : headers
-					};
-					var data = JSON.stringify(list);
-
-					$http.post(url = '/supportTypes', data, config).then(function(response) {
-						if (response.status == 200) {
-							$log.log('successful update support list');
-							deferred.resolve();
-						} else {
-							$log.log('supportType fail to update ');
-							deferred.reject();
-						}
-					}, function(response) {
-						$log.log('supportType fail to update ');
-						deferred.reject();
-					}, function(response) {
-						$log.log('supportType fail to update ');
-						deferred.reject();
-					});
-					return deferred.promise;
-					// then(successCallback, errorCallback, notifyCallback)
-				},
-				*/
 				getDirectories: function() {
 					var deferred = $q.defer();
 
@@ -299,11 +236,7 @@ define(['angular'], function(angular){
 						deferred.reject();
 					});
 					return deferred.promise;
-					// then(successCallback, errorCallback, notifyCallback)
 				}
-	
-				// $rootScope.$on("savestate", service.SaveState);
-				// $rootScope.$on("restorestate", service.RestoreState);
 		};
 		
 		return service;
