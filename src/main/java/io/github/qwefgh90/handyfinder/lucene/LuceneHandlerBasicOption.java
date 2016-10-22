@@ -19,7 +19,7 @@ import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
 
-@JsonIgnoreProperties(value = { "singleton", "om", "LOG","_limitCountOfResult","_maximumDocumentMBSize"},ignoreUnknown = true)
+@JsonIgnoreProperties(value = { "singleton", "om", "LOG"},ignoreUnknown = true)
 class LuceneHandlerBasicOption {
 	private final static Logger LOG = LoggerFactory
 			.getLogger(LuceneHandlerBasicOption.class);
@@ -27,24 +27,29 @@ class LuceneHandlerBasicOption {
 	private final int _limitCountOfResult = 100;
 	private final int _maximumDocumentMBSize = 100;
 	private final KEYWORD_MODE _keywordMode = KEYWORD_MODE.OR;
+	private final boolean _pathMode = true;
 	
 	public enum KEYWORD_MODE{
 		OR, AND
 	};
 	
+	private Path appDataJsonPath;
 	private static LuceneHandlerBasicOption singleton;
 	private static ObjectMapper om = new ObjectMapper();
 
+	private boolean pathMode;
 	private List<Directory> directoryList;
 	private int limitCountOfResult;
 	private int maximumDocumentMBSize;
 	private KEYWORD_MODE keywordMode;
+	
 	private LuceneHandlerBasicOption() throws JsonParseException, JsonMappingException,
 			IOException {
 		this.directoryList = new ArrayList<Directory>();
 		this.limitCountOfResult = _limitCountOfResult;
 		this.maximumDocumentMBSize = _maximumDocumentMBSize;
 		this.keywordMode = _keywordMode;
+		this.pathMode = _pathMode;
 	}
 
 	public KEYWORD_MODE getKeywordMode() {
@@ -64,6 +69,14 @@ class LuceneHandlerBasicOption {
 		this.directoryList = directoryList;
 	}
 
+	public boolean isPathMode() {
+		return pathMode;
+	}
+
+	public void setPathMode(boolean pathMode) {
+		this.pathMode = pathMode;
+	}
+
 	public int getLimitCountOfResult() {
 		return limitCountOfResult;
 	}
@@ -81,7 +94,9 @@ class LuceneHandlerBasicOption {
 	}
 
 	void writeAppDataToDisk() {
-		Path path = AppStartupConfig.appDataJsonPath;
+		Path path = appDataJsonPath;
+		if(path == null)
+			return;
 		try {
 			om.writeValue(path.toFile(), this);
 		} catch (IOException e) {
@@ -97,18 +112,17 @@ class LuceneHandlerBasicOption {
 	 * @throws JsonMappingException
 	 * @throws IOException
 	 */
-	LuceneHandlerBasicOption loadAppDataFromDisk() throws JsonParseException,
+	private static LuceneHandlerBasicOption loadAppDataFromDisk(Path appDataJsonPath) throws JsonParseException,
 			JsonMappingException, IOException {
-		Path path = AppStartupConfig.appDataJsonPath;
-		if (!Files.exists(path))
+		if (!Files.exists(appDataJsonPath))
 			return null;
-		LuceneHandlerBasicOption app = om.readValue(path.toFile(), LuceneHandlerBasicOption.class);
+		LuceneHandlerBasicOption app = om.readValue(appDataJsonPath.toFile(), LuceneHandlerBasicOption.class);
 		return app;
 	}
 
 	void deleteAppDataFromDisk() throws IOException {
-		Path path = AppStartupConfig.appDataJsonPath;
-		if(Files.exists(path))
+		Path path = appDataJsonPath;
+		if(path != null && Files.exists(path))
 			Files.delete(path);
 	}
 
@@ -119,18 +133,20 @@ class LuceneHandlerBasicOption {
 	 * @throws JsonMappingException
 	 * @throws IOException
 	 */
-	static LuceneHandlerBasicOption getInstance() throws JsonParseException,
+	static LuceneHandlerBasicOption getInstance(Path appDataJsonPath) throws JsonParseException,
 			JsonMappingException, IOException {
 		if (singleton == null) {
 			singleton = new LuceneHandlerBasicOption();
-			LuceneHandlerBasicOption appData = singleton.loadAppDataFromDisk();
-			if (appData != null) {
-				singleton.directoryList = appData.directoryList;
-				singleton.limitCountOfResult = appData.limitCountOfResult;
-				singleton.maximumDocumentMBSize = appData.maximumDocumentMBSize;
-				singleton.keywordMode = appData.keywordMode;
+			LuceneHandlerBasicOption loadData = LuceneHandlerBasicOption.loadAppDataFromDisk(appDataJsonPath);
+			if (loadData != null) {
+				singleton.directoryList = loadData.directoryList;
+				singleton.limitCountOfResult = loadData.limitCountOfResult;
+				singleton.maximumDocumentMBSize = loadData.maximumDocumentMBSize;
+				singleton.keywordMode = loadData.keywordMode;
+				singleton.pathMode = loadData.pathMode;
 			}
 		}
+		singleton.appDataJsonPath = appDataJsonPath;
 		return singleton;
 	}
 }

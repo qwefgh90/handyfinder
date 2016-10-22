@@ -96,8 +96,8 @@ public class AppStartupConfig{
 			pathForAppdata = parentOfClassPath.resolve(APP_DATA_DIR_NAME);
 		}
 		else{
-			pathForLog4j = deployedPath.resolve("log4j.xml");
-			pathForAppdata = deployedPath.resolve(APP_DATA_DIR_NAME);
+			pathForLog4j = deployedPath.resolve("log4j.xml");			//possible to redeploy on dev mode
+			pathForAppdata = deployedPath.resolve(APP_DATA_DIR_NAME);	//possible to redeploy on dev mode
 		}
 		
 		pathForDatabase = pathForAppdata.resolve(DB_NAME);
@@ -142,11 +142,11 @@ public class AppStartupConfig{
 				// all files copied in classpath
 				Path classsSourcePath = deployedPath.getParent().resolve("classes");
 				Path log4jSourcePath = classsSourcePath.resolve(pathForLog4j.getFileName().toString());
-				FileUtils.copyFileToDirectory(log4jSourcePath.toFile(), parentOfClassPath.toFile());
+				//FileUtils.copyFileToDirectory(log4jSourcePath.toFile(), parentOfClassPath.toFile());
 				System.out.println("Initializing log4j with: " + pathForLog4j);
 				DOMConfigurator.configureAndWatch(pathForLog4j.toAbsolutePath().toString());
-				FileUtils.copyDirectory(classsSourcePath.toFile(),
-						parentOfClassPath.toFile(), (File f) -> !f.getName().endsWith(".class"));
+				//FileUtils.copyDirectory(classsSourcePath.toFile(),
+				//		parentOfClassPath.toFile(), (File f) -> !f.getName().endsWith(".class"));
 			}
 			// tika-mimetypes.xml copy to appdata
 			copyTikaXml();

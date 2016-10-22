@@ -141,13 +141,14 @@ public class RootService {
 		dto.setLimitCountOfResult(globalAppData.getLimitCountOfResult());
 		dto.setMaximumDocumentMBSize(globalAppData.getMaximumDocumentMBSize());
 		dto.setKeywordMode(globalAppData.getKeywordMode().name());
+		dto.setFirstStart(globalAppData.getDirectoryList().size() == 0 ? true : false);
+		dto.setPathMode(globalAppData.isPathMode());
 		return dto;
 	}
 
 	/**
 	 * 
-	 * @param dto
-	 *            option which will be applied
+	 * @param option will be applied
 	 */
 	public void setOption(OptionDto dto) {
 		if (dto.getLimitCountOfResult() > 0)
@@ -156,6 +157,7 @@ public class RootService {
 			globalAppData.setMaximumDocumentMBSize(dto
 					.getMaximumDocumentMBSize());
 		globalAppData.setKeywordMode(dto.getKeywordMode());
+		globalAppData.setPathMode(dto.isPathMode());
 		globalAppData.writeAppDataToDisk();
 	}
 

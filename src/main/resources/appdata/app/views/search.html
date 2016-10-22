@@ -25,10 +25,15 @@
 			<div uib-collapse="isCollapsed">
 				<div class="panel panel-default">
 					<div class="panel-body">
-						<label>Search mode(applied to content) </label><br>
+						<label>Search Mode (applies to contents) </label><br>
 						<div class="btn-group">
 					        <label class="btn btn-success" ng-model="optionModel.option.keywordMode" ng-click="updateOption()" uib-btn-radio="'OR'">Or</label>
 					        <label class="btn btn-success" ng-model="optionModel.option.keywordMode" ng-click="updateOption()"uib-btn-radio="'AND'">And</label>
+					    </div><br>
+						<label>Path and filename (if included) </label><br>
+						<div class="btn-group">
+					        <label class="btn btn-success" ng-model="optionModel.option.pathMode" ng-click="updateOption()" uib-btn-radio="true">On</label>
+					        <label class="btn btn-success" ng-model="optionModel.option.pathMode" ng-click="updateOption()"uib-btn-radio="false">Off</label>
 					    </div>
 					</div>
 				</div>

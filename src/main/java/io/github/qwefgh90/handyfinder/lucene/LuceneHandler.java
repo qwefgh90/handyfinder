@@ -4,6 +4,7 @@ import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOption.KEYWORD_MO
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
@@ -335,22 +336,24 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		parser.setLowercaseExpandedTerms(true);
 
 		BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
-		List<String> list = getBiWildcardList(fullString);
-		for(String e : list){
-			Query query = parser.parse(e, "lowercasePathString");				
-			queryBuilder.add(query, Occur.SHOULD);
+		
+		if(basicOption.isPathMode()){
+			BooleanQuery.Builder pathQueryBuilder = new BooleanQuery.Builder();
+			for(String e : getBiWildcardList(fullString)){
+				Query query = parser.parse(e, "lowercasePathString");				
+				pathQueryBuilder.add(query, Occur.SHOULD);
+			}
+			queryBuilder.add(pathQueryBuilder.build(), Occur.SHOULD);
 		}
 		
 		BooleanQuery.Builder contentsQueryBuilder = new BooleanQuery.Builder();
-		list = getWildcardList(fullString);
-		for(String e : list){
+		for(String e : getWildcardList(fullString)){
 			Query query = parser.parse(e, "contents");
 			if(basicOption.getKeywordMode().equals(KEYWORD_MODE.OR))
 				contentsQueryBuilder.add(query, Occur.SHOULD);
 			else
 				contentsQueryBuilder.add(query, Occur.MUST);
 		}
-		
 		queryBuilder.add(contentsQueryBuilder.build(), Occur.SHOULD);
 		
 		BooleanQuery query = queryBuilder.build();
@@ -474,7 +477,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			StringBuilder sb = new StringBuilder();
 			String contents;
 			try {
-				contents = JSearch.extractContentsFromFile(pathString);
+				contents = extractContentsFromFile(new File(pathString));
 
 				Document tempDocument = new Document();
 				FieldType type = new FieldType();
@@ -862,6 +865,13 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		}
 		return Integer.valueOf(countOfProcessed);
 	}
+	
+	String extractContentsFromFile(File f) throws IOException, ParseException{
+		final String contents = JSearch
+				.extractContentsFromFile(f)
+				.replaceAll(" +", " "); // erase space
+		return contents;
+	}
 
 	/**
 	 * single file indexing API commit() call at end
@@ -888,11 +898,10 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		FieldType typeWithStore = new FieldType(type);
 		typeWithStore.setStored(true);
 
-		String contents;
+		final String contents;
 
 		try {
-			contents = JSearch.extractContentsFromFile(path.toFile());
-			contents = contents.replaceAll(" +", " "); // erase space
+			contents = extractContentsFromFile(path.toFile());
 		} catch (ParseException e) {
 			LOG.info(ExceptionUtils.getStackTrace(e));
 			return;
