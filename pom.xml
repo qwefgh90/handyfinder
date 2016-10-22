@@ -168,9 +168,9 @@
 					<mainClass>io.github.qwefgh90.handyfinder.gui.AppStartupConfig</mainClass>
 					<vendor>com.qwefgh90.io</vendor>
 					<needShortcut>true</needShortcut>
-					<nativeReleaseVersion>0.1</nativeReleaseVersion>
+					<nativeReleaseVersion>0.101</nativeReleaseVersion>
 					<bundleArguments>
-						<identifier>0.1</identifier>
+						<identifier>0.101</identifier>
 						<installdirChooser>true</installdirChooser>
 					</bundleArguments>
 				</configuration>
