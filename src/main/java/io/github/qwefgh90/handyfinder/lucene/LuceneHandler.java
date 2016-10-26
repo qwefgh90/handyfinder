@@ -469,7 +469,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 
 		final String pathString = doc.get("pathString");
 		final String lowercasePathString = doc.get("lowercasePathString");
-		LOG.debug("highlight pathString : " + pathString);
+		LOG.trace("highlight pathString : " + pathString);
 
 		if (!Files.exists(Paths.get(pathString)))
 			throw new IOException(pathString + " does not exists.");

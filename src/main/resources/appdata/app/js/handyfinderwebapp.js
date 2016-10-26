@@ -250,14 +250,11 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 			}, function(msg) {
 				$log.error(msg);
 			}, function(progressObject) {
-				if (progressObject.state == 'START')
-					$scope.indexModel.index_progress_status.progressBarVisible = true;
-                else if (progressObject.state == 'PROGRESS')
-					$scope.indexModel.index_progress_status.progressBarVisible = true;
-				else if (progressObject.state == 'TERMINATE'){
+				if (progressObject.state == 'TERMINATE'){
 					$scope.indexModel.index_progress_status.progressBarVisible = false;
 					$scope.indexModel.index_progress_status.addAlertQ(4);
-				}
+				}else
+					$scope.indexModel.index_progress_status.progressBarVisible = true;
 				$scope.indexModel.processIndex = progressObject.processIndex;
 				$scope.indexModel.processPath = progressObject.processPath;
 				$scope.indexModel.totalProcessCount = progressObject.totalProcessCount;
