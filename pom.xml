@@ -164,16 +164,21 @@
 			<plugin>
 				<groupId>com.zenjava</groupId>
 				<artifactId>javafx-maven-plugin</artifactId>
-				<version>8.1.4</version>
+				<version>8.7.0</version>
 				<configuration>
 					<mainClass>io.github.qwefgh90.handyfinder.gui.AppStartupConfig</mainClass>
-					<vendor>com.qwefgh90.io</vendor>
+					<vendor>Handyfinder</vendor>
 					<needShortcut>true</needShortcut>
+					<needMenu>true</needMenu>
+                    <verbose>true</verbose>
 					<nativeReleaseVersion>0.102</nativeReleaseVersion>
 					<bundleArguments>
 						<identifier>0.102</identifier>
 						<installdirChooser>true</installdirChooser>
+                        <licenseFile>LICENSE</licenseFile>
 					</bundleArguments>
+                    <additionalBundlerResources>src/main/deploy/package/windows</additionalBundlerResources>
+		            <additionalAppResources>src/main/deploy/package/windows</additionalAppResources>
 				</configuration>
 			</plugin>
 			
@@ -205,6 +210,7 @@
 						<manifest>
 							<addClasspath>true</addClasspath>
 							<mainClass>es.uvigo.ei.sing.webviewdemo.WebViewMain</mainClass>
+
 							<classpathPrefix>dependency-jars/</classpathPrefix>
 						</manifest>
 					</archive>
