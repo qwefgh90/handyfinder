@@ -1,7 +1,6 @@
 ;This file will be executed next to the application bundle image
 ;I.e. current directory will contain folder handyfinder with application files
-[Setup]
-AppId={{0.102}}
+[Setup]AppId={{0.102}}
 AppName=handyfinder
 AppVersion=0.102
 AppVerName=handyfinder 0.102

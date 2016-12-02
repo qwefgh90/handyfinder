@@ -11,26 +11,11 @@
 		<org.springframework.security-version>4.1.0.RELEASE</org.springframework.security-version>
 	</properties>
 
-	<repositories>
-		<repository>
-			<id>local-repo</id>
-			<name>local-repo</name>
-			<url>https://github.com/qwefgh90/maven-repository/raw/master/repository</url>
-			<releases>
-				<enabled>true</enabled>
-				<updatePolicy>never</updatePolicy>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-				<updatePolicy>never</updatePolicy>
-			</snapshots>
-		</repository>
-	</repositories>
 	<dependencies>
 		<dependency>
-			<groupId>com.qwefgh90.io.jsearch</groupId>
-			<artifactId>JSearch</artifactId>
-			<version>1.0</version>
+			<groupId>io.github.qwefgh90</groupId>
+			<artifactId>jsearch</artifactId>
+			<version>0.3.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>
@@ -62,7 +47,6 @@
 			<artifactId>tomcat-embed-websocket</artifactId>
 			<version>${org.apache.tomcat}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-webmvc</artifactId>
