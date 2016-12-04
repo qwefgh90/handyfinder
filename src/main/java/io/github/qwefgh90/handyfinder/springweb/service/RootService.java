@@ -3,8 +3,8 @@ package io.github.qwefgh90.handyfinder.springweb.service;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler.INDEX_WRITE_STATE;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerMimeOptionView;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption;
+import io.github.qwefgh90.handyfinder.lucene.MimeOption;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.model.COMMAND;
 import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
@@ -12,6 +12,7 @@ import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
 import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+import io.github.qwefgh90.jsearch.JSearch;
 
 import java.awt.Desktop;
 import java.io.FileNotFoundException;
@@ -45,8 +46,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.qwefgh90.io.jsearch.FileExtension;
-
 @Service
 public class RootService {
 
@@ -62,10 +61,10 @@ public class RootService {
 	LuceneHandler handler;
 
 	@Autowired
-	LuceneHandlerMimeOptionView tikaMimeObject;
+	MimeOption tikaMimeObject;
 
 	@Autowired
-	LuceneHandlerBasicOptionView globalAppData;
+	BasicOption globalAppData;
 
 	/**
 	 * Get directories to be indexed.
@@ -141,13 +140,14 @@ public class RootService {
 		dto.setLimitCountOfResult(globalAppData.getLimitCountOfResult());
 		dto.setMaximumDocumentMBSize(globalAppData.getMaximumDocumentMBSize());
 		dto.setKeywordMode(globalAppData.getKeywordMode().name());
+		dto.setFirstStart(globalAppData.getDirectoryList().size() == 0 ? true : false);
+		dto.setPathMode(globalAppData.isPathMode());
 		return dto;
 	}
 
 	/**
 	 * 
-	 * @param dto
-	 *            option which will be applied
+	 * @param option will be applied
 	 */
 	public void setOption(OptionDto dto) {
 		if (dto.getLimitCountOfResult() > 0)
@@ -156,6 +156,7 @@ public class RootService {
 			globalAppData.setMaximumDocumentMBSize(dto
 					.getMaximumDocumentMBSize());
 		globalAppData.setKeywordMode(dto.getKeywordMode());
+		globalAppData.setPathMode(dto.isPathMode());
 		globalAppData.writeAppDataToDisk();
 	}
 
@@ -175,8 +176,7 @@ public class RootService {
 				return Optional.empty();
 			return Optional.of(result.get().getValue());
 		} catch (ParseException | IOException | InvalidTokenOffsetsException
-				| QueryNodeException
-				| com.qwefgh90.io.jsearch.JSearch.ParseException e) {
+				| QueryNodeException e) {
 			LOG.warn(ExceptionUtils.getStackTrace(e));
 		} catch (Exception e) {
 			LOG.warn(ExceptionUtils.getStackTrace(e));
@@ -324,7 +324,7 @@ public class RootService {
 		Path path = Paths.get(pathStr);
 		if (Files.exists(path) && Files.isRegularFile(path)) {
 			try {
-				MediaType mime = FileExtension.getContentType(path.toFile(),
+				MediaType mime = JSearch.getContentType(path.toFile(),
 						path.getFileName().toString());
 
 				// if ok, run program

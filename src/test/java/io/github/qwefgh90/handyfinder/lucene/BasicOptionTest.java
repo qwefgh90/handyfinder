@@ -19,8 +19,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import io.github.qwefgh90.handyfinder.lucene.ILuceneHandlerBasicOptionView;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
 import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
@@ -32,10 +32,10 @@ import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
 @ContextConfiguration(classes = { ServletContextTest.class, RootContext.class,
 		AppDataConfig.class, RootWebSocketConfig.class })
 @DirtiesContext(classMode = ClassMode.AFTER_CLASS)
-public class LuceneHandlerBasicOptionViewTest {
+public class BasicOptionTest {
 
 	@Autowired
-	ILuceneHandlerBasicOptionView globalAppDataView;
+	BasicOption globalAppDataView;
 
 	private Directory testDir;
 

@@ -1,12 +1,6 @@
 package io.github.qwefgh90.handyfinder.lucene;
 
 import static org.junit.Assert.assertTrue;
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
-import io.github.qwefgh90.handyfinder.lucene.model.Directory;
-import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
-import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
-import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
-import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
@@ -36,7 +30,13 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import com.qwefgh90.io.jsearch.JSearch.ParseException;
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
+import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
+import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
+import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -51,9 +51,9 @@ public class LuceneHandlerTest {
 	CommandInvoker invoker;
 
 	@Autowired
-	ILuceneHandlerMimeOptionView mimeOption;
+	MimeOption mimeOption;
 	@Autowired
-	ILuceneHandlerBasicOptionView basicOption;
+	BasicOption basicOption;
 
 	LuceneHandler handler;
 	LuceneHandler handler2;
@@ -136,7 +136,7 @@ public class LuceneHandlerTest {
 	@Test
 	public void searchTest() throws IOException,
 			org.apache.lucene.queryparser.classic.ParseException,
-			InvalidTokenOffsetsException, QueryNodeException, ParseException {
+			InvalidTokenOffsetsException, QueryNodeException {
 		handler.indexDirectory(
 				testFilesPath, true);
 
@@ -147,7 +147,7 @@ public class LuceneHandlerTest {
 	@Test
 	public void searchTest2() throws IOException,
 			org.apache.lucene.queryparser.classic.ParseException,
-			InvalidTokenOffsetsException, QueryNodeException, ParseException {
+			InvalidTokenOffsetsException, QueryNodeException {
 		handler.indexDirectory(
 				testFilesPath, true);
 
@@ -198,7 +198,7 @@ public class LuceneHandlerTest {
 	@Test
 	public void fileURITest()
 			throws org.apache.lucene.queryparser.classic.ParseException,
-			QueryNodeException, InvalidTokenOffsetsException, ParseException,
+			QueryNodeException, InvalidTokenOffsetsException,
 			IOException {
 		handler.indexDirectory(
 				testFilesPath, true);

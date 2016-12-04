@@ -2,7 +2,8 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
         , 'ngContextmenu', 'indexModel', 'webSocketModel', 'searchModel', 'optionModel'], function(angular){
 	var app = angular.module('handyfinderwebapp', ['ngRoute', 'ngSanitize', 'ngAnimate', 'ui.bootstrap', 'ngContextMenu', 'IndexModel', 'WebSocketModel', 'SearchModel', 'OptionModel']);
 	app.run(['OptionModel', '$log', function(OptionModel, $log){
-		OptionModel.getOptions();
+		var promise = OptionModel.getOptions();
+		
 	}]);
 	app.config(function($routeProvider) {
 		//Module의 config API를 사용하면 서비스 제공자provider에 접근할 수 있다. 여기선 $route 서비스 제공자를 인자로 받아온다.
@@ -21,12 +22,39 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		});
 		//otherwise 메소드를 통하여 브라우저의 URL이 $routeProivder에서 정의되지 않은 URL일 경우에 해당하는 설정을 할 수 있다. 여기선 ‘/home’으로 이동시키고 있다.
 	});
-	app.controller('MainApplicationController', ['$location', '$scope','NativeService', '$log' , '$timeout',
-	                                             function($location, $scope, NativeService, $log, $timeout) {
+	app.controller('MainApplicationController', ['$location', '$scope','NativeService', '$log' , '$timeout', 'OptionModel', 'IndexModel',
+	                                             function($location, $scope, NativeService, $log, $timeout, OptionModel, IndexModel) {
+		
+		$scope.indexModel = IndexModel.model;
 		$scope.path = '';
 		$scope.go = function(path) {
 			$location.path(path);
 		};
+		
+		$scope.initJobs = function(){
+			var promise = OptionModel.getOptions();
+			promise.then( function(){
+				if(OptionModel.model.option.firstStart == true)
+					$scope.go('/index');
+
+			}, function(){}, function(){});
+
+			$scope.connectAndStart = function(){
+				var promise = $scope.indexModel.connect();
+				promise.then(function(frame) {
+					$log.debug(frame);
+					$scope.indexModel.run();
+				}, function(error) {
+					$timeout(function() { $scope.connectAndStart(); }, 2000); //connect again
+					$log.error(error);
+				}, function(noti) {
+					$log.debug(noti);
+				});
+			}
+			$scope.connectAndStart();
+
+		};
+		
 		$scope.$on('$routeChangeStart', function(next, current) {
 			$scope.path = $location.path().substring(1);
 		});
@@ -51,7 +79,8 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 				};
 			}
 		};
-		
+
+		$scope.initJobs();
 		$scope.initGUIService();
 	}]);
 
@@ -164,14 +193,6 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 			}
 		};
 
-		$scope.refreshCount = function(){
-			var countPromise = IndexModel.getDocumentCount();
-			countPromise.then(function(count){
-				$scope.indexModel.indexDocumentCount = count;
-				$log.log('indexed Count : ' + count);
-			}, function(){}, function(){});
-		};
-
 		{ //context menu handler bind
 			$scope.enableToggle = function(path) {
 				path.used = !path.used;
@@ -194,48 +215,12 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		$scope.run = function() {
 			var promise = $scope.save();
 			promise.then(function(){
-				$scope.indexModel.running = 'RUNNING'
-					progressService.sendStartIndex();
-				$scope.indexModel.intervalStopObject = $interval(function(){
-					if($scope.indexModel.intervalTurn % 2 == 0){
-						$log.debug('update index...');
-						if($scope.indexModel.state != 'TERMINATE'){
-							$scope.indexModel.intervalTurn = $scope.indexModel.intervalTurn - 1; //next time call sendUpdateIndex() again;
-							$log.info('stopping update index... other job still working');
-						}
-						else
-							progressService.sendUpdateIndex();
-					}else{
-						$log.debug('start index...');
-						if($scope.indexModel.updateSummary.state != 'TERMINATE'){
-							$scope.indexModel.intervalTurn = $scope.indexModel.intervalTurn - 1; //next time call sendStartIndex() again;
-							$log.info('stopping start index... other job still working');
-						}
-						else
-							progressService.sendStartIndex();
-					}
-
-					$scope.indexModel.intervalTurn = $scope.indexModel.intervalTurn + 1;
-					if($scope.indexModel.intervalTurn == 100)
-						$scope.indexModel.intervalTurn = 0;
-				}, RUNNING_INTERVAL);
+				$scope.indexModel.run();
 			},function(){},function(){});
 		};
 
 		$scope.stop = function(){
-			if($scope.indexModel.intervalStopObject == undefined){
-				$log.info('not started yet');
-				return;
-			}
-			if($scope.indexModel.running != 'RUNNING'){
-				$log.error('illegal state. not running');
-				return;
-			}
-			$log.info('stopping index...');
-			$interval.cancel($scope.indexModel.intervalStopObject);
-			$scope.indexModel.intervalStopObject = undefined;
-			$scope.indexModel.running = 'READY';		// change state
-			progressService.sendStopIndex();
+			$scope.indexModel.stop();
 		}
 
 		$scope.updateType = function(obj) {
@@ -259,65 +244,64 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 			SupportTypeModel.updateSupportTypeList();
 		}
 
+		$scope.registerProgressService = function(){
+			var progressPromise = progressService.subProgress();
+			progressPromise.then(function() {
+			}, function(msg) {
+				$log.error(msg);
+			}, function(progressObject) {
+				if (progressObject.state == 'TERMINATE'){
+					$scope.indexModel.index_progress_status.progressBarVisible = false;
+					$scope.indexModel.index_progress_status.addAlertQ(4);
+				}else
+					$scope.indexModel.index_progress_status.progressBarVisible = true;
+				$scope.indexModel.processIndex = progressObject.processIndex;
+				$scope.indexModel.processPath = progressObject.processPath;
+				$scope.indexModel.totalProcessCount = progressObject.totalProcessCount;
+				$scope.indexModel.state = progressObject.state;
+				$scope.indexModel.index_progress_status.refreshState();
+				$log.debug(progressObject.processIndex + ", " + progressObject.totalProcessCount + ", " + progressObject.processPath + ", " + progressObject.state);
+				IndexModel.getDocumentCount();
+			});
+			var updatePromise = progressService.subUpdate();
+			updatePromise.then(function() {
+			}, function(msg) {
+				$log.error(msg);
+			}, function(summaryObject) {
+				$scope.indexModel.updateSummary.state = summaryObject.state;
+				$scope.indexModel.updateSummary.countOfDeleted = summaryObject.countOfDeleted;
+				$scope.indexModel.updateSummary.countOfExcluded = summaryObject.countOfExcluded;
+				$scope.indexModel.updateSummary.countOfModified = summaryObject.countOfModified;
+
+				if(summaryObject.state == 'TERMINATE'){
+					$scope.indexModel.index_progress_status.setMsgAlertQ(5, 'Update summary -> deleted files : ' + summaryObject.countOfDeleted 
+							+ ', non contained files : ' + summaryObject.countOfExcluded + ', modified files : ' + summaryObject.countOfModified);
+					$scope.indexModel.index_progress_status.addAlertQ(5);
+					$log.debug(summaryObject.countOfDeleted + ", " + summaryObject.countOfExcluded + ", " + summaryObject.countOfModified);
+					IndexModel.getDocumentCount();
+				}
+			});
+
+			var guiDirPromise = progressService.subGuiDirectory();
+			guiDirPromise.then(function(){},function(msg){$log.error(msg);},
+					function(path){
+						$log.info('selected path : ' + path);
+						$scope.addDirectory(path);
+					});
+		}
+		
 		$scope.initProgressService = function(){
 			if(progressService.isConnected() == false){
-				var promise = progressService.connect();
-				promise.then(function(frame) {
-					$log.debug(frame);
-					var progressPromise = progressService.subProgress();
-					progressPromise.then(function() {
-					}, function(msg) {
-						$log.error(msg);
-					}, function(progressObject) {
-						if (progressObject.state == 'START')
-							$scope.indexModel.index_progress_status.progressBarVisible = true;
-						else if (progressObject.state == 'TERMINATE'){
-							$scope.indexModel.index_progress_status.progressBarVisible = false;
-							$scope.indexModel.index_progress_status.addAlertQ(4);
-						}
-						$scope.indexModel.processIndex = progressObject.processIndex;
-						$scope.indexModel.processPath = progressObject.processPath;
-						$scope.indexModel.totalProcessCount = progressObject.totalProcessCount;
-						$scope.indexModel.state = progressObject.state;
-						$scope.indexModel.index_progress_status.refreshState();
-						$log.debug(progressObject.processIndex + ", " + progressObject.totalProcessCount + ", " + progressObject.processPath + ", " + progressObject.state);
-						$scope.refreshCount();
-					});
-					var updatePromise = progressService.subUpdate();
-					updatePromise.then(function() {
-					}, function(msg) {
-						$log.error(msg);
-					}, function(summaryObject) {
-						if(summaryObject.state == 'START')
-							return;
-						$scope.indexModel.updateSummary.countOfDeleted = summaryObject.countOfDeleted;
-						$scope.indexModel.updateSummary.countOfExcluded = summaryObject.countOfExcluded;
-						$scope.indexModel.updateSummary.countOfModified = summaryObject.countOfModified;
-						$scope.indexModel.updateSummary.state = summaryObject.state;
-
-						$scope.indexModel.index_progress_status.setMsgAlertQ(5, 'Update summary -> deleted files : ' + summaryObject.countOfDeleted 
-								+ ', non contained files : ' + summaryObject.countOfExcluded + ', modified files : ' + summaryObject.countOfModified);
-						$scope.indexModel.index_progress_status.addAlertQ(5);
-						$log.debug(summaryObject.countOfDeleted + ", " + summaryObject.countOfExcluded + ", " + summaryObject.countOfModified);
-						$scope.refreshCount();
-					});
-
-					var guiDirPromise = progressService.subGuiDirectory();
-					guiDirPromise.then(function(){},
-							function(msg){$log.error(msg);},
-							function(path){
-								$log.info('selected path : ' + path);
-								$scope.addDirectory(path);
-							});
-
-				}, function(error) {
-					$timeout(function() { $scope.initProgressService(); }, 2000); //connect again
-					$log.error(error);
-				}, function(noti) {
-					$log.debug(noti);
-				});
+				$timeout(function() { $scope.initProgressService(); }, 2000); //connect again
+				$log.error('Socket connection is not ready');
+			}else{
+				if($scope.indexModel.indexControllerSubscribed == false)
+					$scope.registerProgressService();
+				$scope.indexModel.indexControllerSubscribed = true;
 			}
 		}
+		
+		
 		$scope.initProgressService();
 
 		//pathlist from apiserver
@@ -355,7 +339,7 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 			$scope.indexModel.select_toggle = true;
 		}, true);
 
-		$scope.refreshCount();
+		IndexModel.getDocumentCount();
 	}]);
 
 	app.directive("compileHtml", function($parse, $sce, $compile) {

@@ -15,12 +15,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javafx.application.Platform;
 
 import javax.servlet.ServletException;
 
@@ -40,6 +39,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.context.WebApplicationContext;
+
+import javafx.application.Platform;
 
 /**
  * local file contents search engine with javafx webview and spring restful api
@@ -96,8 +97,8 @@ public class AppStartupConfig{
 			pathForAppdata = parentOfClassPath.resolve(APP_DATA_DIR_NAME);
 		}
 		else{
-			pathForLog4j = deployedPath.resolve("log4j.xml");
-			pathForAppdata = deployedPath.resolve(APP_DATA_DIR_NAME);
+			pathForLog4j = deployedPath.resolve("log4j.xml");			//possible to redeploy on dev mode
+			pathForAppdata = deployedPath.resolve(APP_DATA_DIR_NAME);	//possible to redeploy on dev mode
 		}
 		
 		pathForDatabase = pathForAppdata.resolve(DB_NAME);
@@ -131,22 +132,22 @@ public class AppStartupConfig{
 		try {
 			if (isProduct) { // jar start
 				AppStartupConfig.copyFileInJar(deployedPath.toString(), pathForLog4j.getFileName().toString(),
-						parentOfClassPath.toFile(), (file) -> !file.exists());
+						parentOfClassPath.toFile(), (file) -> {return !file.exists();});
 				System.out.println("Initializing log4j with: " + pathForLog4j);
 				DOMConfigurator.configureAndWatch(pathForLog4j.toAbsolutePath().toString());
 				
 				// resources which is in jar copy to appdata deployed.
 				copyDirectoryInJar(deployedPath.toString(), APP_DATA_DIR_NAME,
-						parentOfClassPath.toFile(), (File file) -> !Files.exists(file.toPath()));
+						parentOfClassPath.toFile(), (File file, JarEntry entry) -> file.lastModified() < entry.getLastModifiedTime().toMillis());
 			} else { // no jar start
 				// all files copied in classpath
 				Path classsSourcePath = deployedPath.getParent().resolve("classes");
 				Path log4jSourcePath = classsSourcePath.resolve(pathForLog4j.getFileName().toString());
-				FileUtils.copyFileToDirectory(log4jSourcePath.toFile(), parentOfClassPath.toFile());
+				//FileUtils.copyFileToDirectory(log4jSourcePath.toFile(), parentOfClassPath.toFile());
 				System.out.println("Initializing log4j with: " + pathForLog4j);
 				DOMConfigurator.configureAndWatch(pathForLog4j.toAbsolutePath().toString());
-				FileUtils.copyDirectory(classsSourcePath.toFile(),
-						parentOfClassPath.toFile(), (File f) -> !f.getName().endsWith(".class"));
+				//FileUtils.copyDirectory(classsSourcePath.toFile(),
+				//		parentOfClassPath.toFile(), (File f) -> !f.getName().endsWith(".class"));
 			}
 			// tika-mimetypes.xml copy to appdata
 			copyTikaXml();
@@ -350,10 +351,10 @@ public class AppStartupConfig{
 	 * @author qwefgh90
 	 */
 	public static void copyDirectoryInJar(String jarPath,
-			String resourceDirInJar, File destinationRoot, FileFilter destFileFilter)
+			String resourceDirInJar, File destinationRoot, BiFunction<File, JarEntry, Boolean> destFileFilter)
 			throws URISyntaxException, IOException {
 		if(destFileFilter == null)
-			destFileFilter = (file) -> true;
+			destFileFilter = (file,entry) -> true;
 		if (resourceDirInJar.startsWith("/")) { // jar url start with /
 												// replace to jar
 												// entry style which
@@ -381,7 +382,7 @@ public class AppStartupConfig{
 			LOG.trace("extract from java : " + entry.getName());
 			if (entry.getName().startsWith(resourceDirInJar) // Directory in jar
 					&& entry.getName().endsWith("/")) {
-				LOG.trace("create start : " + entry.getName());
+				LOG.trace("try to copy : " + entry.getName());
 				Files.createDirectories(new File(destinationRoot, entry
 						.getName()).toPath());
 			} else if (entry.getName().startsWith(resourceDirInJar) // File in jar
@@ -389,7 +390,7 @@ public class AppStartupConfig{
 				File destFile = new File(destinationRoot.getAbsolutePath(), entry
 						.getName());
 				
-				if(!destFileFilter.accept(destFile)){
+				if(!destFileFilter.apply(destFile, entry)){
 					LOG.debug("skip copy : " + entry.getName());
 					
 				}else{

@@ -3,33 +3,18 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>sing</groupId>
 	<artifactId>handyfinder</artifactId>
-	<version>0.1</version>
+	<version>0.102</version>
 	<properties>
 		<org.apache.tomcat>8.0.33</org.apache.tomcat>
 		<spring.webmvc.version>4.2.5.RELEASE</spring.webmvc.version>
 		<org.springframework.security-version>4.1.0.RELEASE</org.springframework.security-version>
 	</properties>
 
-	<repositories>
-		<repository>
-			<id>local-repo</id>
-			<name>local-repo</name>
-			<url>https://github.com/qwefgh90/maven-repository/raw/master/repository</url>
-			<releases>
-				<enabled>true</enabled>
-				<updatePolicy>never</updatePolicy>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-				<updatePolicy>never</updatePolicy>
-			</snapshots>
-		</repository>
-	</repositories>
 	<dependencies>
 		<dependency>
-			<groupId>com.qwefgh90.io.jsearch</groupId>
-			<artifactId>JSearch</artifactId>
-			<version>1.0</version>
+			<groupId>io.github.qwefgh90</groupId>
+			<artifactId>jsearch</artifactId>
+			<version>0.3.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>
@@ -61,7 +46,6 @@
 			<artifactId>tomcat-embed-websocket</artifactId>
 			<version>${org.apache.tomcat}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-webmvc</artifactId>
@@ -163,16 +147,21 @@
 			<plugin>
 				<groupId>com.zenjava</groupId>
 				<artifactId>javafx-maven-plugin</artifactId>
-				<version>8.1.4</version>
+				<version>8.7.0</version>
 				<configuration>
 					<mainClass>io.github.qwefgh90.handyfinder.gui.AppStartupConfig</mainClass>
-					<vendor>com.qwefgh90.io</vendor>
+					<vendor>Handyfinder</vendor>
 					<needShortcut>true</needShortcut>
-					<nativeReleaseVersion>0.1</nativeReleaseVersion>
+					<needMenu>true</needMenu>
+                    <verbose>true</verbose>
+					<nativeReleaseVersion>0.102</nativeReleaseVersion>
 					<bundleArguments>
-						<identifier>0.1</identifier>
+						<identifier>0.102</identifier>
 						<installdirChooser>true</installdirChooser>
+                        <licenseFile>LICENSE</licenseFile>
 					</bundleArguments>
+                    <additionalBundlerResources>src/main/deploy/package/windows</additionalBundlerResources>
+		            <additionalAppResources>src/main/deploy/package/windows</additionalAppResources>
 				</configuration>
 			</plugin>
 			

@@ -46,7 +46,7 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 import javafx.application.Platform;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerMimeOptionView;
+import io.github.qwefgh90.handyfinder.lucene.MimeOption;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
 import io.github.qwefgh90.handyfinder.springweb.service.RootService;
@@ -59,7 +59,7 @@ public class WebsockTest {
 
 	RootService rootService;
 	MetaRespository metaRepo;
-	LuceneHandlerMimeOptionView xmlObject;
+	MimeOption xmlObject;
 	List<Directory> list = new ArrayList<>();
 	static Thread th;
 	@BeforeClass
@@ -83,7 +83,7 @@ public class WebsockTest {
 				TimeUnit.SECONDS);
 		rootService = AppStartupConfig.getBean(RootService.class);
 		metaRepo = AppStartupConfig.getBean(MetaRespository.class);
-		xmlObject = AppStartupConfig.getBean(LuceneHandlerMimeOptionView.class);
+		xmlObject = AppStartupConfig.getBean(MimeOption.class);
 		xmlObject.initGlobTrue();
 		Directory dir = new Directory();
 		dir.setRecursively(true);

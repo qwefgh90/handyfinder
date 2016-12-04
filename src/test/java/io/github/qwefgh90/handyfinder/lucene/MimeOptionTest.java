@@ -3,9 +3,8 @@ package io.github.qwefgh90.handyfinder.lucene;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
-import io.github.qwefgh90.handyfinder.lucene.ILuceneHandlerMimeOptionView;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerMimeOptionView;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerMimeOptionView.TikaMimeXmlObjectFactory;
+import io.github.qwefgh90.handyfinder.lucene.MimeOption;
+import io.github.qwefgh90.handyfinder.lucene.MimeOption.MimeXmlObjectFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,8 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-public class LuceneHandlerMimeOptionViewTest {
-	private final static Logger LOG = LoggerFactory.getLogger(LuceneHandlerMimeOptionViewTest.class);
+public class MimeOptionTest {
+	private final static Logger LOG = LoggerFactory.getLogger(MimeOptionTest.class);
 	URL xmlUrl;
 	String xmlUrlStr;
 	Pattern pat;
@@ -74,11 +73,11 @@ public class LuceneHandlerMimeOptionViewTest {
 			LOG.info(resourceName);
 		}
 		afterXmlUrl = MimeTypes.class.getResource("/tika-mimetypes.xml");
-		obj = TikaMimeXmlObjectFactory.getInstanceFromXml(Paths.get(afterXmlUrl.toURI()).toAbsolutePath().toString()
+		obj = MimeXmlObjectFactory.getInstanceFromXml(Paths.get(afterXmlUrl.toURI()).toAbsolutePath().toString()
 				,AppStartupConfig.propertiesPath, AppStartupConfig.customTikaGlobPropertiesPath);
 	}
 
-	ILuceneHandlerMimeOptionView obj;
+	MimeOption obj;
 
 	@Test
 	public void parseTest() throws ParserConfigurationException, SAXException, IOException, URISyntaxException {
@@ -86,7 +85,7 @@ public class LuceneHandlerMimeOptionViewTest {
 		obj.setGlob("*.xml", false);
 		assertFalse(obj.isAllowMime("application/x-hwp"));
 
-		LuceneHandlerMimeOptionView obj2 = TikaMimeXmlObjectFactory
+		MimeOption obj2 = MimeXmlObjectFactory
 				.getInstanceFromXml(Paths.get(afterXmlUrl.toURI()).toAbsolutePath().toString()
 						,AppStartupConfig.propertiesPath, AppStartupConfig.customTikaGlobPropertiesPath);
 		assertTrue(obj == obj2);

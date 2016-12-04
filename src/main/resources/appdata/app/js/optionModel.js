@@ -27,8 +27,10 @@ define(['angular', 'searchModel'], function(angular){
 							self.model.option.limitCountOfResult = msg.limitCountOfResult;
 							self.model.option.maximumDocumentMBSize = msg.maximumDocumentMBSize;
 							self.model.option.keywordMode = msg.keywordMode;
+							self.model.option.firstStart = msg.firstStart
+							self.model.option.pathMode = msg.pathMode;
 							$log.debug('option loaded ' + self.model.option.limitCountOfResult + ', ' + self.model.option.maximumDocumentMBSize
-									+ ', ' + self.model.option.keywordMode);
+									+ ', ' + self.model.option.keywordMode + ', ' + self.model.option.firstStart + ', ' + self.model.option.pathMode);
 							deferred.resolve(response.data);
 						} else {
 							deferred.reject('getDirectories() fail');
@@ -37,17 +39,16 @@ define(['angular', 'searchModel'], function(angular){
 						$log.log('option fail to load');
 						deferred.reject(response.data);
 					}, function(response) {
-						$log.log('option noti');
+						$log.log('option notified');
 						deferred.reject(response.data);
 					});
 					return deferred.promise;
-					// then(successCallback, errorCallback, notifyCallback)
 				},
 
 				updateOptions: function() {
-					var deferred = $q.defer();
-
 					SearchModel.setSearchFlag(true);
+					
+					var deferred = $q.defer();
 
 					// ajax $http
 					var headers = {
@@ -264,21 +265,12 @@ define(['angular', 'searchModel'], function(angular){
 
 	app.factory("Option", function() {
 		// Define the constructor function.
-		/*
-		 * 
-	private int limitCountOfResult;
-	private int maximumDocumentMBSize;
-		 * 
-		 */
-		function Option(limitCountOfResult, maximumDocumentMBSize, keywordMode) {
-			this.limitCountOfResult = limitCountOfResult;
-			this.maximumDocumentMBSize = maximumDocumentMBSize;
-			this.keywordMode = keywordMode;
-		}
 		function Option() {
 			this.limitCountOfResult = -1;
 			this.maximumDocumentMBSize = -1;
 			this.keywordMode = 'OR';
+			this.firstStart = false;
+			this.pathMode = false;
 		}
 
 		// Return constructor - this is what defines the actual

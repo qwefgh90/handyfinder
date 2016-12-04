@@ -10,7 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption;
 import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
 import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
 import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
@@ -67,9 +67,9 @@ public class ControllerTest {
 	LuceneHandler handler;
 
 	@Autowired
-	LuceneHandlerBasicOptionView basicOption;
+	BasicOption basicOption;
 	@Autowired
-	LuceneHandlerMimeOptionView mimeOption;
+	MimeOption mimeOption;
 
 	MockMvc mvc;
 	

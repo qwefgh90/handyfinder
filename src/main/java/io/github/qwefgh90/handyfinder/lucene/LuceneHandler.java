@@ -1,9 +1,10 @@
 package io.github.qwefgh90.handyfinder.lucene;
 
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOption.KEYWORD_MODE;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption.BasicOptionModel.KEYWORD_MODE;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
@@ -71,9 +72,7 @@ import org.apache.tika.mime.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.qwefgh90.io.jsearch.FileExtension;
-import com.qwefgh90.io.jsearch.JSearch;
-import com.qwefgh90.io.jsearch.JSearch.ParseException;
+import io.github.qwefgh90.jsearch.JSearch;
 
 /**
  * document indexing, search class based on Lucene
@@ -107,8 +106,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	private int currentProgress = 0; // indexed documents count
 	private int totalProcess = 0; // total documents count to be indexed
 	private CommandInvoker invokerForCommand; // for command to client
-	private ILuceneHandlerBasicOptionView basicOption;
-	private ILuceneHandlerMimeOptionView mimeOption;
+	private BasicOption basicOption;
+	private MimeOption mimeOption;
 
 	private INDEX_WRITE_STATE writeStateInternal = INDEX_WRITE_STATE.READY; // no directly access
 
@@ -187,8 +186,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 */
 	public static LuceneHandler getInstance(Path indexWriterPath,
 			CommandInvoker invoker, 
-			ILuceneHandlerBasicOptionView basicOption,
-			ILuceneHandlerMimeOptionView mimeOption) {
+			BasicOption basicOption,
+			MimeOption mimeOption) {
 		if (Files.isDirectory(indexWriterPath.getParent())
 				&& Files.isWritable(indexWriterPath.getParent())) {
 			String indexPathString = indexWriterPath.toAbsolutePath().toString();
@@ -335,22 +334,24 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		parser.setLowercaseExpandedTerms(true);
 
 		BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
-		List<String> list = getBiWildcardList(fullString);
-		for(String e : list){
-			Query query = parser.parse(e, "lowercasePathString");				
-			queryBuilder.add(query, Occur.SHOULD);
+		
+		if(basicOption.isPathMode()){
+			BooleanQuery.Builder pathQueryBuilder = new BooleanQuery.Builder();
+			for(String e : getBiWildcardList(fullString)){
+				Query query = parser.parse(e, "lowercasePathString");				
+				pathQueryBuilder.add(query, Occur.SHOULD);
+			}
+			queryBuilder.add(pathQueryBuilder.build(), Occur.SHOULD);
 		}
 		
 		BooleanQuery.Builder contentsQueryBuilder = new BooleanQuery.Builder();
-		list = getWildcardList(fullString);
-		for(String e : list){
+		for(String e : getWildcardList(fullString)){
 			Query query = parser.parse(e, "contents");
 			if(basicOption.getKeywordMode().equals(KEYWORD_MODE.OR))
 				contentsQueryBuilder.add(query, Occur.SHOULD);
 			else
 				contentsQueryBuilder.add(query, Occur.MUST);
 		}
-		
 		queryBuilder.add(contentsQueryBuilder.build(), Occur.SHOULD);
 		
 		BooleanQuery query = queryBuilder.build();
@@ -428,7 +429,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @throws QueryNodeException
 	 * @throws ParseException
 	 */
-	public Callable<Optional<Map.Entry<String, String>>> highlight(String pathString, String queryString) throws org.apache.lucene.queryparser.classic.ParseException, IOException, InvalidTokenOffsetsException, QueryNodeException, ParseException{
+	public Callable<Optional<Map.Entry<String, String>>> highlight(String pathString, String queryString) throws org.apache.lucene.queryparser.classic.ParseException, IOException, InvalidTokenOffsetsException, QueryNodeException{
 		Optional<Integer> docResult = getDocument(pathString);
 		LOG.trace("highlight : " + pathString);
 		if(!docResult.isPresent()){
@@ -450,8 +451,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 */
 	public Callable<Optional<Map.Entry<String, String>>> highlight(int docid, String queryString)
 			throws org.apache.lucene.queryparser.classic.ParseException,
-			IOException, InvalidTokenOffsetsException, QueryNodeException,
-			ParseException {
+			IOException, InvalidTokenOffsetsException, QueryNodeException
+			 {
 		checkDirectoryReader();
 
 		if(docid >= indexReader.maxDoc() || docid < 0){
@@ -466,7 +467,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 
 		final String pathString = doc.get("pathString");
 		final String lowercasePathString = doc.get("lowercasePathString");
-		LOG.debug("highlight pathString : " + pathString);
+		LOG.trace("highlight pathString : " + pathString);
 
 		if (!Files.exists(Paths.get(pathString)))
 			throw new IOException(pathString + " does not exists.");
@@ -474,7 +475,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			StringBuilder sb = new StringBuilder();
 			String contents;
 			try {
-				contents = JSearch.extractContentsFromFile(pathString);
+				contents = extractContentsFromFile(new File(pathString));
 
 				Document tempDocument = new Document();
 				FieldType type = new FieldType();
@@ -769,7 +770,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 							String pathString = document.get("pathString");
 							Path path = Paths.get(pathString);
 							try {
-								MediaType type = FileExtension.getContentType(
+								MediaType type = JSearch.getContentType(
 										path.toFile(), path.toAbsolutePath()
 										.toString());
 								if (false == mimeOption.isAllowMime(type
@@ -862,6 +863,13 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		}
 		return Integer.valueOf(countOfProcessed);
 	}
+	
+	String extractContentsFromFile(File f) throws IOException{
+		final String contents = JSearch
+				.extractContentsFromFile(f)
+				.replaceAll(" +", " "); // erase space
+		return contents;
+	}
 
 	/**
 	 * single file indexing API commit() call at end
@@ -872,7 +880,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 */
 	void index(Path path) throws IOException {
 		checkIndexWriter();
-		MediaType mimeType = FileExtension.getContentType(path.toFile(), path
+		MediaType mimeType = JSearch.getContentType(path.toFile(), path
 				.getFileName().toString());
 		if (!mimeOption.isAllowMime(mimeType.toString()))
 			return;
@@ -888,15 +896,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		FieldType typeWithStore = new FieldType(type);
 		typeWithStore.setStored(true);
 
-		String contents;
+		final String contents;
 
-		try {
-			contents = JSearch.extractContentsFromFile(path.toFile());
-			contents = contents.replaceAll(" +", " "); // erase space
-		} catch (ParseException e) {
-			LOG.info(ExceptionUtils.getStackTrace(e));
-			return;
-		}
+		contents = extractContentsFromFile(path.toFile());
 
 		BasicFileAttributes attr = Files.readAttributes(path,
 				BasicFileAttributes.class);
