@@ -69,7 +69,6 @@ public class LuceneHandlerTest {
 		}
 	}
 	//test files
-	Path texttxt;
 	Path temptxt;
 	Path temp2txt;
 	
@@ -95,8 +94,6 @@ public class LuceneHandlerTest {
 		
 		indexDirList = new ArrayList<>();
 		indexDirList.add(testFileiDir);
-		
-		texttxt = testFilesPath.resolve("text.txt");
 		
 		//create new files
 		temp2txt = testFilesPath.resolve("temp2.txt");
@@ -140,7 +137,7 @@ public class LuceneHandlerTest {
 		handler.indexDirectory(
 				testFilesPath, true);
 
-		TopDocs docs = handler.search("javageeks _javageeks");
+		TopDocs docs = handler.search("javageek");
 		Assert.assertThat(docs.scoreDocs.length, Matchers.is(5));
 	}
 

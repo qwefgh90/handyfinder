@@ -1,15 +1,25 @@
 package io.github.qwefgh90.handyfinder.lucene;
 
 
+import static org.hamcrest.CoreMatchers.is;
+
+import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.core.KeywordTokenizerFactory;
 import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.custom.CustomAnalyzer;
+import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.ngram.NGramTokenizerFactory;
+import org.apache.lucene.analysis.path.PathHierarchyTokenizerFactory;
+import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
@@ -19,6 +29,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
@@ -26,6 +37,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.search.highlight.Highlighter;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.search.highlight.QueryScorer;
@@ -54,13 +66,27 @@ public class NGramTest extends LuceneTestCase {
 		final Map<String, String> map = new HashMap<>();
 		map.put("minGramSize", "1");
 		map.put("maxGramSize", "10");
-		final Analyzer analyzer = CustomAnalyzer.builder()
+		final Analyzer ngramAnalyzer = CustomAnalyzer.builder()
 				.withTokenizer(NGramTokenizerFactory.class, map)
 				.addTokenFilter(LowerCaseFilterFactory.class)
 				.build();
-		/*
 		
-		final TokenStream ts = analyzer.tokenStream("myfield", new StringReader(" This is the text to be indexed. textlongtermlongterm"));
+//		final Map<String, String> pathAttrMap = new HashMap<>();
+//		pathAttrMap.put("delimiter", File.separator);
+		final Analyzer pathAnalyzer = CustomAnalyzer.builder()
+				.withTokenizer(KeywordTokenizerFactory.class)
+				.addTokenFilter(LowerCaseFilterFactory.class)
+				.build();
+		WhitespaceAnalyzer a;
+		final Map<String, Analyzer> perFieldAnalyzer = new TreeMap<>();
+		perFieldAnalyzer.put("content", ngramAnalyzer);
+		perFieldAnalyzer.put("hidingContentForTest", ngramAnalyzer);
+		perFieldAnalyzer.put("length", ngramAnalyzer);
+		perFieldAnalyzer.put("path", pathAnalyzer);
+		PerFieldAnalyzerWrapper analyzer = new PerFieldAnalyzerWrapper(ngramAnalyzer, perFieldAnalyzer);
+		
+		
+		final TokenStream ts = analyzer.tokenStream("path", new StringReader("c:\\handyfinder\\example"));
 		final OffsetAttribute offsetAtt = ts.addAttribute(OffsetAttribute.class);
 		//reference : http://lucene.apache.org/core/6_3_0/core/org/apache/lucene/analysis/package-summary.html
 		try {
@@ -78,7 +104,7 @@ public class NGramTest extends LuceneTestCase {
 			ts.close(); // Release resources associated with this stream.
 		}
 		
- */
+ 
 
 		// Store the index in memory:
 		//Directory directory = newDirectory();
@@ -95,9 +121,11 @@ public class NGramTest extends LuceneTestCase {
 		ft1.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
 		ft1.setStoreTermVectors(true);
 		ft1.setStoreTermVectorOffsets(true);
+		ft1.setStored(true);
 		doc.add(newField("content", text1, ft1));
 		doc.add(newTextField("hidingContentForTest", text1, Field.Store.YES));
 		doc.add(newTextField("length", String.valueOf(text1.length()), Field.Store.YES));
+		doc.add(newStringField("path", "c:\\handyfinder\\example",  Field.Store.YES));
 		
 		iwriter.addDocument(doc);
 		
@@ -107,9 +135,11 @@ public class NGramTest extends LuceneTestCase {
 		ft2.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
 		ft2.setStoreTermVectors(true);
 		ft2.setStoreTermVectorOffsets(true);
-		doc.add(newField("content", text2, ft2));
+		ft2.setStored(true);
+		doc.add(newField("content", text2 , ft2));
 		doc.add(newTextField("hidingContentForTest", text2, Field.Store.YES));
 		doc.add(newTextField("length", String.valueOf(text2.length()), Field.Store.YES));
+		doc.add(newStringField("path", "c:\\lucene\\example",  Field.Store.YES));
 		
 		iwriter.addDocument(doc);
 		iwriter.close();
@@ -118,14 +148,19 @@ public class NGramTest extends LuceneTestCase {
 		IndexReader ireader = DirectoryReader.open(directory); // read-only=true
 		IndexSearcher isearcher = newSearcher(ireader);
 		
-		//Query q1 = new TermQuery(new Term("content", "text"));
+		
+		TopDocs docs = isearcher.search(new TermQuery(new Term("path", "c:\\lucene\\example")), 1);
+		assertThat(docs.scoreDocs.length, is(1));
+		
 		BooleanQuery.Builder b = new BooleanQuery.Builder();
-		Query q1 = new TermQuery(new Term("content", "한글"));//parser.parse("is the", "content");
-		b.add(q1, Occur.MUST);
-		Query q2 = new TermQuery(new Term("content", "매우긴문장이니깐잘검"));// parser.parse("This", "content");// 
+		Query q1 = new TermQuery(new Term("content", "indexed"));//parser.parse("is the", "content");
+		b.add(q1, Occur.SHOULD);
+		
+		Query q2 = new WildcardQuery(new Term("path", "*"+QueryParser.escape(":\\lucene")+"*"));
+		//Query q2 = new TermQuery(new Term("path", "c:\\lucene"));// parser.parse("This", "content");// 
 		b.add(q2, Occur.SHOULD);
 		
-		TopDocs hits = isearcher.search(b.build(), 10);
+		TopDocs hits = isearcher.search(b.build(),10);
 		//assertEquals(1, hits.totalHits);
 		// Iterate through the results:
 		for (int i = 0; i < hits.scoreDocs.length; i++) {
@@ -140,8 +175,10 @@ public class NGramTest extends LuceneTestCase {
 			Document tempDocument = new Document();
 			FieldType type = new FieldType();
 			type.setStored(true);
-			Field field = new Field("content", hitDoc.get("hidingContentForTest"), type);
+			final Field field = new Field("content", hitDoc.get("hidingContentForTest"), type);
+			final Field field2 = new Field("path", hitDoc.get("path"), type);
 			tempDocument.add(field);
+			tempDocument.add(field2);
 
 			//first, lucene find offset of sentence and highlight sentence from file
 			try (@SuppressWarnings("deprecation")
@@ -149,6 +186,20 @@ public class NGramTest extends LuceneTestCase {
 					.getAnyTokenStream(ireader, hits.scoreDocs[i].doc, "content", tempDocument, analyzer)) {
 				TextFragment[] frag = highlighter.getBestTextFragments(
 						tokenStream, hitDoc.get("hidingContentForTest"), false, 10);// highlighter.getBestFragments(tokenStream,
+				for (int j = 0; j < frag.length; j++) {
+					if ((frag[j] != null) && (frag[j].getScore() > 0)) {
+						sb.append(frag[j].toString());
+					}
+				}
+			}
+			
+			
+			//first, lucene find offset of sentence and highlight sentence from file
+			try (@SuppressWarnings("deprecation")
+			TokenStream tokenStream = TokenSources
+					.getAnyTokenStream(ireader, hits.scoreDocs[i].doc, "path", tempDocument, analyzer)) {
+				TextFragment[] frag = highlighter.getBestTextFragments(
+						tokenStream, hitDoc.get("path"), false, 10);// highlighter.getBestFragments(tokenStream,
 				for (int j = 0; j < frag.length; j++) {
 					if ((frag[j] != null) && (frag[j].getScore() > 0)) {
 						sb.append(frag[j].toString());

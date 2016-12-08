@@ -72,41 +72,6 @@ public class GUIApplication extends Application {
 	private ExecutorService webAppThread = Executors.newSingleThreadExecutor();
 	public ExecutorService getWebAppThread() { return webAppThread;}
 
-	private Task<Boolean> webApp = new Task<Boolean>() {
-		@Override
-		protected Boolean call() throws Exception {
-			try {
-				Platform.runLater(() -> setLoadingParagraphBeforeLoading("server initialzing..."));
-
-				Tomcat tomcat = new Tomcat();
-				GUIApplication.this.tomcat = tomcat;
-				tomcat.getConnector().setAttribute("address",
-						AppStartupConfig.address);
-				tomcat.getConnector().setAttribute("port",
-						AppStartupConfig.port);
-
-				Context context = tomcat.addWebapp("",
-						AppStartupConfig.pathForAppdata.toAbsolutePath()
-								.toString());
-				// https://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/catalina/startup/Tomcat.html#addWebapp(org.apache.catalina.Host,%20java.lang.String,%20java.lang.String)
-
-				context.setJarScanner(new FastJarScanner());
-				context.addWelcomeFile(AppStartupConfig.REDIRECT_PAGE);
-				tomcat.init();
-				Platform.runLater(() -> setLoadingParagraphBeforeLoading("server startup..."));
-				tomcat.start();
-				Platform.runLater(() -> setLoadingParagraphBeforeLoading("server health checking..."));
-				healthCheck();
-				Platform.runLater(() -> showUI(GUIApplication.this::setWebviewAfterLoading));
-				LOG.info("tomcat started completely : "
-						+ AppStartupConfig.homeUrl);
-			} catch (Exception e) {
-				LOG.error(e.toString());
-				return false;
-			}
-			return true;
-		}
-	};
 
 	public void healthCheck() throws TomcatInitFailException {
 		String strUrl = "http://" + AppStartupConfig.address + ":"
@@ -132,7 +97,7 @@ public class GUIApplication extends Application {
 
 	@Override
 	public void start(Stage primaryStage) {
-		this.primaryStage = primaryStage;
+		//Register a callback when closing
 		primaryStage.setOnCloseRequest(event -> {
 			stopped = true;
 			LOG.info("javafx onCloseRequest()");
@@ -166,18 +131,52 @@ public class GUIApplication extends Application {
 				event.consume();
 			}
 		});
-		
-		showUI(this::setWebviewBeforeLoading);
-		LOG.info("javafx ui is initialized ");
-		
-		webAppThread.submit(webApp);
+
+		final Task<Boolean> loadingTask = new Task<Boolean>() {
+			@Override
+			protected Boolean call() throws Exception {
+				try {
+					Platform.runLater(() -> setLoadingParagraphBeforeLoading("server initialzing..."));
+
+					Tomcat tomcat = new Tomcat();
+					GUIApplication.this.tomcat = tomcat;
+					tomcat.getConnector().setAttribute("address",
+							AppStartupConfig.address);
+					tomcat.getConnector().setAttribute("port",
+							AppStartupConfig.port);
+
+					Context context = tomcat.addWebapp("",
+							AppStartupConfig.pathForAppdata.toAbsolutePath()
+							.toString());
+					// https://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/catalina/startup/Tomcat.html#addWebapp(org.apache.catalina.Host,%20java.lang.String,%20java.lang.String)
+
+					context.setJarScanner(new FastJarScanner());
+					context.addWelcomeFile(AppStartupConfig.REDIRECT_PAGE);
+					tomcat.init();
+					Platform.runLater(() -> setLoadingParagraphBeforeLoading("server startup..."));
+					tomcat.start();
+					Platform.runLater(() -> setLoadingParagraphBeforeLoading("server health checking..."));
+					healthCheck();
+					Platform.runLater(() -> showUI(GUIApplication.this::initializeWebviewWhenComplete));
+				} catch (Exception e) {
+					LOG.error(e.toString());
+					return false;
+				}
+				return true;
+			}
+		};
+
+		this.primaryStage = primaryStage;
+		showUI(this::initializeWebviewWhenLoading);
+		LOG.info("Handyfinder is Loading");
+		webAppThread.submit(loadingTask);
 		webAppThread.shutdown();
 	}
 	
+
 	@Override
 	public void init() throws Exception {
 		super.init();
-		LOG.info("javafx init()");
 	}
 	
 	@Override
@@ -248,14 +247,14 @@ public class GUIApplication extends Application {
 		element.setTextContent(paragraph);
 	}
 
-	private WebView setWebviewBeforeLoading() {
+	private WebView initializeWebviewWhenLoading() {
 		// create the JavaFX webview
 		final WebView webView = new WebView();
 		webView.getEngine().load(
 				AppStartupConfig.class.getResource(
 						AppStartupConfig.RESOURCE_LOADING_PAGE)
 						.toExternalForm());
-		Scene scene = new Scene(webView);
+		final Scene scene = new Scene(webView);
 		
 		primaryStage.setScene(scene);
 		primaryStage.setTitle(TITLE.BEFORE_LOADING.getTitle());
@@ -265,7 +264,7 @@ public class GUIApplication extends Application {
 		return webView;
 	}
 
-	private WebView setWebviewAfterLoading() {
+	private WebView initializeWebviewWhenComplete() {
 		final WebView webView = new WebView();
 		// show "alert" Javascript messages in stdout (useful to debug)
 		webView.getEngine().setOnAlert(new EventHandler<WebEvent<String>>() {
@@ -321,8 +320,7 @@ public class GUIApplication extends Application {
 		primaryStage.setWidth(w);
 		primaryStage.setHeight(h);
 
-		LOG.info("\nhandyfinder started completely " + "\n"
-				+ "Webengine load: " + AppStartupConfig.homeUrl); // handyfinder
+		LOG.info("Handyfinder is ready : " + AppStartupConfig.homeUrl);
 		return webView;
 	}
 	

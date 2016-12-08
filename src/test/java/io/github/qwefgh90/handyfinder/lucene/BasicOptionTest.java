@@ -35,14 +35,14 @@ import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
 public class BasicOptionTest {
 
 	@Autowired
-	BasicOption globalAppDataView;
+	BasicOption basicOption;
 
 	private Directory testDir;
 
 	@Before
 	public void setup() throws IOException {
-		globalAppDataView.deleteAppDataFromDisk();
-		globalAppDataView.deleteDirectories();
+		basicOption.deleteAppDataFromDisk();
+		basicOption.deleteDirectories();
 		testDir = new Directory();
 		testDir.setPathString("hello path");
 		testDir.setRecursively(false);
@@ -51,40 +51,40 @@ public class BasicOptionTest {
 
 	@After
 	public void clean() throws IOException {
-		globalAppDataView.deleteAppDataFromDisk();
-		globalAppDataView.deleteDirectories();
+		basicOption.deleteAppDataFromDisk();
+		basicOption.deleteDirectories();
 	}
 
 	@Test
 	public void methodTest() {
-		globalAppDataView.addDirectory(testDir);
-		Assert.assertThat(globalAppDataView.getDirectoryList().size(),
+		basicOption.addDirectory(testDir);
+		Assert.assertThat(basicOption.getDirectoryList().size(),
 				Matchers.is(1));
 		
-		globalAppDataView.deleteDirectories();
-		Assert.assertThat(globalAppDataView.getDirectoryList().size(),
+		basicOption.deleteDirectories();
+		Assert.assertThat(basicOption.getDirectoryList().size(),
 				Matchers.is(0));
 
-		globalAppDataView.addDirectory(testDir);
-		globalAppDataView.deleteDirectory(testDir);
-		Assert.assertThat(globalAppDataView.getDirectoryList().size(),
+		basicOption.addDirectory(testDir);
+		basicOption.deleteDirectory(testDir);
+		Assert.assertThat(basicOption.getDirectoryList().size(),
 				Matchers.is(0));
 
-		globalAppDataView.addDirectory(testDir);
+		basicOption.addDirectory(testDir);
 		testDir.setPathString("modified");
-		globalAppDataView.setDirectory(testDir);
-		Assert.assertThat(globalAppDataView.getDirectoryList().size(),
+		basicOption.setDirectory(testDir);
+		Assert.assertThat(basicOption.getDirectoryList().size(),
 				Matchers.is(1));
-		Assert.assertThat(globalAppDataView.getDirectoryList().get(0).getPathString()
+		Assert.assertThat(basicOption.getDirectoryList().get(0).getPathString()
 				,Matchers.is("modified"));
 		
-		globalAppDataView.setMaximumDocumentMBSize(1);
+		basicOption.setMaximumDocumentMBSize(1);
 		Assert.assertThat(1,
-				Matchers.is(globalAppDataView.getMaximumDocumentMBSize()));
+				Matchers.is(basicOption.getMaximumDocumentMBSize()));
 		
-		globalAppDataView.setLimitCountOfResult(1);
+		basicOption.setLimitCountOfResult(1);
 		Assert.assertThat(1,
-				Matchers.is(globalAppDataView.getLimitCountOfResult()));
+				Matchers.is(basicOption.getLimitCountOfResult()));
 	}
 
 }

@@ -68,10 +68,13 @@ public class ControllerTest {
 
 	@Autowired
 	BasicOption basicOption;
+	
 	@Autowired
 	MimeOption mimeOption;
 
 	MockMvc mvc;
+	
+	final ObjectMapper om = new ObjectMapper();
 	
 	@Before
 	public void setup() throws IOException {
@@ -87,8 +90,6 @@ public class ControllerTest {
 	@After
 	public void clean() throws IOException {
 	}
-
-	ObjectMapper om = new ObjectMapper();
 
 	@Test
 	public void optionTest() throws Exception {
@@ -122,12 +123,11 @@ public class ControllerTest {
 		
 		String responseString = mvcResult.getResponse().getContentAsString();
 		List<DocumentDto> list = om.readValue(responseString, List.class);
-		Assert.assertThat(list.size(), Matchers.is(4));
+		Assert.assertThat(list.size(), Matchers.is(5));
 	}
 
 	@Test
 	public void supportTypeTest() throws Exception {
-
 		MvcResult result = mvc
 				.perform(
 						get("/supportTypes").contentType(
@@ -148,21 +148,15 @@ public class ControllerTest {
 		String json = om.writeValueAsString(dto);
 
 		// update type -> true
-		mvc.perform(
-				post("/supportType").contentType(
-						MediaType.APPLICATION_JSON_UTF8).content(json))
+		mvc.perform(post("/supportType").contentType(MediaType.APPLICATION_JSON_UTF8).content(json))
 				.andExpect(status().isOk());
 
 		// check -> true
-		mvc.perform(
-				get("/supportTypes").contentType(
-						MediaType.APPLICATION_JSON_UTF8))
+		mvc.perform(get("/supportTypes").contentType(MediaType.APPLICATION_JSON_UTF8))
 				.andExpect(status().isOk())
 				.andDo(MockMvcResultHandlers.print())
 				.andExpect(jsonPath("$[0].type", Matchers.is(dto.getType())))
-				.andExpect(
-						jsonPath("$[0].used",
-								Matchers.is(Boolean.valueOf(dto.isUsed()))));
+				.andExpect(jsonPath("$[0].used", Matchers.is(Boolean.valueOf(dto.isUsed()))));
 
 		dto.setUsed(false);
 		json = om.writeValueAsString(dto);
@@ -179,19 +173,14 @@ public class ControllerTest {
 				.andExpect(status().isOk())
 				.andDo(MockMvcResultHandlers.print())
 				.andExpect(jsonPath("$[0].type", Matchers.is(dto.getType())))
-				.andExpect(
-						jsonPath("$[0].used",
-								Matchers.is(Boolean.valueOf(dto.isUsed()))));
+				.andExpect(jsonPath("$[0].used", Matchers.is(Boolean.valueOf(dto.isUsed()))));
 
 	}
 	
 	@Test
 	public void supportTypeTest2() throws Exception {
-
 		MvcResult result = mvc
-				.perform(
-						get("/supportTypes").contentType(
-								MediaType.APPLICATION_JSON_UTF8))
+				.perform(get("/supportTypes").contentType(MediaType.APPLICATION_JSON_UTF8))
 				.andExpect(status().isOk())
 				.andDo(MockMvcResultHandlers.print()).andReturn();
 
@@ -208,15 +197,11 @@ public class ControllerTest {
 		}
 		String json = om.writeValueAsString(list);
 
-		mvc.perform(
-				post("/supportTypes").contentType(
-						MediaType.APPLICATION_JSON_UTF8).content(json))
+		mvc.perform(post("/supportTypes").contentType(MediaType.APPLICATION_JSON_UTF8).content(json))
 				.andExpect(status().isOk());
 		
 		result = mvc
-				.perform(
-						get("/supportTypes").contentType(
-								MediaType.APPLICATION_JSON_UTF8))
+				.perform(get("/supportTypes").contentType(MediaType.APPLICATION_JSON_UTF8))
 				.andExpect(status().isOk())
 				.andDo(MockMvcResultHandlers.print()).andReturn();
 
@@ -226,5 +211,4 @@ public class ControllerTest {
 			assertFalse(Boolean.valueOf(((JSONObject) arr.get(i)).get("used").toString()));
 		}
 	}
-
 }

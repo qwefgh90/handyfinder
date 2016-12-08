@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
-import io.github.qwefgh90.handyfinder.springweb.model.COMMAND;
+import io.github.qwefgh90.handyfinder.springweb.model.Command;
 import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
 import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
 import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
@@ -137,15 +137,15 @@ public class RootController {
 	public void command1(@DestinationVariable String command, SimpMessageHeaderAccessor accessor) {
 		if (command == null)
 			return;
-		COMMAND dto;
+		Command dto;
 		if (command.equals("start"))
-			dto = COMMAND.START_INDEXING;
+			dto = Command.START_INDEXING;
 		else if (command.equals("stop"))
-			dto = COMMAND.STOP_INDEXING;
+			dto = Command.STOP_INDEXING;
 		else if (command.equals("update"))
-			dto = COMMAND.UPDATE_INDEXING;
+			dto = Command.UPDATE_INDEXING;
 		else if (command.equals("openAndSelectDirectory"))
-			dto = COMMAND.OPEN_AND_SEND_DIRECTORY;
+			dto = Command.OPEN_AND_SEND_DIRECTORY;
 		else
 			return;
 

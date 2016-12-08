@@ -140,14 +140,7 @@ public class AppStartupConfig{
 				copyDirectoryInJar(deployedPath.toString(), APP_DATA_DIR_NAME,
 						parentOfClassPath.toFile(), (File file, JarEntry entry) -> file.lastModified() < entry.getLastModifiedTime().toMillis());
 			} else { // no jar start
-				// all files copied in classpath
-				Path classsSourcePath = deployedPath.getParent().resolve("classes");
-				Path log4jSourcePath = classsSourcePath.resolve(pathForLog4j.getFileName().toString());
-				//FileUtils.copyFileToDirectory(log4jSourcePath.toFile(), parentOfClassPath.toFile());
-				System.out.println("Initializing log4j with: " + pathForLog4j);
 				DOMConfigurator.configureAndWatch(pathForLog4j.toAbsolutePath().toString());
-				//FileUtils.copyDirectory(classsSourcePath.toFile(),
-				//		parentOfClassPath.toFile(), (File f) -> !f.getName().endsWith(".class"));
 			}
 			// tika-mimetypes.xml copy to appdata
 			copyTikaXml();
@@ -161,21 +154,13 @@ public class AppStartupConfig{
 
 		StringBuilder logBuilder = new StringBuilder();
 		logBuilder.append("\n")
-				.append("handyfinder environment is initialized").append("\n")
-				.append("current classpath: ").append(getCurrentBuildPath())
-				.append("\n").append("appdata: ")
-				.append(pathForAppdata.toString());
+				.append("[Handyfinder information]").append("\n")
+				.append("* classpath: ").append(getCurrentBuildPath()).append("\n")
+				.append("* appdata path: ").append(pathForAppdata.toString()).append("\n")
+				.append("* log4j path: ").append(pathForLog4j.toString());
 		LOG.info(logBuilder.toString());
 
 		logBuilder.setLength(0);
-		/*
-		 * String[] allPath = allClassPath(); for (int i = 0; i <
-		 * allPath.length; i++) {
-		 * logBuilder.append("classpath: ").append("\n").append(String.valueOf(i
-		 * + 1)).append(") ").append(allPath[i]); }
-		 * 
-		 * LOG.debug(logBuilder.toString());
-		 */
 	}
 
 	public static GUIApplication getGuiApp(){return GUIApplication.getSingleton();}
