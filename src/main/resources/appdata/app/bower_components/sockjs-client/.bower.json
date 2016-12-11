@@ -25,15 +25,14 @@
     "test",
     "tests"
   ],
-  "version": "1.1.0",
-  "_release": "1.1.0",
+  "version": "1.1.1",
+  "_release": "1.1.1",
   "_resolution": {
     "type": "version",
-    "tag": "v1.1.0",
-    "commit": "3be0c73f55de9474cf7d81e77cec49f08fa798ae"
+    "tag": "v1.1.1",
+    "commit": "91e30059cc32c6b41ddd0de05c68681e9b00d503"
   },
   "_source": "https://github.com/sockjs/sockjs-client.git",
   "_target": "^1.1.0",
-  "_originalSource": "sockjs-client",
-  "_direct": true
+  "_originalSource": "sockjs-client"
 }

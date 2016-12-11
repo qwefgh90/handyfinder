@@ -127,6 +127,18 @@ public class ControllerTest {
 	}
 
 	@Test
+	public void searchAllDocumentTest() throws Exception {
+		MvcResult mvcResult = mvc.perform(
+				get("/documents").contentType(MediaType.APPLICATION_JSON_UTF8))
+				.andExpect(status().isOk())
+				.andDo(MockMvcResultHandlers.print()).andReturn();
+		
+		String responseString = mvcResult.getResponse().getContentAsString();
+		List<String> list = om.readValue(responseString, List.class);
+		Assert.assertThat(list.size(), Matchers.is(12));
+	}
+
+	@Test
 	public void supportTypeTest() throws Exception {
 		MvcResult result = mvc
 				.perform(

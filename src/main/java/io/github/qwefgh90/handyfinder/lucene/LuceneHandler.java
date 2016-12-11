@@ -12,6 +12,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.security.InvalidParameterException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -41,7 +42,6 @@ import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.LegacyLongField;
 import org.apache.lucene.document.StringField;
-import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexReader;
@@ -51,7 +51,6 @@ import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
-import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
@@ -439,7 +438,26 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 */
 	public int getDocumentCount() {
 		checkDirectoryReader();
-		return reader.numDocs();
+						final List<Document> list = getDocumentList();
+		return (int) list.stream()
+				.filter(doc -> doc.get("pathString") != null)
+				.filter(doc -> !doc.get("pathString").trim().isEmpty()).count();
+	}
+	
+	/**
+	 * 
+	 * @return path List
+	 */
+	public List<String> getDocumentPathList(){
+		checkDirectoryReader();
+		final List<Document> list = getDocumentList();
+		return list.stream()
+				.map(doc -> doc.get("pathString"))
+				.filter(pathString -> pathString != null)
+				.filter(pathString -> !pathString.trim().isEmpty())
+				.collect(Collectors.toList());
+		//reader
+		
 	}
 
 	/**

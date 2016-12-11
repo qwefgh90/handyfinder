@@ -111,6 +111,10 @@ public class LuceneHandlerTest {
 	
 	@After
 	public void clean() throws IOException {
+		if(Files.exists(temptxt))
+			Files.delete(temptxt);
+		if(Files.exists(temp2txt))
+			Files.delete(temp2txt);
 		mimeOption.initGlobTrue();
 		LuceneHandler.closeResources();
 		try {

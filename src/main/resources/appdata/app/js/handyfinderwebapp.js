@@ -85,13 +85,15 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		$scope.initGUIService();
 	}]);
 
-	app.controller('searchController', ['$q', '$log', '$scope', '$timeout','$sce', 'NativeService', 'SearchModel','OptionModel', 'SupportTypeModel', 'SupportTypeUI', 'ProgressService', 'IndexModel', 'Path',
-	                                    function($q, $log, $scope, $timeout, $sce, NativeService, SearchModel, OptionModel, SupportTypeModel, SupportTypeUI, ProgressService, IndexModel, Path) {
+	app.constant('LIMIT_INDEXED_FILE_LIST', 20);
+	app.controller('searchController', ['$q', '$log', '$scope', '$timeout','$sce', 'NativeService', 'SearchModel','OptionModel', 'SupportTypeModel', 'SupportTypeUI', 'ProgressService', 'IndexModel', 'Path', 'LIMIT_INDEXED_FILE_LIST',
+	                                    function($q, $log, $scope, $timeout, $sce, NativeService, SearchModel, OptionModel, SupportTypeModel, SupportTypeUI, ProgressService, IndexModel, Path, LIMIT_INDEXED_FILE_LIST) {
 		$scope.searchModel = SearchModel.model;
 		$scope.optionModel = OptionModel.model;
 		$scope.isCollapsed = true;
 		$scope.supportTypeModel = SupportTypeModel.model;
 		$scope.supportTypeUI = new SupportTypeUI(SupportTypeModel);
+		$scope.LIMIT_INDEXED_FILE_LIST = LIMIT_INDEXED_FILE_LIST;
 
 		/**
 		 * code for directory
@@ -213,7 +215,36 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 			$scope.startWatch();
 		});
 		
+		/**
+		 * for indexed file list and count
+		 */
+		
+		$scope.loadIndexedFileList = function(){
+			var promise = IndexModel.model.indexedFileList.load();
+			promise.then(function(){IndexModel.model.indexedFileList.show = true;});
+		};
+		
+		$scope.closeIndexFileList = function(){
+			IndexModel.model.indexedFileList.show = false;
+		};
+		
+		$scope.offset = 0;
+		$scope.nextList = function(){
+			var nextOffset = $scope.offset + LIMIT_INDEXED_FILE_LIST
+			if(nextOffset < IndexModel.model.indexedFileList.list.length)
+				$scope.offset = nextOffset;
+		};
+		
+		$scope.previousList = function(){
+			var previousOffset = $scope.offset - LIMIT_INDEXED_FILE_LIST
+			if(0 > previousOffset)
+				$scope.offset = 0;
+			else
+				$scope.offset = previousOffset;
+		};
 
+		IndexModel.getDocumentCount();
+		
 		/**
 		 * for context menu
 		 */

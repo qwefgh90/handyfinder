@@ -62,11 +62,10 @@
 							</div>
 						</div>
 						<!-- filtering & directory -->
-						<hr/>
+						<hr />
 						<div class="row">
 							<div class="col-xs-5  col-md-4" style="">
-								<b>What type of files are you looking for?
-								</b>
+								<b>What type of files are you looking for? </b>
 								<div class="boxes">
 
 									<div class="checkbox">
@@ -90,23 +89,25 @@
 									ng-model='supportTypeUI.searchedTypeKeyword'
 									ng-keydown="$event.which === 13 && nextSearch(supportTypeUI.searchedTypeKeyword)" />
 								<button ng-click="loadMore()" style="width: 100%" type="submit"
-									class="btn btn-default">Read More({{supportTypeUI.totalDisplayed}}/{{supportTypeModel.supportTypes.length}})</button>
+									class="btn btn-default">Read
+									More({{supportTypeUI.totalDisplayed}}/{{supportTypeModel.supportTypes.length}})</button>
 							</div>
 							<div class="col-xs-7 col-md-8">
-								<b>Which directories are you looking for?
-								</b>
+								<b>Which directories are you looking for? </b>
 								<div class="list-group" style="margin-bottom: 10px">
-									<a
-										data-context-menu="views/context-menu/index-contextmenu.html"
-										href class="list-group-item"
-										ng-repeat="path in indexModel.pathList"> <span
-										ng-style="path.used == false ? {'opacity': 0.3} : {}"
-										ng-class="path.used == false ? 'glyphicon glyphicon-ok' : 'glyphicon glyphicon-ok'"
-										aria-hidden="true"> </span> <span
-										ng-style="path.recursively == false ? {'opacity': 0.3} : {}"
-										ng-class="path.recursively == false ? 'glyphicon glyphicon-repeat' : 'glyphicon glyphicon-repeat'"
-										aria-hidden="true"> </span> <span style="font-size: 16px; word-break: break-all">{{path.pathString}}</span>
-									</a>
+									<div class="list-group-item" ng-repeat="path in indexModel.pathList">
+										<div style="float: left">
+											<span style="font-size: 16px; word-break: break-all">{{path.pathString}}</span>
+										</div>
+										<div style="float: right">
+											<a href ng-click="enableToggle(path)" style=""
+												ng-style="path.used == false ? {'opacity': 0.3} : {}"
+												ng-class="path.used == false ? 'glyphicon glyphicon-ok' : 'glyphicon glyphicon-ok'"
+												aria-hidden="true"> </a> <a href style="" ng-click="remove(path)"
+												class="glyphicon glyphicon-trash" aria-hidden="true"></a>
+										</div>
+										<div style="clear: both;"></div>
+									</div>
 									<button type="button" class="list-group-item btn btn-default"
 										ng-click="selectDirectory()" style="text-align: center"
 										aria-label="Left Align">
@@ -127,9 +128,31 @@
 										<!--automatically update indexes. automatically clean deleted files.-->
 									</button>
 								</div>
-								<div>{{indexModel.indexDocumentCount}} files are indexed</div>
+								<div><a href ng-click="loadIndexedFileList()">{{indexModel.indexDocumentCount}} files are indexed {{indexModel.state == 'PROGRESS' ? '(' + ((((indexModel.processIndex * 1.0) / indexModel.totalProcessCount) * 100) | number : 2 ) + '%)' : ''}}	</a></div>
 							</div>
 						</div>
+						<!-- indexed files list -->
+						<uib-accordion close-others="false" ng-show="indexModel.indexedFileList.show == true">
+							<hr></hr>
+							<uib-accordion-group is-open="indexModel.indexedFileList.show == true">
+								<uib-accordion-heading>You can search files in following list<i ng-click="closeIndexFileList()"
+									class="pull-right glyphicon glyphicon glyphicon-remove"></i>
+								</uib-accordion-heading>
+								<div>
+									<button type="button" class="btn btn-default btn-md" ng-click="previousList()">
+									  <span class="glyphicon glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+									</button>
+									<button type="button" class="btn btn-default btn-md" ng-click="nextList()">
+									  <span class="glyphicon glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
+									</button>
+									[{{offset + 1}} - {{offset + LIMIT_INDEXED_FILE_LIST < indexModel.indexedFileList.list.length 
+										? offset + LIMIT_INDEXED_FILE_LIST : indexModel.indexedFileList.list.length }} / {{ indexModel.indexedFileList.list.length }}]
+								</div>
+								<ul>
+								  <li ng-repeat="path in indexModel.indexedFileList.list | limitTo:LIMIT_INDEXED_FILE_LIST:offset">{{path}}</li>
+								</ul>
+							</uib-accordion-group>
+						</uib-accordion>
 					</div>
 				</div>
 			</div>

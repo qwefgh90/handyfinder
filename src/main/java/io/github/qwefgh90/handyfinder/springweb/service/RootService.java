@@ -1,38 +1,20 @@
 package io.github.qwefgh90.handyfinder.springweb.service;
 
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandler.INDEX_WRITE_STATE;
-import io.github.qwefgh90.handyfinder.lucene.BasicOption;
-import io.github.qwefgh90.handyfinder.lucene.MimeOption;
-import io.github.qwefgh90.handyfinder.lucene.model.Directory;
-import io.github.qwefgh90.handyfinder.springweb.model.Command;
-import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
-import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
-import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
-import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
-import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
-import io.github.qwefgh90.jsearch.JSearch;
-
 import java.awt.Desktop;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.lucene.document.Document;
@@ -45,6 +27,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
+import io.github.qwefgh90.handyfinder.lucene.MimeOption;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.model.Command;
+import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
+import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
+import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
+import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
+import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+import io.github.qwefgh90.jsearch.JSearch;
 
 @Service
 public class RootService {
@@ -166,6 +161,10 @@ public class RootService {
 
 	public int getDocumentCount() {
 		return handler.getDocumentCount();
+	}
+	
+	public List<String> getTempPathForAllDocumentList() throws IOException{
+		return handler.getDocumentPathList();
 	}
 
 	public Optional<String> search(String keyword, String pathString) {
