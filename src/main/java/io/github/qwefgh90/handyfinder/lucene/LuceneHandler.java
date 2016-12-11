@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -350,20 +351,21 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		return docs;
 	}
 
-	private List<String> getEscapedTermList(String fullString, boolean prefixWildcard, boolean postfixWildcard, Optional<Integer> trimmedSize) {
+	private List<String> getEscapedTermList(String fullString, boolean prefixWildcard, boolean postfixWildcard, Optional<Integer> trimSize) {
 		final List<String> list = new ArrayList<>();
 		final String[] partialQuery = fullString.replaceAll(" +", " ").split(" ");
 		for (String element : partialQuery) {
-			final Integer currectSize = trimmedSize.map(size -> {
+			final Integer currectSize = trimSize.map(size -> {
 				if(element.length() < size)
 					return element.length(); 
 				else 
 					return size;
 				}).orElse(element.length());
-			list.add((prefixWildcard == true ? "*" : "") 
-					+ QueryParser.escape(element.substring(0, currectSize)).replaceAll("\\\\/", "/")
+			list.add((prefixWildcard == true ? "*" : "")
+					+ element.substring(0, currectSize)
+					.replaceAll("(\\\\)", ((prefixWildcard || postfixWildcard) == true ? "$1$1" : "$1"))//replace single backslash with double backslash in wildcard query
+					.replaceAll("(\\*)", ((prefixWildcard || postfixWildcard) == true ? Matcher.quoteReplacement("\\*") : "*"))//make wildcard charactor to be eascaped in widlcard query 
 					+ (postfixWildcard == true ? "*" : ""));
-		//	QueryParser.TERM
 		}
 		return list;
 	}
@@ -379,7 +381,6 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			String term = text.utf8ToString();
 			int freq = (int) termsEnum.totalTermFreq();
 			frequencies.put(term, freq);
-			// terms.add(term);
 		}
 		return frequencies;
 	}
