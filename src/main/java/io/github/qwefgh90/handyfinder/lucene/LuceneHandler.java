@@ -498,9 +498,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 				FieldType type = new FieldType();
 				type.setStored(true);
 				Field contentsField = new Field("contents", contents.toString(), type);
-				//Field pathStringField = new Field("pathString", pathString, type);
 				tempDocument.add(contentsField);
-				//tempDocument.add(pathStringField);
+
 
 				//first, lucene find offset of sentence and highlight sentence from file
 				try (@SuppressWarnings("deprecation")
@@ -529,6 +528,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 						}
 					}
 				}
+				if(sb.length() == 0)
+					sb.append(queryString);
+				
 			} catch (Exception e) {
 				LOG.warn(ExceptionUtils.getStackTrace(e));
 				return Optional.empty();
@@ -791,11 +793,6 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 							String pathString = document.get("pathString");
 							Path path = Paths.get(pathString);
 							try {
-								MediaType type = JSearch.getContentType(
-										path.toFile(), path.toAbsolutePath()
-										.toString());
-								if (mimeOption.isAllowMime(type.toString()) == false)
-									return true;
 								long size = Files.size(path);
 
 								if (size / (1000 * 1000) > basicOption.getMaximumDocumentMBSize()) {
@@ -887,7 +884,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	String extractContentsFromFile(File f) throws IOException{
 		final String contents = JSearch
 				.extractContentsFromFile(f)
-				.replaceAll("[\n\t\r ]+", " "); // erase tab, new line, return
+				.replaceAll("[\n\t\r ]+", " "); // erase tab, new line, return, space
 
 		return contents;
 	}
@@ -902,9 +899,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		checkIndexWriter();
 		final MediaType mimeType = JSearch.getContentType(path.toFile(), path
 				.getFileName().toString());
-		if (!mimeOption.isAllowMime(mimeType.toString()))
-			return;
-
+		
 		final FieldType type = new FieldType();
 		type.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
 		type.setStoreTermVectors(true);
@@ -1026,6 +1021,12 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 
 		final BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
 
+		Iterator<String> notAllowedMimeIter = mimeOption.getNotAllowedMimeList().iterator();
+		while(notAllowedMimeIter.hasNext()){
+			final String mime = notAllowedMimeIter.next();
+			queryBuilder.add(new TermQuery(new Term("mimeType", mime)), Occur.MUST_NOT);
+		}
+		
 		if(basicOption.isPathMode()){
 			BooleanQuery.Builder pathQueryBuilder = new BooleanQuery.Builder();
 			for(String e : getEscapedTermList(lowerFullString, true, true, Optional.empty())){

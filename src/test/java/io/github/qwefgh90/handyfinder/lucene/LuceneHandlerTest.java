@@ -130,15 +130,29 @@ public class LuceneHandlerTest {
 		assertTrue(handler == handler2);
 	}
 
+	
 	@Test
 	public void searchTest() throws IOException,
 			org.apache.lucene.queryparser.classic.ParseException,
 			InvalidTokenOffsetsException, QueryNodeException {
 		handler.indexDirectory(
 				testFilesPath, true);
-
+		
 		TopDocs docs = handler.search("javageek");
 		Assert.assertThat(docs.scoreDocs.length, Matchers.is(5));
+	}
+	
+	@Test
+	public void searchTestWithMime() throws IOException,
+			org.apache.lucene.queryparser.classic.ParseException,
+			InvalidTokenOffsetsException, QueryNodeException {
+		handler.indexDirectory(
+				testFilesPath, true);
+
+		mimeOption.setGlob("*.txt", false);
+		
+		TopDocs docs = handler.search("javageek");
+		Assert.assertThat(docs.scoreDocs.length, Matchers.is(0));
 	}
 
 	@Test
@@ -180,16 +194,6 @@ public class LuceneHandlerTest {
 		int clearCount = handler.getDocumentCount();
 		Assert.assertThat(clearCount, Matchers.is(0));
 		LOG.info("clear count : " + clearCount);
-	}
-
-	@Test
-	public void mimeExceptTest() throws IOException {
-		mimeOption.setGlob("*.txt", false);
-		handler.indexDirectory(
-				testFilesPath, true);
-		int count = handler.getDocumentCount();
-		Assert.assertThat(count, Matchers.is(4));
-		LOG.info("mime except : " + count);
 	}
 
 	@Test

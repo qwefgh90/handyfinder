@@ -25,16 +25,111 @@
 			<div uib-collapse="isCollapsed">
 				<div class="panel panel-default">
 					<div class="panel-body">
-						<label>Search Mode (applies to contents) </label><br>
-						<div class="btn-group">
-					        <label class="btn btn-success" ng-model="optionModel.option.keywordMode" ng-click="updateOption()" uib-btn-radio="'OR'">Or</label>
-					        <label class="btn btn-success" ng-model="optionModel.option.keywordMode" ng-click="updateOption()"uib-btn-radio="'AND'">And</label>
-					    </div><br>
-						<label>Path and filename (if included) </label><br>
-						<div class="btn-group">
-					        <label class="btn btn-success" ng-model="optionModel.option.pathMode" ng-click="updateOption()" uib-btn-radio="true">On</label>
-					        <label class="btn btn-success" ng-model="optionModel.option.pathMode" ng-click="updateOption()"uib-btn-radio="false">Off</label>
-					    </div>
+						<!-- search option -->
+						<div class="row pad-in-inner-div">
+							<div class="col-md-4 col-xs-6">
+								<label>Search Mode (applies to contents) </label><br>
+								<div class="btn-group">
+									<label class="btn btn-success"
+										ng-model="optionModel.option.keywordMode"
+										ng-click="updateOption()" uib-btn-radio="'OR'">Or</label> <label
+										class="btn btn-success"
+										ng-model="optionModel.option.keywordMode"
+										ng-click="updateOption()" uib-btn-radio="'AND'">And</label>
+								</div>
+							</div>
+							<div class="col-md-4 col-xs-6">
+								<label>Path and filename (if included) </label><br>
+								<div class="btn-group">
+									<label class="btn btn-success"
+										ng-model="optionModel.option.pathMode"
+										ng-click="updateOption()" uib-btn-radio="true">On</label> <label
+										class="btn btn-success" ng-model="optionModel.option.pathMode"
+										ng-click="updateOption()" uib-btn-radio="false">Off</label>
+								</div>
+							</div>
+							<div class="col-md-4 col-xs-6">
+								<label>Search Limit</label> <input type="number"
+									class="form-control" style="width: 100px"
+									ng-change="updateOption()"
+									ng-model="optionModel.option.limitCountOfResult" />
+							</div>
+							<div class="col-md-4 col-xs-6">
+								<label>Maximum Document Size(MB)</label> <input type="number"
+									class="form-control" style="width: 100px"
+									ng-change="updateOption()"
+									ng-model="optionModel.option.maximumDocumentMBSize" />
+							</div>
+						</div>
+						<!-- filtering & directory -->
+						<hr/>
+						<div class="row">
+							<div class="col-xs-5  col-md-4" style="">
+								<b>What type of files are you looking for?
+								</b>
+								<div class="boxes">
+
+									<div class="checkbox">
+										<label> <input type="checkbox"
+											ng-model="indexModel.select_toggle"
+											ng-change="toggleTopcheckbox()">&lt;Toggle&gt;
+										</label>
+									</div>
+									<div class="checkbox"
+										ng-repeat="typeObj in supportTypeModel.supportTypes | limitTo:supportTypeUI.totalDisplayed"
+										scroll-if="typeObj.type == supportTypeUI.searchedType">
+										<label
+											ng-style="supportTypeUI.searchedTypeKeyword != '' && typeObj.type.indexOf(supportTypeUI.searchedTypeKeyword) > -1 && {'font-weight':800}">
+											<input type="checkbox" ng-model="typeObj.used"
+											ng-change="updateType(typeObj)"> {{typeObj.type}}
+										</label>
+									</div>
+								</div>
+								<input type="text" placeholder="*.txt" style="width: 100%"
+									ng-change='changeSearchKeyword(supportTypeUI.searchedTypeKeyword)'
+									ng-model='supportTypeUI.searchedTypeKeyword'
+									ng-keydown="$event.which === 13 && nextSearch(supportTypeUI.searchedTypeKeyword)" />
+								<button ng-click="loadMore()" style="width: 100%" type="submit"
+									class="btn btn-default">Read More({{supportTypeUI.totalDisplayed}}/{{supportTypeModel.supportTypes.length}})</button>
+							</div>
+							<div class="col-xs-7 col-md-8">
+								<b>Which directories are you looking for?
+								</b>
+								<div class="list-group" style="margin-bottom: 10px">
+									<a
+										data-context-menu="views/context-menu/index-contextmenu.html"
+										href class="list-group-item"
+										ng-repeat="path in indexModel.pathList"> <span
+										ng-style="path.used == false ? {'opacity': 0.3} : {}"
+										ng-class="path.used == false ? 'glyphicon glyphicon-ok' : 'glyphicon glyphicon-ok'"
+										aria-hidden="true"> </span> <span
+										ng-style="path.recursively == false ? {'opacity': 0.3} : {}"
+										ng-class="path.recursively == false ? 'glyphicon glyphicon-repeat' : 'glyphicon glyphicon-repeat'"
+										aria-hidden="true"> </span> <span style="font-size: 16px; word-break: break-all">{{path.pathString}}</span>
+									</a>
+									<button type="button" class="list-group-item btn btn-default"
+										ng-click="selectDirectory()" style="text-align: center"
+										aria-label="Left Align">
+										<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>New
+										Directory <b>(where you find words)</b>
+									</button>
+								</div>
+								<div style="text-align: center">
+									<button class="btn btn-default"
+										ng-show="indexModel.running == 'READY'" ng-click="run()">
+										Run
+										<!--automatically update indexes. automatically clean deleted files.-->
+									</button>
+									<button class="btn btn-info"
+										ng-show="indexModel.running == 'RUNNING' || indexModel.running == 'WAITING'"
+										ng-click="stop()">
+										Running
+										<!--automatically update indexes. automatically clean deleted files.-->
+									</button>
+								</div>
+								<div>{{indexModel.indexDocumentCount}} files are indexed</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>

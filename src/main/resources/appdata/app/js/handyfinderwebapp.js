@@ -39,19 +39,20 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 
 			}, function(){}, function(){});
 
-			$scope.connectAndStart = function(){
+			(function connectAndStart(){
 				var promise = $scope.indexModel.connect();
 				promise.then(function(frame) {
+					$log.info('Connection to web socket has been successful');
 					$log.debug(frame);
 					$scope.indexModel.run();
 				}, function(error) {
-					$timeout(function() { $scope.connectAndStart(); }, 2000); //connect again
-					$log.error(error);
+					$timeout(function() { connectAndStart(); }, 2000); //connect again
+					$log.warn('Connection to web socket has been failed');
+					$log.warn(error);
 				}, function(noti) {
 					$log.debug(noti);
 				});
-			}
-			$scope.connectAndStart();
+			}());
 
 		};
 		
@@ -84,13 +85,230 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		$scope.initGUIService();
 	}]);
 
-	app.controller('searchController', ['$log', '$scope', '$timeout','$sce', 'NativeService', 'SearchModel','OptionModel',
-	                                    function($log, $scope, $timeout, $sce, NativeService, SearchModel, OptionModel) {
+	app.controller('searchController', ['$q', '$log', '$scope', '$timeout','$sce', 'NativeService', 'SearchModel','OptionModel', 'SupportTypeModel', 'SupportTypeUI', 'ProgressService', 'IndexModel', 'Path',
+	                                    function($q, $log, $scope, $timeout, $sce, NativeService, SearchModel, OptionModel, SupportTypeModel, SupportTypeUI, ProgressService, IndexModel, Path) {
 		$scope.searchModel = SearchModel.model;
 		$scope.optionModel = OptionModel.model;
 		$scope.isCollapsed = true;
+		$scope.supportTypeModel = SupportTypeModel.model;
+		$scope.supportTypeUI = new SupportTypeUI(SupportTypeModel);
+
+		/**
+		 * code for directory
+		 */
+		
+		// Select a directory in native file selector
+		$scope.selectDirectory = function(originalPath) {
+			ProgressService.openDirectoryDialog();
+		};
+
+		// Save directories to the server
+		$scope.save = function() {
+			var deferred = $q.defer();
+			var promise = IndexModel.updateDirectories();
+			promise.then(function() {
+				deferred.resolve();
+				$log.debug('successful update a list of path');
+			}, function() {
+				$scope.indexModel.index_progress_status.addAlertQ(1);
+				deferred.reject();
+				$log.error('fail to update a list of path');
+			}, function() {
+				$scope.indexModel.index_progress_status.addAlertQ(1);
+				deferred.reject();
+			});
+			return deferred.promise;
+		};
+		
+		// Add directory to list and save it
+		$scope.addDirectory = function(path) {
+			var returnedPath = path;
+			if (returnedPath != '') {
+				var path = Path.createInstance(returnedPath);
+				$scope.indexModel.pathList.push(path);
+				$scope.save();
+				$log.debug('pushed path: '+ returnedPath);
+			}
+		};
+
+		// Watch changes in directories
+		$scope.startWatch = function() {
+			$scope.$watchCollection('indexModel.pathList', function(newNames, oldNames) {
+				$scope.save();
+			});
+		};
+		
+		// Subscribe content notified through websocket
+		$scope.registerProgressService = function(){
+			var progressPromise = ProgressService.subProgress();
+			progressPromise.then(function() {
+			}, function(msg) {
+				$log.error(msg);
+			}, function(progressObject) {
+				if (progressObject.state == 'TERMINATE'){
+					$scope.indexModel.index_progress_status.progressBarVisible = false;
+					$scope.indexModel.index_progress_status.addAlertQ(4);
+				}else
+					$scope.indexModel.index_progress_status.progressBarVisible = true;
+				$scope.indexModel.processIndex = progressObject.processIndex;
+				$scope.indexModel.processPath = progressObject.processPath;
+				$scope.indexModel.totalProcessCount = progressObject.totalProcessCount;
+				$scope.indexModel.state = progressObject.state;
+				$scope.indexModel.index_progress_status.refreshState();
+				$log.debug(progressObject.processIndex + ", " + progressObject.totalProcessCount + ", " + progressObject.processPath + ", " + progressObject.state);
+				IndexModel.getDocumentCount();
+			});
+			var updatePromise = ProgressService.subUpdate();
+			updatePromise.then(function() {
+			}, function(msg) {
+				$log.error(msg);
+			}, function(summaryObject) {
+				$scope.indexModel.updateSummary.state = summaryObject.state;
+				$scope.indexModel.updateSummary.countOfDeleted = summaryObject.countOfDeleted;
+				$scope.indexModel.updateSummary.countOfExcluded = summaryObject.countOfExcluded;
+				$scope.indexModel.updateSummary.countOfModified = summaryObject.countOfModified;
+
+				if(summaryObject.state == 'TERMINATE'){
+					$scope.indexModel.index_progress_status.setMsgAlertQ(5, 'Update summary -> deleted files : ' + summaryObject.countOfDeleted 
+							+ ', non contained files : ' + summaryObject.countOfExcluded + ', modified files : ' + summaryObject.countOfModified);
+					$scope.indexModel.index_progress_status.addAlertQ(5);
+					$log.debug(summaryObject.countOfDeleted + ", " + summaryObject.countOfExcluded + ", " + summaryObject.countOfModified);
+					IndexModel.getDocumentCount();
+				}
+			});
+
+			var guiDirPromise = ProgressService.subGuiDirectory();
+			guiDirPromise.then(function(){},function(msg){$log.error(msg);},
+					function(path){
+						$log.info('selected path : ' + path);
+						$scope.addDirectory(path);
+					});
+		};
+		
+		// Connect to a server via a web socket
+		(function initProgressService(){
+			if(ProgressService.isConnected() == false){
+				$timeout(function() { initProgressService(); }, 2000); //connect again
+				$log.warn('Socket connection has not yet been ready. Try connecting again...');
+			}else{
+				if($scope.indexModel.indexControllerSubscribed == false)
+					$scope.registerProgressService();
+				$scope.indexModel.indexControllerSubscribed = true;
+			}
+		}());
+		
+		// Get pathlist from apiserver
+		IndexModel.getDirectories().then(function(msg) {
+			$log.debug('directories loaded');
+			$scope.indexModel.pathList = msg;
+			$scope.indexModel.index_progress_status.addAlertQ(2);
+			$scope.startWatch();
+		}, function(msg) {
+			$log.error('directories fail to load');
+			$scope.indexModel.index_progress_status.addAlertQ(3);
+			$scope.startWatch();
+		}, function(msg) {
+			$log.debug('directories fail to load');
+			$scope.indexModel.index_progress_status.addAlertQ(3);
+			$scope.startWatch();
+		});
+		
+
+		/**
+		 * for context menu
+		 */
+		
+		$scope.enableToggle = function(path) {
+			path.used = !path.used;
+		};
+
+		$scope.recursivelyToggle = function(path) {
+			path.recursively = !path.recursively;
+		};
+
+		$scope.remove = function(path) {
+			$timeout(function() {
+				var index = $scope.indexModel.pathList.indexOf(path);
+				if (index > -1) {
+					$scope.indexModel.pathList.splice(index, 1);
+				}
+			}, 100);
+		};
+
+		/**
+		 * Index actions
+		 */
+		
+		//save and run indexing
+		$scope.run = function() {
+			var promise = $scope.save();
+			promise.then(function(){
+				$scope.indexModel.run();
+			},function(){},function(){});
+		};
+
+		//stop indexing in server
+		$scope.stop = function(){
+			$scope.indexModel.stop();
+		};
+		
+		/**
+		 * Code for support types 
+		 */
+		
+		// show first result to contain keyword
+		$scope.changeSearchKeyword = function(searchedTypeKeyword){
+			$scope.supportTypeUI.changeSearchKeyword(searchedTypeKeyword);
+		};
+		
+		//show next result to contain keyword
+		$scope.nextSearch = function(searchedTypeKeyword){
+			$scope.supportTypeUI.nextSearch(searchedTypeKeyword);
+		}
+
+		//watch changes in support types
+		$scope.$watch('supportTypeModel.supportTypes', function(){
+			for(var i=0; i<SupportTypeModel.model.supportTypes.length; i++){
+				if(SupportTypeModel.model.supportTypes[i].used == false){
+					$scope.indexModel.select_toggle = false;
+					return;
+				}
+			}
+			$scope.indexModel.select_toggle = true;
+		}, true);
+		
+		//load more data from server
+		$scope.loadMore = function(){
+			$scope.supportTypeUI.loadMore();
+		};
+		
+		//update data in server
+		$scope.updateType = function(obj) {
+			var promise = SupportTypeModel.updateSupportType(obj);
+			promise.then(function(){
+				$log.debug('successful update ' + obj.type + ':' + obj.used);
+			},function(){
+				$log.error('fail to update ');},function(){});
+		};
+
+		//click top element and change all check state 
+		$scope.toggleTopcheckbox = function(){
+			$log.debug('toggle top checkbox : ' + $scope.indexModel.select_toggle);
+			for (var i=0; i<SupportTypeModel.model.supportTypes.length; i++){
+				SupportTypeModel.model.supportTypes[i].used = $scope.indexModel.select_toggle;
+			}
+			$scope.updateSupportTypeList(); //update to api server
+		};
+		
+		//update support data in server
+		$scope.updateSupportTypeList = function() {
+			SupportTypeModel.updateSupportTypeList();
+		};
+
 		
 		$scope.search = function(keyword){
+			//collapse option panel 
+			$scope.isCollapsed = true;
 			SearchModel.search(keyword);
 		};
 
@@ -318,15 +536,6 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 			$log.debug('directories fail to load');
 			$scope.indexModel.index_progress_status.addAlertQ(3);
 			$scope.startWatch();
-		});
-
-		var typePromise = SupportTypeModel.getSupportTypes();
-		typePromise.then(function(msg) {
-			$log.debug('supportTypes loaded : ' + msg.length);
-		}, function(msg) {
-			$log.error('supportTypes fail to load');
-		}, function(msg) {
-			$log.debug('supportTypes notify');
 		});
 
 		$scope.$watch('supportTypeModel.supportTypes', function(){

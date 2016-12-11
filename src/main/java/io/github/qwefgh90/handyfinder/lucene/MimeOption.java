@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
@@ -27,8 +28,6 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 
 /**
  * instance is created by <b>TikaMimeXmlObjectFactory</b>
@@ -65,7 +64,31 @@ public final class MimeOption {
 			globMap.put(iter.next(), Boolean.TRUE);
 		}
 	}
-
+	
+	public Set<String> getAllowedMimeList(){
+		final HashSet<String> list = new HashSet<>();
+		final Iterator<String> iter = mimeToGlobListMap.keySet().iterator();
+		while(iter.hasNext()){
+			String mimeString = iter.next();
+			if(isAllowMime(mimeString)){
+				list.add(mimeString);
+			}
+		}
+		return list;
+	}
+	
+	public Set<String> getNotAllowedMimeList(){
+		final HashSet<String> list = new HashSet<>();
+		final Iterator<String> iter = mimeToGlobListMap.keySet().iterator();
+		while(iter.hasNext()){
+			String mimeString = iter.next();
+			if(!isAllowMime(mimeString)){
+				list.add(mimeString);
+			}
+		}
+		return list;
+	}
+	
 	public boolean isAllowMime(String mime) {
 		Iterator<String> iter = getGlobIterator(mime);
 		if (iter == null)
