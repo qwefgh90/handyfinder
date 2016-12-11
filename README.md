@@ -34,6 +34,8 @@ A handyfinder is tiny search program working on desktop to support multiple type
 - internal auth token
 - usuful search condition
 - sorting and search in result
+- paging
+- new update log
 
 # Run & Test
 
