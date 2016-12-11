@@ -264,9 +264,9 @@ public class RootService {
 					handler.startIndex(list);
 				return;
 			} catch (SQLException e) {
-				LOG.info(ExceptionUtils.getStackTrace(e));
+				LOG.warn(ExceptionUtils.getStackTrace(e));
 			} catch (IOException e) {
-				LOG.info(ExceptionUtils.getStackTrace(e));
+				LOG.warn(ExceptionUtils.getStackTrace(e));
 			}
 			break;
 		}
@@ -277,7 +277,7 @@ public class RootService {
 				if (handler.isReady())
 					handler.updateIndexedDocuments(list);
 			} catch (SQLException e) {
-				LOG.info(ExceptionUtils.getStackTrace(e));
+				LOG.warn(ExceptionUtils.getStackTrace(e));
 			}
 			break;
 		}

@@ -29,7 +29,7 @@
 		<level value="debug" />
 	</logger>
 	<logger name="io.github.qwefgh90.springweb.service">
-		<level value="info" />
+		<level value="debug" />
 	</logger>
 	<logger name="io.github.qwefgh90.handyfinder.lucene">
 		<level value="trace" />

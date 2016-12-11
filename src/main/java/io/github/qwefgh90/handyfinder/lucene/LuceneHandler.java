@@ -615,7 +615,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		reader = null;
 	}
 
-	void indexDocuments(final List<Directory> list) throws IOException {
+	void indexDocuments(final List<Directory> list) {
 		for (Directory dir : list) {
 			Path tmp = Paths.get(dir.getPathString());
 			if (dir.isRecursively()) {
@@ -644,43 +644,51 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @param recursively
 	 * @throws IOException
 	 */
-	void indexDirectory(final Path path, final boolean recursively) throws IOException {
+	void indexDirectory(final Path path, final boolean recursively) {
 		checkIndexWriter();
 		if (Files.isDirectory(path)) {
 			final List<Path> pathList = new ArrayList<>();
 			final Path rootDirectory = path;
 			if (recursively) {
-				Files.walkFileTree(rootDirectory,
-						new SimpleFileVisitor<Path>() {
-					public FileVisitResult visitFile(Path file,
-							BasicFileAttributes attrs)
-									throws IOException {
-						if (attrs.isRegularFile()) {
-							pathList.add(file); // UPDATE
-							if (isStopping()) {
-								return FileVisitResult.TERMINATE;
+				try {
+					Files.walkFileTree(rootDirectory,
+							new SimpleFileVisitor<Path>() {
+						public FileVisitResult visitFile(Path file,
+								BasicFileAttributes attrs)
+										throws IOException {
+							if (attrs.isRegularFile()) {
+								pathList.add(file); // UPDATE
+								if (isStopping()) {
+									return FileVisitResult.TERMINATE;
+								}
 							}
+							return FileVisitResult.CONTINUE;
 						}
-						return FileVisitResult.CONTINUE;
-					}
-				});
+					});
+				} catch (IOException e) {
+					LOG.error(ExceptionUtils.getStackTrace(e));
+				}
 			} else {
-				Files.walkFileTree(rootDirectory,
-						EnumSet.noneOf(FileVisitOption.class), 1,
-						new SimpleFileVisitor<Path>() {
-					public FileVisitResult visitFile(Path file,
-							BasicFileAttributes attrs)
-									throws IOException {
-						if (attrs.isRegularFile()) {
-							pathList.add(file);
-							// check file size // UPDATE
-							if (isStopping()) {
-								return FileVisitResult.TERMINATE;
+				try {
+					Files.walkFileTree(rootDirectory,
+							EnumSet.noneOf(FileVisitOption.class), 1,
+							new SimpleFileVisitor<Path>() {
+						public FileVisitResult visitFile(Path file,
+								BasicFileAttributes attrs)
+										throws IOException {
+							if (attrs.isRegularFile()) {
+								pathList.add(file);
+								// check file size // UPDATE
+								if (isStopping()) {
+									return FileVisitResult.TERMINATE;
+								}
 							}
+							return FileVisitResult.CONTINUE;
 						}
-						return FileVisitResult.CONTINUE;
-					}
-				});
+					});
+				} catch (IOException e) {
+					LOG.error(ExceptionUtils.getStackTrace(e));
+				}
 			}
 			pathList
 			.parallelStream()
@@ -999,36 +1007,41 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @param recursively
 	 * @throws IOException
 	 */
-	Size sizeOfindexDirectory(Path path, boolean recursively)
-			throws IOException {
+	Size sizeOfindexDirectory(Path path, boolean recursively) {
 		Size size = new Size();
-		if (Files.isDirectory(path)) {
+		if (Files.isDirectory(path) ) {
 			Path rootDirectory = path;
 			if (recursively) {
-				Files.walkFileTree(rootDirectory,
-						new SimpleFileVisitor<Path>() {
-					public FileVisitResult visitFile(Path file,
-							BasicFileAttributes attrs)
-									throws IOException {
-						if (attrs.isRegularFile()) {
-							size.add();
+				try {
+					Files.walkFileTree(rootDirectory,
+							new SimpleFileVisitor<Path>() {
+						public FileVisitResult visitFile(Path file,
+								BasicFileAttributes attrs){
+							if (attrs.isRegularFile()) {
+								size.add();
+							}
+							return FileVisitResult.CONTINUE;
 						}
-						return FileVisitResult.CONTINUE;
-					}
-				});
+					});
+				} catch (IOException e) {
+					LOG.error(ExceptionUtils.getStackTrace(e));
+				}
 			} else {
+				try {
 				Files.walkFileTree(rootDirectory,
 						EnumSet.noneOf(FileVisitOption.class), 1,
 						new SimpleFileVisitor<Path>() {
 					public FileVisitResult visitFile(Path file,
-							BasicFileAttributes attrs)
-									throws IOException {
+							BasicFileAttributes attrs){
 						if (attrs.isRegularFile()) {
 							size.add();
 						}
 						return FileVisitResult.CONTINUE;
 					}
 				});
+				} catch (IOException e) {
+					LOG.error(ExceptionUtils.getStackTrace(e));
+				}
 			}
 		}
 		return size;
