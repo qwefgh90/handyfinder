@@ -1,10 +1,15 @@
 package io.github.qwefgh90.handyfinder.lucene;
 
+import io.github.qwefgh90.handyfinder.lucene.BasicOption.BasicOptionModel.KEYWORD_MODE;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption.BasicOptionModel.TARGET_MODE;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -12,13 +17,13 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.github.qwefgh90.handyfinder.lucene.BasicOption.BasicOptionModel.KEYWORD_MODE;
-import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
 /**
  * Service class of BasicOptionModel
@@ -89,14 +94,15 @@ public class BasicOption {
 		model.getDirectoryList().clear();
 	}
 
-	public boolean isPathMode() {
-		return model.isPathMode();
+
+	public EnumSet<TARGET_MODE> getTargetMode() {
+		return model.getTargetMode();
 	}
 
-	public void setPathMode(boolean pathMode) {
-		model.setPathMode(pathMode);
+	public void setTargetMode(EnumSet<TARGET_MODE> targetMode) {
+		model.setTargetMode(targetMode);
 	}
-
+	
 	public void writeAppDataToDisk() {
 		model.writeAppDataToDisk();
 	}
@@ -121,13 +127,14 @@ public class BasicOption {
 		return model.getLimitCountOfResult();
 	}
 
-	static class BasicOptionModel {
+	@JsonIgnoreProperties(ignoreUnknown=true)
+	public static class BasicOptionModel {
 		private BasicOptionModel() {
 			this.directoryList = new ArrayList<Directory>();
 			this.limitCountOfResult = _limitCountOfResult;
 			this.maximumDocumentMBSize = _maximumDocumentMBSize;
 			this.keywordMode = _keywordMode;
-			this.pathMode = _pathMode;
+			this.targetMode = EnumSet.of(TARGET_MODE.PATH, TARGET_MODE.CONTENT);
 		}
 
 		private final static Logger LOG = LoggerFactory
@@ -138,6 +145,10 @@ public class BasicOption {
 		private final KEYWORD_MODE _keywordMode = KEYWORD_MODE.OR;
 		private final boolean _pathMode = true;
 
+		public enum TARGET_MODE{
+			PATH, CONTENT
+		}
+		
 		public enum KEYWORD_MODE{
 			OR, AND
 		};
@@ -146,12 +157,12 @@ public class BasicOption {
 		private static BasicOptionModel singleton;
 		private static ObjectMapper om = new ObjectMapper();
 
-		private boolean pathMode;
+		private EnumSet<TARGET_MODE> targetMode;
 		private List<Directory> directoryList;
 		private int limitCountOfResult;
 		private int maximumDocumentMBSize;
 		private KEYWORD_MODE keywordMode;
-		
+
 		public KEYWORD_MODE getKeywordMode() {
 			return keywordMode;
 		}
@@ -169,12 +180,13 @@ public class BasicOption {
 			this.directoryList = directoryList;
 		}
 
-		public boolean isPathMode() {
-			return pathMode;
+
+		public EnumSet<TARGET_MODE> getTargetMode() {
+			return targetMode;
 		}
 
-		public void setPathMode(boolean pathMode) {
-			this.pathMode = pathMode;
+		public void setTargetMode(EnumSet<TARGET_MODE> targetMode) {
+			this.targetMode = targetMode;
 		}
 
 		public int getLimitCountOfResult() {
@@ -242,7 +254,7 @@ public class BasicOption {
 				this.limitCountOfResult = loadData.limitCountOfResult;
 				this.maximumDocumentMBSize = loadData.maximumDocumentMBSize;
 				this.keywordMode = loadData.keywordMode;
-				this.pathMode = loadData.pathMode;
+				this.targetMode = loadData.targetMode;
 			}
 		}
 	}

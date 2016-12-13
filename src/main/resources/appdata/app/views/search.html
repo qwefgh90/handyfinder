@@ -39,13 +39,19 @@
 								</div>
 							</div>
 							<div class="col-md-4 col-xs-6">
-								<label>Path and filename (if included) </label><br>
+								<label>Search target</label><br>
 								<div class="btn-group">
-									<label class="btn btn-success"
-										ng-model="optionModel.option.pathMode"
-										ng-click="updateOption()" uib-btn-radio="true">On</label> <label
-										class="btn btn-success" ng-model="optionModel.option.pathMode"
-										ng-click="updateOption()" uib-btn-radio="false">Off</label>
+									<button type="button" class="btn btn-success"
+										ng-model="optionModel.option.pathTarget" uib-btn-checkbox btn-checkbox-true="true"
+										btn-checkbox-false="false" ng-click="updateOption()">Path</button>
+									<button type="button" class="btn btn-success"
+										ng-model="optionModel.option.contentTarget" uib-btn-checkbox btn-checkbox-true="true"
+										btn-checkbox-false="false" ng-click="updateOption()">Content</button>
+								<!--	<label class="btn btn-success"
+										ng-model="optionModel.option.pathTarget"
+										ng-click="updateOption()" uib-btn-radio="true">Path</label> <label
+										class="btn btn-success" ng-model="optionModel.option.contentTarget"
+										ng-click="updateOption()" uib-btn-radio="false">Content</label>-->
 								</div>
 							</div>
 							<div class="col-md-4 col-xs-6">
@@ -97,7 +103,7 @@
 								<div class="list-group" style="margin-bottom: 10px">
 									<div class="list-group-item" ng-repeat="path in indexModel.pathList">
 										<div style="float: left">
-											<span style="font-size: 16px; word-break: break-all">{{path.pathString}}</span>
+											<a href ng-click="open(path.pathString)" style="font-size: 16px; word-break: break-all">{{path.pathString}}</a>
 										</div>
 										<div style="float: right">
 											<a href ng-click="enableToggle(path)" style=""
@@ -162,12 +168,6 @@
 				secs), order of documents to contain more keywords.
 			</p>
 			
-			<!-- 
-			<div>
-				<button type="button" class="btn btn-default btn-sm" aria-label="Left Align">
-					<span class="glyphicon glyphicon-save" style="" aria-hidden="true"></span>Download
-				</button>
-			</div>-->
 		</div>
 	</div>
 

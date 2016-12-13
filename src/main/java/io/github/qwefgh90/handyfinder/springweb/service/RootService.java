@@ -1,15 +1,29 @@
 package io.github.qwefgh90.handyfinder.springweb.service;
 
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption.BasicOptionModel.TARGET_MODE;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
+import io.github.qwefgh90.handyfinder.lucene.MimeOption;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.model.Command;
+import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
+import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
+import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
+import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
+import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+import io.github.qwefgh90.jsearch.JSearch;
+
 import java.awt.Desktop;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -27,19 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
-import io.github.qwefgh90.handyfinder.lucene.BasicOption;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
-import io.github.qwefgh90.handyfinder.lucene.MimeOption;
-import io.github.qwefgh90.handyfinder.lucene.model.Directory;
-import io.github.qwefgh90.handyfinder.springweb.model.Command;
-import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
-import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
-import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
-import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
-import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
-import io.github.qwefgh90.jsearch.JSearch;
 
 @Service
 public class RootService {
@@ -136,7 +137,10 @@ public class RootService {
 		dto.setMaximumDocumentMBSize(globalAppData.getMaximumDocumentMBSize());
 		dto.setKeywordMode(globalAppData.getKeywordMode().name());
 		dto.setFirstStart(globalAppData.getDirectoryList().size() == 0 ? true : false);
-		dto.setPathMode(globalAppData.isPathMode());
+		//dto.setPathMode(globalAppData.getTargetMode());
+		dto.setPathTarget(globalAppData.getTargetMode().contains(TARGET_MODE.PATH));
+		dto.setContentTarget(globalAppData.getTargetMode().contains(TARGET_MODE.CONTENT));
+		
 		return dto;
 	}
 
@@ -151,7 +155,12 @@ public class RootService {
 			globalAppData.setMaximumDocumentMBSize(dto
 					.getMaximumDocumentMBSize());
 		globalAppData.setKeywordMode(dto.getKeywordMode());
-		globalAppData.setPathMode(dto.isPathMode());
+		EnumSet<TARGET_MODE> targetMode = EnumSet.noneOf(TARGET_MODE.class);
+		if(dto.isPathTarget())
+			targetMode.add(TARGET_MODE.PATH);
+		if(dto.isContentTarget())
+			targetMode.add(TARGET_MODE.CONTENT);
+		globalAppData.setTargetMode(targetMode);
 		globalAppData.writeAppDataToDisk();
 	}
 

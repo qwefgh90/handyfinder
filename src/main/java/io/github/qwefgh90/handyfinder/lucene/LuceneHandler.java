@@ -74,6 +74,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.github.qwefgh90.handyfinder.lucene.BasicOption.BasicOptionModel.KEYWORD_MODE;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption.BasicOptionModel.TARGET_MODE;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 import io.github.qwefgh90.jsearch.JSearch;
@@ -1059,7 +1060,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			queryBuilder.add(new TermQuery(new Term("mimeType", mime)), Occur.MUST_NOT);
 		}
 		
-		if(basicOption.isPathMode()){
+		if(basicOption.getTargetMode().contains(TARGET_MODE.PATH)){
 			BooleanQuery.Builder pathQueryBuilder = new BooleanQuery.Builder();
 			for(String e : getEscapedTermList(lowerFullString, true, true, Optional.empty())){
 				Query query = new WildcardQuery(new Term("pathStringForQuery", e)); 
@@ -1068,16 +1069,17 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			queryBuilder.add(pathQueryBuilder.build(), Occur.SHOULD);
 		}
 
-		BooleanQuery.Builder contentsQueryBuilder = new BooleanQuery.Builder();
-		for(String e : getEscapedTermList(lowerFullString, false, false, Optional.of(maxGramSize))){
-			Query query = new TermQuery(new Term("contents", e));// parser.parse(e, "contents");
-			if(basicOption.getKeywordMode().equals(KEYWORD_MODE.OR))
-				contentsQueryBuilder.add(query, Occur.SHOULD);
-			else
-				contentsQueryBuilder.add(query, Occur.MUST);
+		if(basicOption.getTargetMode().contains(TARGET_MODE.CONTENT)){
+			BooleanQuery.Builder contentsQueryBuilder = new BooleanQuery.Builder();
+			for(String e : getEscapedTermList(lowerFullString, false, false, Optional.of(maxGramSize))){
+				Query query = new TermQuery(new Term("contents", e));// parser.parse(e, "contents");
+				if(basicOption.getKeywordMode().equals(KEYWORD_MODE.OR))
+					contentsQueryBuilder.add(query, Occur.SHOULD);
+				else
+					contentsQueryBuilder.add(query, Occur.MUST);
+			}
+			queryBuilder.add(contentsQueryBuilder.build(), Occur.SHOULD);
 		}
-		queryBuilder.add(contentsQueryBuilder.build(), Occur.SHOULD);
-
 		return queryBuilder.build();
 	}
 

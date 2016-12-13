@@ -28,9 +28,9 @@ define(['angular', 'searchModel'], function(angular){
 							self.model.option.maximumDocumentMBSize = msg.maximumDocumentMBSize;
 							self.model.option.keywordMode = msg.keywordMode;
 							self.model.option.firstStart = msg.firstStart
-							self.model.option.pathMode = msg.pathMode;
-							$log.debug('option loaded ' + self.model.option.limitCountOfResult + ', ' + self.model.option.maximumDocumentMBSize
-									+ ', ' + self.model.option.keywordMode + ', ' + self.model.option.firstStart + ', ' + self.model.option.pathMode);
+							self.model.option.pathTarget = msg.pathTarget;
+							self.model.option.contentTarget = msg.contentTarget;
+							$log.debug('option loaded ' + self.model);
 							deferred.resolve(response.data);
 						} else {
 							deferred.reject('getDirectories() fail');
@@ -281,7 +281,8 @@ define(['angular', 'searchModel'], function(angular){
 			this.maximumDocumentMBSize = -1;
 			this.keywordMode = 'OR';
 			this.firstStart = false;
-			this.pathMode = false;
+			this.pathTarget = true;
+			this.contentTarget = true;
 		}
 
 		// Return constructor - this is what defines the actual
