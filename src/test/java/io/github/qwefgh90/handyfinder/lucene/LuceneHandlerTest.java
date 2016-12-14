@@ -9,10 +9,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.hamcrest.Matchers;
@@ -35,7 +37,10 @@ import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
 import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
 import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
+import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption.BasicOptionModel.KEYWORD_MODE;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption.BasicOptionModel.TARGET_MODE;
 
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -50,6 +55,9 @@ public class LuceneHandlerTest {
 	@Autowired
 	CommandInvoker invoker;
 
+	@Autowired
+	MetaRespository metaRepository;
+	
 	@Autowired
 	MimeOption mimeOption;
 	@Autowired
@@ -80,13 +88,14 @@ public class LuceneHandlerTest {
 		mimeOption.initGlobTrue();
 		basicOption.setLimitCountOfResult(100);
 		basicOption.setMaximumDocumentMBSize(100);
-		
+		basicOption.setTargetMode(EnumSet.of(TARGET_MODE.PATH, TARGET_MODE.CONTENT));
+		basicOption.setKeywordMode(KEYWORD_MODE.OR.toString());
 		handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex,
 				invoker, basicOption, mimeOption);
 		handler.deleteAllIndexesFromFileSystem();
 
 		testFilesPath = AppStartupConfig.deployedPath.resolve("index-test-files");
-
+		
 		Directory testFileiDir = new Directory();
 		testFileiDir.setRecursively(true);
 		testFileiDir.setUsed(true);
@@ -94,6 +103,9 @@ public class LuceneHandlerTest {
 		
 		indexDirList = new ArrayList<>();
 		indexDirList.add(testFileiDir);
+		indexDirList.forEach(dir -> {
+			basicOption.addDirectory(dir);
+		});
 		
 		//create new files
 		temp2txt = testFilesPath.resolve("temp2.txt");
@@ -142,8 +154,8 @@ public class LuceneHandlerTest {
 		handler.indexDirectory(
 				testFilesPath, true);
 		
-		TopDocs docs = handler.search("javageek");
-		Assert.assertThat(docs.scoreDocs.length, Matchers.is(5));
+		List<ScoreDoc> docs = handler.search("javageek", 0);
+		Assert.assertThat(docs.size(), Matchers.is(5));
 	}
 	
 	@Test
@@ -155,8 +167,8 @@ public class LuceneHandlerTest {
 
 		mimeOption.setGlob("*.txt", false);
 		
-		TopDocs docs = handler.search("javageek");
-		Assert.assertThat(docs.scoreDocs.length, Matchers.is(0));
+		List<ScoreDoc> docs = handler.search("javageek", 0);
+		Assert.assertThat(docs.size(), Matchers.is(0));
 	}
 
 	@Test
@@ -166,8 +178,8 @@ public class LuceneHandlerTest {
 		handler.indexDirectory(
 				testFilesPath, true);
 
-		TopDocs docs = handler.search("PageBase");
-		Assert.assertThat(docs.scoreDocs.length, Matchers.is(1));
+		List<ScoreDoc> docs = handler.search("PageBase", 0);
+		Assert.assertThat(docs.size(), Matchers.is(1));
 	}
 	
 	@Test
@@ -208,7 +220,7 @@ public class LuceneHandlerTest {
 		handler.indexDirectory(
 				testFilesPath, true);
 
-		TopDocs docs = handler.search("http");
-		Assert.assertThat(docs.scoreDocs.length, Matchers.is(1));
+		List<ScoreDoc> docs = handler.search("http",0);
+		Assert.assertThat(docs.size(), Matchers.is(1));
 	}
 }

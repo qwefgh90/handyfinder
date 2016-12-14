@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.lucene.BasicOption;
 import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
 import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
@@ -20,6 +21,7 @@ import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -75,6 +77,7 @@ public class ControllerTest {
 	MockMvc mvc;
 	
 	final ObjectMapper om = new ObjectMapper();
+	final List<Directory> indexDirList = new ArrayList<>();
 	
 	@Before
 	public void setup() throws IOException {
@@ -82,6 +85,19 @@ public class ControllerTest {
 		basicOption.setMaximumDocumentMBSize(100);
 		mimeOption.initGlobTrue();
 		handler.deleteAllIndexesFromFileSystem();
+		
+		final Path indexPath = AppStartupConfig.deployedPath.resolve("index-test-files");
+		
+		Directory testFileiDir = new Directory();
+		testFileiDir.setRecursively(true);
+		testFileiDir.setUsed(true);
+		testFileiDir.setPathString(indexPath.toAbsolutePath().toString());;
+		
+		indexDirList.add(testFileiDir);
+		indexDirList.forEach(dir -> {
+			basicOption.addDirectory(dir);
+		});
+		
 		handler.indexDirectory(
 				AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 		mvc = MockMvcBuilders.webAppContextSetup(wac).build();

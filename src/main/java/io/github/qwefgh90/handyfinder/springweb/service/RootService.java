@@ -34,6 +34,7 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.tika.mime.MediaType;
@@ -198,10 +199,9 @@ public class RootService {
 		// List<Callable<Optional<Map.Entry<String, String>>>> functionList =
 		// new ArrayList<>();
 		try {
-			TopDocs docs = handler.search(keyword);
-			// ExecutorService executor = Executors.newWorkStealingPool();
-			for (int i = 0; i < docs.scoreDocs.length; i++) {
-				Document document = handler.getDocument(docs.scoreDocs[i].doc);
+			List<ScoreDoc> docs = handler.search(keyword, 0);
+			for (ScoreDoc scoreDocument : docs){
+				Document document = handler.getDocument(scoreDocument.doc);
 				DocumentDto dto = new DocumentDto();
 				String pathString = document.get("pathString");
 				Path path = Paths.get(pathString);
@@ -241,6 +241,7 @@ public class RootService {
 				// docMap.put(dto.getPathString(), dto);
 				list.add(dto);
 			}
+
 			/*
 			 * try { List<Future<Optional<Map.Entry<String, String>>>>
 			 * futureList = executor.invokeAll(functionList);
@@ -272,8 +273,6 @@ public class RootService {
 				if (handler.isReady())
 					handler.startIndex(list);
 				return;
-			} catch (SQLException e) {
-				LOG.warn(ExceptionUtils.getStackTrace(e));
 			} catch (IOException e) {
 				LOG.warn(ExceptionUtils.getStackTrace(e));
 			}
@@ -281,13 +280,9 @@ public class RootService {
 		}
 		case UPDATE_INDEXING: {
 			List<Directory> list;
-			try {
-				list = indexProperty.selectDirectory();
-				if (handler.isReady())
-					handler.updateIndexedDocuments(list);
-			} catch (SQLException e) {
-				LOG.warn(ExceptionUtils.getStackTrace(e));
-			}
+			list = indexProperty.selectDirectory();
+			if (handler.isReady())
+				handler.updateIndexedDocuments(list);
 			break;
 		}
 		case STOP_INDEXING: {

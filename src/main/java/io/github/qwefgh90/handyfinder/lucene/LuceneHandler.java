@@ -12,7 +12,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.security.InvalidParameterException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -57,6 +56,7 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
@@ -341,19 +341,26 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @throws IOException
 	 * @throws IndexException
 	 */
-	public TopDocs search(String fullString) throws QueryNodeException,
+	public List<ScoreDoc> search(String fullString, int lowerBound) throws QueryNodeException,
 	IOException {
 		// if (INDEX_WRITE_STATE.PROGRESS == writeState)
 		// throw new IndexException("now indexing");
 		checkDirectoryReader();
-		TopDocs docs = searcher.search(getHandyFinderQuery(fullString),
+		final TopDocs docs = searcher.search(getHandyFinderQuery(fullString),
 				basicOption.getLimitCountOfResult());
-		return docs;
+		
+		final List<ScoreDoc> docList = new ArrayList<>();
+		for(int i=0; i < docs.scoreDocs.length; i++){
+			if(docs.scoreDocs[i].score > lowerBound)
+				docList.add(docs.scoreDocs[i]);
+		}
+		
+		return docList;
 	}
 
 	private List<String> getEscapedTermList(String fullString, boolean prefixWildcard, boolean postfixWildcard, Optional<Integer> trimSize) {
 		final List<String> list = new ArrayList<>();
-		final String[] partialQuery = fullString.replaceAll(" +", " ").split(" ");
+		final String[] partialQuery = fullString.toLowerCase().replaceAll(" +", " ").split(" ");
 		for (String element : partialQuery) {
 			final Integer currectSize = trimSize.map(size -> {
 				if(element.length() < size)
@@ -835,8 +842,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 								// ->
 								// return
 								// true
-								if (!dir.isUsed())
-									return false;
+								//if (!dir.isUsed())
+								//	return false;
 								if (dir.isRecursively()) {
 									return path.startsWith(dir
 											.getPathString());
@@ -1050,28 +1057,42 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 
 	BooleanQuery getHandyFinderQuery(String fullString)
 			throws QueryNodeException {
-		final String lowerFullString = fullString.toLowerCase();
-
 		final BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
-
-		Iterator<String> notAllowedMimeIter = mimeOption.getNotAllowedMimeList().iterator();
+		
+		final Iterator<Directory> dirIter = basicOption.getDirectoryList().iterator();
+		
+		//Directory filter
+		BooleanQuery.Builder dirQueryBuilder = new BooleanQuery.Builder();
+		while(dirIter.hasNext()){
+			final Directory dir = dirIter.next();
+			if(dir.isUsed())
+				dirQueryBuilder.add(new WildcardQuery( 
+						new Term("pathStringForQuery", getEscapedTermList(dir.getPathString(), false, true, Optional.empty()).get(0)))
+						, Occur.SHOULD);
+		}
+		queryBuilder.add(dirQueryBuilder.build(), Occur.FILTER);
+		
+		//Mime filter
+		final Iterator<String> notAllowedMimeIter = mimeOption.getNotAllowedMimeList().iterator();
 		while(notAllowedMimeIter.hasNext()){
 			final String mime = notAllowedMimeIter.next();
 			queryBuilder.add(new TermQuery(new Term("mimeType", mime)), Occur.MUST_NOT);
 		}
 		
+		//Path string query
 		if(basicOption.getTargetMode().contains(TARGET_MODE.PATH)){
 			BooleanQuery.Builder pathQueryBuilder = new BooleanQuery.Builder();
-			for(String e : getEscapedTermList(lowerFullString, true, true, Optional.empty())){
+			for(String e : getEscapedTermList(fullString, true, true, Optional.empty())){
 				Query query = new WildcardQuery(new Term("pathStringForQuery", e)); 
 				pathQueryBuilder.add(query, Occur.SHOULD);
 			}
 			queryBuilder.add(pathQueryBuilder.build(), Occur.SHOULD);
 		}
 
+		//Content string query
 		if(basicOption.getTargetMode().contains(TARGET_MODE.CONTENT)){
 			BooleanQuery.Builder contentsQueryBuilder = new BooleanQuery.Builder();
-			for(String e : getEscapedTermList(lowerFullString, false, false, Optional.of(maxGramSize))){
+			for(String e : getEscapedTermList(fullString, false, false, Optional.of(maxGramSize))){
 				Query query = new TermQuery(new Term("contents", e));// parser.parse(e, "contents");
 				if(basicOption.getKeywordMode().equals(KEYWORD_MODE.OR))
 					contentsQueryBuilder.add(query, Occur.SHOULD);

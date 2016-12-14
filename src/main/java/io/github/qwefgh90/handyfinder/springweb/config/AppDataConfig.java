@@ -14,6 +14,7 @@ import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
 import io.github.qwefgh90.handyfinder.lucene.MimeOption;
 import io.github.qwefgh90.handyfinder.lucene.MimeOption.MimeXmlObjectFactory;
+import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
 @Configuration

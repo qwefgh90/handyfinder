@@ -251,6 +251,7 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		
 		$scope.enableToggle = function(path) {
 			path.used = !path.used;
+			$scope.save();
 		};
 
 		$scope.recursivelyToggle = function(path) {
