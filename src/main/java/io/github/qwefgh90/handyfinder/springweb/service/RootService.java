@@ -1,19 +1,5 @@
 package io.github.qwefgh90.handyfinder.springweb.service;
 
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
-import io.github.qwefgh90.handyfinder.lucene.BasicOption;
-import io.github.qwefgh90.handyfinder.lucene.BasicOption.BasicOptionModel.TARGET_MODE;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
-import io.github.qwefgh90.handyfinder.lucene.MimeOption;
-import io.github.qwefgh90.handyfinder.lucene.model.Directory;
-import io.github.qwefgh90.handyfinder.springweb.model.Command;
-import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
-import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
-import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
-import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
-import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
-import io.github.qwefgh90.jsearch.JSearch;
-
 import java.awt.Desktop;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -35,13 +21,26 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.tika.mime.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption;
+import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
+import io.github.qwefgh90.handyfinder.lucene.MimeOption;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.model.Command;
+import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
+import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
+import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
+import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
+import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+import io.github.qwefgh90.jsearch.JSearch;
 
 @Service
 public class RootService {

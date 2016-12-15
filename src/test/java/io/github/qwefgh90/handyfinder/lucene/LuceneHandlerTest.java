@@ -15,7 +15,6 @@ import java.util.List;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.hamcrest.Matchers;
 import org.junit.After;
@@ -33,14 +32,14 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.KEYWORD_MODE;
+import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
 import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
 import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
-import io.github.qwefgh90.handyfinder.lucene.BasicOption.BasicOptionModel.KEYWORD_MODE;
-import io.github.qwefgh90.handyfinder.lucene.BasicOption.BasicOptionModel.TARGET_MODE;
 
 
 @RunWith(SpringJUnit4ClassRunner.class)

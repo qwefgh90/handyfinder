@@ -73,8 +73,8 @@ import org.apache.tika.mime.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.qwefgh90.handyfinder.lucene.BasicOption.BasicOptionModel.KEYWORD_MODE;
-import io.github.qwefgh90.handyfinder.lucene.BasicOption.BasicOptionModel.TARGET_MODE;
+import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.KEYWORD_MODE;
+import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 import io.github.qwefgh90.jsearch.JSearch;
