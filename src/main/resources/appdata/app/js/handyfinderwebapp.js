@@ -1,6 +1,6 @@
 define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angularBootstrap'
         , 'ngContextmenu', 'indexModel', 'webSocketModel', 'searchModel', 'optionModel'], function(angular){
-	var app = angular.module('handyfinderwebapp', ['ngRoute', 'ngSanitize', 'ngAnimate', 'ui.bootstrap', 'ngContextMenu', 'IndexModel', 'WebSocketModel', 'SearchModel', 'OptionModel']);
+	var app = angular.module('handyfinderwebapp', ['ngRoute', 'ngSanitize', 'ngAnimate', 'ui.bootstrap', 'ngContextMenu', 'IndexModel', 'WebSocketModel', 'SearchModel', 'OptionModel', 'angular-inview']);
 	app.run(['OptionModel', '$log', function(OptionModel, $log){
 		var promise = OptionModel.getOptions();
 	}]);
@@ -81,16 +81,43 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		$scope.initGUIService();
 	}]);
 
+	app.constant('SHOWN_RESULT_COUNT', 20);
 	app.constant('LIMIT_INDEXED_FILE_LIST', 20);
-	app.controller('searchController', ['$q', '$log', '$scope', '$timeout','$sce', 'NativeService', 'SearchModel','OptionModel', 'SupportTypeModel', 'SupportTypeUI', 'ProgressService', 'IndexModel', 'Path', 'LIMIT_INDEXED_FILE_LIST',
-	                                    function($q, $log, $scope, $timeout, $sce, NativeService, SearchModel, OptionModel, SupportTypeModel, SupportTypeUI, ProgressService, IndexModel, Path, LIMIT_INDEXED_FILE_LIST) {
+	app.controller('searchController', ['$q', '$log', '$scope', '$timeout','$sce', 'NativeService', 'SearchModel','OptionModel', 'SupportTypeModel', 'SupportTypeUI', 'ProgressService', 'IndexModel', 'Path', 'LIMIT_INDEXED_FILE_LIST','SHOWN_RESULT_COUNT',
+	                                    function($q, $log, $scope, $timeout, $sce, NativeService, SearchModel, OptionModel, SupportTypeModel, SupportTypeUI, ProgressService, IndexModel, Path, LIMIT_INDEXED_FILE_LIST, SHOWN_RESULT_COUNT) {
 		$scope.searchModel = SearchModel.model;
 		$scope.optionModel = OptionModel.model;
 		$scope.isCollapsed = true;
 		$scope.supportTypeModel = SupportTypeModel.model;
 		$scope.supportTypeUI = new SupportTypeUI(SupportTypeModel);
 		$scope.LIMIT_INDEXED_FILE_LIST = LIMIT_INDEXED_FILE_LIST;
-
+		$scope.SHOWN_RESULT_COUNT = SHOWN_RESULT_COUNT;
+		
+		/**
+		 * utility
+		 */
+		$scope.getNumber = function(n) {	
+			if(typeof n == "number")
+				return new Array(parseInt(n));
+			else
+				return [];
+		}
+		
+		/**
+		 * handler for inview 
+		 */
+		$scope.elementInViewport = function(object, inview, inviewpart){
+//			$log.debug(object);
+//			$log.debug(inview);
+//			$log.debug(inviewpart);
+			if(inview == true && object.loaded == false){
+				var promise = SearchModel.lazyLoadDocumentContent(object);
+				promise.then(function(){
+					object.loaded = true;
+				});
+			}
+		}
+		
 		/**
 		 * code for directory
 		 */
@@ -291,7 +318,8 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		
 		//go to page
 		$scope.go = function(page){
-			$scope.searchModel.page = page;
+			if(typeof page == "number")
+				$scope.searchModel.page = parseInt(page);
 		};
 		
 		//show next result to contain keyword

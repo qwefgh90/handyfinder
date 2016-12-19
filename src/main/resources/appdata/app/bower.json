@@ -25,6 +25,7 @@
     "angular-bootstrap-switch": "^0.5.0",
     "jquery": "^2.2.4",
     "angular-sanitize": "^1.5.6",
-    "requirejs": "https://github.com/requirejs/requirejs-bower.git#^2.2.0"
+    "requirejs": "https://github.com/requirejs/requirejs-bower.git#^2.2.0",
+    "angular-inview": "^2.2.0"
   }
 }

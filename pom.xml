@@ -161,13 +161,31 @@
 	</dependencies>
 
 	<build>
-		<resources>
-			<resource>
-				<directory>src/main/resources</directory>
-				<filtering>true</filtering>
-			</resource>
-		</resources>
-		<finalName>
+	<resources>
+	<!-- 
+		<resource>
+			<directory>src/main/resources</directory>
+			<filtering>true</filtering>
+		</resource>
+-->
+		<resource>
+			<directory>src/main/resources</directory>
+			<filtering>true</filtering>
+			<excludes>
+				<exclude>**/*.woff</exclude>
+				<exclude>**/*.ttf</exclude>
+			</excludes>
+		</resource>
+  		<resource>
+			<directory>src/main/resources</directory>
+			<filtering>false</filtering>
+			<includes>
+				<include>**/*.woff</include>
+				<include>**/*.ttf</include>
+			</includes>
+		</resource>
+	</resources>
+	<finalName>
 			handyfinder
 		</finalName>
 		<plugins>
