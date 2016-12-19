@@ -33,10 +33,9 @@ public class BasicOptionModel {
 		private final static Logger LOG = LoggerFactory
 				.getLogger(BasicOptionModel.class);
 
-		private final int _limitCountOfResult = 50;
+		private final int _limitCountOfResult = 100;
 		private final int _maximumDocumentMBSize = 20;
 		private final KEYWORD_MODE _keywordMode = KEYWORD_MODE.OR;
-		private final boolean _pathMode = true;
 
 		public enum TARGET_MODE{
 			PATH, CONTENT
@@ -50,6 +49,9 @@ public class BasicOptionModel {
 		private static BasicOptionModel singleton;
 		private static ObjectMapper om = new ObjectMapper();
 
+		/**
+		 * json fields
+		 */
 		private EnumSet<TARGET_MODE> targetMode;
 		private List<Directory> directoryList;
 		private int limitCountOfResult;

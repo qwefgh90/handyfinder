@@ -54,6 +54,8 @@ define(['angular'], function(angular){
 				},
 
 				search : function(keyword){
+					this.model.page = 1;
+					
 					var deferred = $q.defer();
 
 					// ajax $http

@@ -83,8 +83,8 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 
 	app.constant('SHOWN_RESULT_COUNT', 20);
 	app.constant('LIMIT_INDEXED_FILE_LIST', 20);
-	app.controller('searchController', ['$q', '$log', '$scope', '$timeout','$sce', 'NativeService', 'SearchModel','OptionModel', 'SupportTypeModel', 'SupportTypeUI', 'ProgressService', 'IndexModel', 'Path', 'LIMIT_INDEXED_FILE_LIST','SHOWN_RESULT_COUNT',
-	                                    function($q, $log, $scope, $timeout, $sce, NativeService, SearchModel, OptionModel, SupportTypeModel, SupportTypeUI, ProgressService, IndexModel, Path, LIMIT_INDEXED_FILE_LIST, SHOWN_RESULT_COUNT) {
+	app.controller('searchController', ['$q', '$log', '$window', '$scope', '$timeout','$sce', 'NativeService', 'SearchModel','OptionModel', 'SupportTypeModel', 'SupportTypeUI', 'ProgressService', 'IndexModel', 'Path', 'LIMIT_INDEXED_FILE_LIST','SHOWN_RESULT_COUNT',
+	                                    function($q, $log, $window, $scope, $timeout, $sce, NativeService, SearchModel, OptionModel, SupportTypeModel, SupportTypeUI, ProgressService, IndexModel, Path, LIMIT_INDEXED_FILE_LIST, SHOWN_RESULT_COUNT) {
 		$scope.searchModel = SearchModel.model;
 		$scope.optionModel = OptionModel.model;
 		$scope.isCollapsed = true;
@@ -107,9 +107,6 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		 * handler for inview 
 		 */
 		$scope.elementInViewport = function(object, inview, inviewpart){
-//			$log.debug(object);
-//			$log.debug(inview);
-//			$log.debug(inviewpart);
 			if(inview == true && object.loaded == false){
 				var promise = SearchModel.lazyLoadDocumentContent(object);
 				promise.then(function(){
@@ -294,18 +291,13 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		 * Index actions
 		 */
 		
-		//save and run indexing
-		/*$scope.run = function() {
-			var promise = $scope.save();
-			promise.then(function(){
-				$scope.indexModel.run();
-			},function(){},function(){});
+		// go to page
+		$scope.go = function(page){
+			if(typeof page == "number"){
+				$scope.searchModel.page = parseInt(page);
+				$window.scrollTo(0,0);
+			}
 		};
-
-		//stop indexing in server
-		$scope.stop = function(){
-			$scope.indexModel.stop();
-		};*/
 		
 		/**
 		 * Code for support types 
@@ -314,12 +306,6 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		// show first result to contain keyword
 		$scope.changeSearchKeyword = function(searchedTypeKeyword){
 			$scope.supportTypeUI.changeSearchKeyword(searchedTypeKeyword);
-		};
-		
-		//go to page
-		$scope.go = function(page){
-			if(typeof page == "number")
-				$scope.searchModel.page = parseInt(page);
 		};
 		
 		//show next result to contain keyword
