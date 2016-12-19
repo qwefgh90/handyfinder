@@ -9,7 +9,8 @@ require.config({
 		angularAnimate: '../bower_components/angular-animate/angular-animate.min',
 		ngContextmenu : '../bower_components/ng-contextmenu/dist/ng-contextmenu',
 		angularBootstrap : '../bower_components/angular-bootstrap/ui-bootstrap-tpls.min',
-		angularSanitize : '../bower_components/angular-sanitize/angular-sanitize.min'
+		angularSanitize : '../bower_components/angular-sanitize/angular-sanitize.min',
+		angularInview: '../bower_components/angular-inview/angular-inview'
 	},
 	
 	/* (key: module name , exports: global variable) for non-AMD(Asynchronous Module Definition) */
@@ -20,12 +21,13 @@ require.config({
 		angularAnimate: {deps: ['angular'], exports: 'angular'},
 		ngContextmenu : {deps: ['angular'], exports: 'angular'},
         angularBootstrap: {deps: ['angular','angularAnimate'], exports: 'angular'},
-		angularSanitize: {deps: ['angular'], exports: 'angular'}
+		angularSanitize: {deps: ['angular'], exports: 'angular'},
+		angularInview: {deps: ['angular']}
 	}	
 });
 /* short or full name of script path */
 require(['angular', 'angularRoute', 'angularAnimate', 'ngContextmenu' ,'angularBootstrap'
-         ,'angularSanitize', 'sockjs', 'stomp'
+         ,'angularSanitize', 'sockjs', 'stomp', 'angularInview'
          , './handyfinderwebapp', './indexModel', './webSocketModel', './searchModel', './optionModel'], function(angular){
     
 	angular.bootstrap(document, ['handyfinderwebapp']);

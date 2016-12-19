@@ -85,7 +85,6 @@ public class NGramTest extends LuceneTestCase {
 		perFieldAnalyzer.put("path", pathAnalyzer);
 		PerFieldAnalyzerWrapper analyzer = new PerFieldAnalyzerWrapper(ngramAnalyzer, perFieldAnalyzer);
 		
-		
 		final TokenStream ts = analyzer.tokenStream("path", new StringReader("c:\\handyfinder\\example"));
 		final OffsetAttribute offsetAtt = ts.addAttribute(OffsetAttribute.class);
 		//reference : http://lucene.apache.org/core/6_3_0/core/org/apache/lucene/analysis/package-summary.html

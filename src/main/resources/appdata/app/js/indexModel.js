@@ -7,9 +7,42 @@ define(['angular', 'webSocketModel'], function(angular){
 					indexDocumentCount : 0,
 					auto_update_index : false,
 					auto_clean_files : false,
-					//supportTypes : [], //{type:xx, used:xx}
 					pathList : [],
 					select_toggle : false,
+					indexedFileList : {
+						list : [],
+						show : false,
+						load : function(){
+							var deferred = $q.defer();
+
+							// ajax $http
+							var headers = {
+									'Accept' : 'application/json',
+									'Content-Type' : 'application/json'
+							};
+							var params = {
+							};
+							var config = {
+									'params' : params,
+									'headers' : headers
+							};
+							var self = this;
+							$http.get(url = '/documents', config).then(function(response) {
+								if (response.status == 200) {
+									self.list = response.data
+									deferred.resolve(response.data);
+								} else {
+									deferred.reject('It failed to load a list of indexed file');
+								}
+							}, function(response) {
+								deferred.reject(response.data);
+							}, function(response) {
+								deferred.reject(response.data);
+							});
+							
+							return deferred.promise;
+						}
+					},
 					index_manager_status : {
 						open : true
 					},
@@ -109,13 +142,13 @@ define(['angular', 'webSocketModel'], function(angular){
 						self.running = 'RUNNING'
 							progressService.sendStartIndex();
 						self.intervalStopObject = $interval(function(){
-							if(self.intervalTurn % 2 == 0){
-								$log.debug('try update index...');
-								progressService.sendUpdateIndex();
-							}else{
-								$log.debug('try start index...');
-								progressService.sendStartIndex();
-							}
+							//if(self.intervalTurn % 2 == 0){
+							//	$log.debug('try update index...');
+							//	progressService.sendUpdateIndex();
+							//}else{
+							$log.debug('try start index...');
+							progressService.sendStartIndex();
+							//}
 
 							self.intervalTurn = self.intervalTurn + 1;
 							if(self.intervalTurn == 100)

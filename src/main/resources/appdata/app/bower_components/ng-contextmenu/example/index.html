@@ -1,43 +1,39 @@
 <!DOCTYPE html>
 <html>
-	<head>
+<head>
 
-		<title>ngContextMenu</title>
+    <title>ngContextMenu</title>
 
-		<!-- Dependencies! -->
-		<script src="../../../bower_components/angular/angular.min.js"></script>
-		<script src="../../../bower_components/angular-route/angular-route.min.js"></script>
-		<script src="../../../bower_components/angular-animate/angular-animate.min.js"></script>
-		<script src="../../../bower_components/ng-contextmenu/dist/ng-contextmenu.min.js"></script>
+    <!-- Dependencies! -->
+    <script type="text/javascript" src="js/vendor/angular/angular.js"></script>
+    <script type="text/javascript" src="js/vendor/ng-contextmenu/ngContextMenu.js"></script>
 
-		<!-- Application! -->
-		<script type="text/javascript" src="js/Application.js"></script>
+    <!-- Application! -->
+    <script type="text/javascript" src="js/Application.js"></script>
 
-		<!-- Beautification! -->
-		<link rel="stylesheet" type="text/css" href="css/Default.css" />
-		<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:100,300,400,700,900,100italic,300italic,400italic,700italic,900italic">
+    <!-- Beautification! -->
+    <link rel="stylesheet" type="text/css" href="css/Default.css" />
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:100,300,400,700,900,100italic,300italic,400italic,700italic,900italic">
 
-	</head>
-	<body ng-app="menuApp" ng-controller="MessagesController">
+</head>
+<body ng-app="menuApp" ng-controller="MessagesController">
 
-		<h1 data-context-menu="context-menus/welcome.html">Try right-clicking on the following messages:</h1>
+    <h1 data-context-menu="context-menus/welcome.html">Try right-clicking on the following messages:</h1>
 
-		<ul class="messages">
+    <ul class="messages">
 
-			<li class="message" ng-controller="MessageController as mc"
-			ng-repeat="message in messages"
-			ng-model="message"
-			data-context-event="contextmenu"
-			data-context-menu="context-menus/message.html">
+        <li class="message" ng-controller="MessageController as mc"
+                            ng-repeat="message in messages"
+                            ng-model="message"
+                            data-context-event="contextmenu"
+                            data-context-menu="context-menus/message.html">
 
-				<h2 data-context-menu="context-menus/subject.html"><a href="#">{{message.subject}}</a></h2>
-				<div class="sent">
-					Sent by {{message.from}} on {{message.date | date: "dd MMM yy"}}
-				</div>
+            <h2 data-context-menu="context-menus/subject.html"><a href="#">{{message.subject}}</a></h2>
+            <div class="sent">Sent by {{message.from}} on {{message.date | date: "dd MMM yy"}}</div>
 
-			</li>
+        </li>
 
-		</ul>
+    </ul>
 
-	</body>
+</body>
 </html>

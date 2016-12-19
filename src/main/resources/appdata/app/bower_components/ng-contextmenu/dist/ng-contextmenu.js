@@ -136,30 +136,20 @@
 
                             // Determine whether to append new, or replace an existing.
                             switch (strategy) {
-                                case ('append'): element.append(menu); break;
+                                case ('append'): angular.element(document.body).append(menu); break;
                                 default: scope.menu.replaceWith(menu); break;
                             }
 
-						/*
-						 * 160505 : code modified for javafx webview by choechangwon
-						 */
-						menu.css({
+                            menu.css({
 
-							position : 'fixed',
-							top : $interpolate('{{y}}px')({
-							y : scope.position.y
-						}),
-							left : $interpolate('{{x}}px')({
-							x : scope.position.x
-						}),
+                                position: 'fixed',
+                                top: 0,
+                                left: 0,
+                                transform: $interpolate('translate({{x}}px, {{y}}px)')({
+                                    x: scope.position.x, y: scope.position.y
+                                })
 
-							// 'transform' : $interpolate('translate({{x}}px, {{y}}px)')({
-								// x : scope.position.x,
-								// y : scope.position.y
-							// })
-
-						}); 
-
+                            });
 
                             scope.menu = menu;
                             scope.menu.bind('click', closeMenu);

@@ -49,7 +49,7 @@ public class MetaRespository {
 		appData.writeAppDataToDisk();
 	}
 
-	public List<Directory> selectDirectory() throws SQLException {
+	public List<Directory> selectDirectory() {
 		List<Directory> list = appData.getDirectoryList();
 		return list;
 	}

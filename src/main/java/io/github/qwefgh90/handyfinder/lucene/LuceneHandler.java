@@ -21,6 +21,10 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,7 +44,6 @@ import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.LegacyLongField;
 import org.apache.lucene.document.StringField;
-import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexReader;
@@ -50,13 +53,13 @@ import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
-import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
@@ -73,7 +76,8 @@ import org.apache.tika.mime.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.qwefgh90.handyfinder.lucene.BasicOption.BasicOptionModel.KEYWORD_MODE;
+import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.KEYWORD_MODE;
+import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 import io.github.qwefgh90.jsearch.JSearch;
@@ -95,7 +99,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	final private org.apache.lucene.store.Directory dir;
 	final private Analyzer analyzer;
 	final private IndexWriterConfig indexConfig;
-	final int minGramSize = 1;
+	final int minGramSize = 2;
 	final int maxGramSize = 8;
 	
 	// mutable writer, reader, searcher
@@ -108,8 +112,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		PROGRESS, STOPPING, READY
 	}
 
-	private int currentProgress = 0; // indexed documents count
-	private int totalProcess = 0; // total documents count to be indexed
+	private volatile int currentProgress = 0; // indexed documents count
+	private volatile int totalProcess = 0; // total documents count to be indexed
 	private CommandInvoker invokerForCommand; // for command to client
 	private BasicOption basicOption;
 	private MimeOption mimeOption;
@@ -256,7 +260,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	}
 
 	/**
-	 * handyfinder object indexing API
+	 * handyfinder synchronized index API
 	 * 
 	 * @param list
 	 * @throws IOException
@@ -280,7 +284,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	}
 
 	/**
-	 * remove or update indexed documents
+	 * synchronized remove or update indexed documents
 	 * 
 	 * @param rootIndexDirectory
 	 *            a list of index directory on top
@@ -288,29 +292,29 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	public void updateIndexedDocuments(List<Directory> rootIndexDirectory) {
 		if (!isReady())
 			throw new IllegalStateException("already indexing");
-		// checkDirectoryReader();
-		// checkIndexWriter();
-		// count variables
 		int nonPresentCount = 0;
 		int nonContainedCount = 0;
 		int updateCount = 0;
 		if(updateWriteState(INDEX_WRITE_STATE.PROGRESS)){
 			try {
 				invokerForCommand.startUpdateSummary();
-				Map.Entry<List<Document>, Integer> returnValue;
+				Map.Entry<List<Document>, Integer> tempReturnValue;
 
 				// clean non present file
-				List<Document> list = getDocumentList();
-				returnValue = cleanNonPresentInternalIndex(list);
-				list = returnValue.getKey();
-				nonPresentCount = returnValue.getValue();
+				final List<Document> list = getDocumentList();
+				tempReturnValue = cleanNonPresentInternalIndex(list);
+				nonPresentCount = tempReturnValue.getValue();
 				// clean non contained file
-				returnValue = cleanNonContainedInternalIndex(list,
+				tempReturnValue = cleanNonContainedInternalIndex(tempReturnValue.getKey(),
 						rootIndexDirectory);
-				list = returnValue.getKey();
-				nonContainedCount = returnValue.getValue();
+				nonContainedCount = tempReturnValue.getValue();
 				// update file
-				updateCount = updateContentInternalIndex(list);
+				updateCount = updateContentInternalIndex(tempReturnValue.getKey());
+				writer.forceMergeDeletes();
+				writer.deleteUnusedFiles();
+				writer.commit();
+			} catch (IOException e) {
+				LOG.warn(ExceptionUtils.getStackTrace(e));
 			} finally {
 				updateWriteState(INDEX_WRITE_STATE.READY);
 				invokerForCommand.terminateUpdateSummary(nonPresentCount,
@@ -320,7 +324,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	}
 
 	/**
-	 * stop indexing
+	 * stop API
 	 */
 	public void stopIndex() {
 		updateWriteState(LuceneHandler.INDEX_WRITE_STATE.STOPPING);
@@ -340,30 +344,38 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @throws IOException
 	 * @throws IndexException
 	 */
-	public TopDocs search(String fullString) throws QueryNodeException,
+	public List<ScoreDoc> search(String fullString, int lowerBound) throws QueryNodeException,
 	IOException {
 		// if (INDEX_WRITE_STATE.PROGRESS == writeState)
 		// throw new IndexException("now indexing");
 		checkDirectoryReader();
-		TopDocs docs = searcher.search(getHandyFinderQuery(fullString),
+		final TopDocs docs = searcher.search(getHandyFinderQuery(fullString),
 				basicOption.getLimitCountOfResult());
-		return docs;
+		
+		final List<ScoreDoc> docList = new ArrayList<>();
+		for(int i=0; i < docs.scoreDocs.length; i++){
+			if(docs.scoreDocs[i].score > lowerBound)
+				docList.add(docs.scoreDocs[i]);
+		}
+		
+		return docList;
 	}
 
-	private List<String> getEscapedTermList(String fullString, boolean prefixWildcard, boolean postfixWildcard, Optional<Integer> trimmedSize) {
+	private List<String> getEscapedTermList(String fullString, boolean prefixWildcard, boolean postfixWildcard, Optional<Integer> trimSize) {
 		final List<String> list = new ArrayList<>();
-		final String[] partialQuery = fullString.replaceAll(" +", " ").split(" ");
+		final String[] partialQuery = fullString.toLowerCase().replaceAll(" +", " ").split(" ");
 		for (String element : partialQuery) {
-			final Integer currectSize = trimmedSize.map(size -> {
+			final Integer currectSize = trimSize.map(size -> {
 				if(element.length() < size)
 					return element.length(); 
 				else 
 					return size;
 				}).orElse(element.length());
-			list.add((prefixWildcard == true ? "*" : "") 
-					+ QueryParser.escape(element.substring(0, currectSize)).replaceAll("\\\\/", "/")
+			list.add((prefixWildcard == true ? "*" : "")
+					+ element.substring(0, currectSize)
+					.replaceAll("(\\\\)", ((prefixWildcard || postfixWildcard) == true ? "$1$1" : "$1"))//replace single backslash with double backslash in wildcard query
+					.replaceAll("(\\*)", ((prefixWildcard || postfixWildcard) == true ? Matcher.quoteReplacement("\\*") : "*"))//make wildcard charactor to be eascaped in widlcard query 
 					+ (postfixWildcard == true ? "*" : ""));
-		//	QueryParser.TERM
 		}
 		return list;
 	}
@@ -379,7 +391,6 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 			String term = text.utf8ToString();
 			int freq = (int) termsEnum.totalTermFreq();
 			frequencies.put(term, freq);
-			// terms.add(term);
 		}
 		return frequencies;
 	}
@@ -438,7 +449,26 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 */
 	public int getDocumentCount() {
 		checkDirectoryReader();
-		return reader.numDocs();
+						final List<Document> list = getDocumentList();
+		return (int) list.stream()
+				.filter(doc -> doc.get("pathString") != null)
+				.filter(doc -> !doc.get("pathString").trim().isEmpty()).count();
+	}
+	
+	/**
+	 * 
+	 * @return path List
+	 */
+	public List<String> getDocumentPathList(){
+		checkDirectoryReader();
+		final List<Document> list = getDocumentList();
+		return list.stream()
+				.map(doc -> doc.get("pathString"))
+				.filter(pathString -> pathString != null)
+				.filter(pathString -> !pathString.trim().isEmpty())
+				.collect(Collectors.toList());
+		//reader
+		
 	}
 
 	/**
@@ -498,9 +528,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 				FieldType type = new FieldType();
 				type.setStored(true);
 				Field contentsField = new Field("contents", contents.toString(), type);
-				//Field pathStringField = new Field("pathString", pathString, type);
 				tempDocument.add(contentsField);
-				//tempDocument.add(pathStringField);
+
 
 				//first, lucene find offset of sentence and highlight sentence from file
 				try (@SuppressWarnings("deprecation")
@@ -529,6 +558,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 						}
 					}
 				}
+				if(sb.length() == 0)
+					sb.append(queryString);
+				
 			} catch (Exception e) {
 				LOG.warn(ExceptionUtils.getStackTrace(e));
 				return Optional.empty();
@@ -583,8 +615,10 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	@Override
 	public void close() throws IOException {
 		checkIndexWriter();
-		if (writer != null)
+		if (writer != null){
+			writer.commit();
 			writer.close();
+		}
 		if (reader != null)
 			reader.close();
 		if (dir != null)
@@ -594,25 +628,17 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		reader = null;
 	}
 
-	void indexDocuments(final List<Directory> list) throws IOException {
+	void indexDocuments(final List<Directory> list) {
 		for (Directory dir : list) {
-			Path tmp = Paths.get(dir.getPathString());
+			Path path = Paths.get(dir.getPathString());
 			if (dir.isRecursively()) {
-				indexDirectory(tmp, true);
+				indexDirectory(path, true);
 			} else {
-				indexDirectory(tmp, false);
+				indexDirectory(path, false);
 			}
 			if (isStopping()) {
 				break;
 			}
-		}
-	}
-
-	void updateIndexReaderAndSearcher() throws IOException {
-		DirectoryReader temp = DirectoryReader.openIfChanged(reader);
-		if (temp != null) {
-			reader = temp;
-			searcher = new IndexSearcher(reader);
 		}
 	}
 
@@ -623,44 +649,93 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @param recursively
 	 * @throws IOException
 	 */
-	void indexDirectory(final Path path, final boolean recursively) throws IOException {
+	void indexDirectory(final Path path, final boolean recursively) {
 		checkIndexWriter();
 		if (Files.isDirectory(path)) {
-			final List<Path> pathList = new ArrayList<>();
+			final List<Path> pathList = new ArrayList<>(1000);
+			
 			final Path rootDirectory = path;
 			if (recursively) {
-				Files.walkFileTree(rootDirectory,
-						new SimpleFileVisitor<Path>() {
-					public FileVisitResult visitFile(Path file,
-							BasicFileAttributes attrs)
-									throws IOException {
-						if (attrs.isRegularFile()) {
-							pathList.add(file); // UPDATE
-							if (isStopping()) {
-								return FileVisitResult.TERMINATE;
+				try {
+					Files.walkFileTree(rootDirectory,
+							new SimpleFileVisitor<Path>() {
+						public FileVisitResult visitFile(Path file,
+								BasicFileAttributes attrs)
+										throws IOException {
+							if (attrs.isRegularFile()) {
+								pathList.add(file); // UPDATE
+								if (isStopping()) {
+									return FileVisitResult.TERMINATE;
+								}
 							}
+							return FileVisitResult.CONTINUE;
 						}
-						return FileVisitResult.CONTINUE;
-					}
-				});
+					});
+				} catch (IOException e) {
+					LOG.error(ExceptionUtils.getStackTrace(e));
+				}
 			} else {
-				Files.walkFileTree(rootDirectory,
-						EnumSet.noneOf(FileVisitOption.class), 1,
-						new SimpleFileVisitor<Path>() {
-					public FileVisitResult visitFile(Path file,
-							BasicFileAttributes attrs)
-									throws IOException {
-						if (attrs.isRegularFile()) {
-							pathList.add(file);
-							// check file size // UPDATE
-							if (isStopping()) {
-								return FileVisitResult.TERMINATE;
+				try {
+					Files.walkFileTree(rootDirectory,
+							EnumSet.noneOf(FileVisitOption.class), 1,
+							new SimpleFileVisitor<Path>() {
+						public FileVisitResult visitFile(Path file,
+								BasicFileAttributes attrs)
+										throws IOException {
+							if (attrs.isRegularFile()) {
+								pathList.add(file);
+								// check file size // UPDATE
+								if (isStopping()) {
+									return FileVisitResult.TERMINATE;
+								}
 							}
+							return FileVisitResult.CONTINUE;
 						}
-						return FileVisitResult.CONTINUE;
-					}
-				});
+					});
+				} catch (IOException e) {
+					LOG.error(ExceptionUtils.getStackTrace(e));
+				}
 			}
+			
+			final ExecutorService threads = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+			pathList.forEach((file) -> {
+				threads.submit(new Runnable(){
+					@Override
+					public void run() {
+						if (isStopping()) {
+							return;
+						}
+						// check file size
+						try {
+							if (Files.size(file) / (1000 * 1000) <= basicOption
+									.getMaximumDocumentMBSize()
+									&& !isExistsInLuceneIndex(file.toAbsolutePath()
+											.toString())){
+								index(file);
+								currentProgress++; // STATE UPDATE
+								invokerForCommand
+								.updateProgress(currentProgress,
+										file, totalProcess); // STATE
+							} else {
+								LOG.debug("skip " + file.toString());
+								currentProgress++; // STATE UPDATE
+							}
+						} catch (Exception e) {
+							LOG.warn("Failed : " + file.toString());
+							LOG.warn(ExceptionUtils.getStackTrace(e));
+						}
+					}
+
+				});
+			});
+			threads.shutdown();
+			try {
+				threads.awaitTermination(24, TimeUnit.HOURS);
+			} catch (InterruptedException e) {
+				threads.shutdownNow();
+				LOG.error(ExceptionUtils.getStackTrace(e));
+			}
+			/*
 			pathList
 			.parallelStream()
 			.forEach(
@@ -675,23 +750,28 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 									&& !isExistsInLuceneIndex(file.toAbsolutePath()
 											.toString())){
 								index(file);
-								synchronized (this) {
-									currentProgress++; // STATE UPDATE
-									invokerForCommand
-									.updateProgress(currentProgress,
-											file, totalProcess); // STATE
-								}
+								currentProgress++; // STATE UPDATE
+								invokerForCommand
+								.updateProgress(currentProgress,
+										file, totalProcess); // STATE
 							} else
 								LOG.debug("skip " + file.toString());
 						} catch (Exception e) {
 							LOG.warn("Failed : " + file.toString());
 							LOG.warn(ExceptionUtils.getStackTrace(e));
 						}
-					});
+					});*/
 
 		}
 	}
 
+	void updateIndexReaderAndSearcher() throws IOException {
+		DirectoryReader temp = DirectoryReader.openIfChanged(reader);
+		if (temp != null) {
+			reader = temp;
+			searcher = new IndexSearcher(reader);
+		}
+	}
 	/**
 	 * check if indexed. function time test : 1000 of indexed documents consume
 	 * 200 millis. maybe 500 micro seconds
@@ -791,11 +871,6 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 							String pathString = document.get("pathString");
 							Path path = Paths.get(pathString);
 							try {
-								MediaType type = JSearch.getContentType(
-										path.toFile(), path.toAbsolutePath()
-										.toString());
-								if (mimeOption.isAllowMime(type.toString()) == false)
-									return true;
 								long size = Files.size(path);
 
 								if (size / (1000 * 1000) > basicOption.getMaximumDocumentMBSize()) {
@@ -804,17 +879,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 							} catch (Exception e) {
 								LOG.error(e.toString());
 							}
-							return dirList.parallelStream().noneMatch(dir -> { // all
-								// test
-								// false
-								// ->
-								// return
-								// true
-								if (!dir.isUsed())
-									return false;
+							return dirList.parallelStream().noneMatch(dir -> {
 								if (dir.isRecursively()) {
-									return path.startsWith(dir
-											.getPathString());
+									return path.startsWith(dir.getPathString());
 								} else {
 									return path.getParent().equals(
 											dir.getPathString());
@@ -887,7 +954,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	String extractContentsFromFile(File f) throws IOException{
 		final String contents = JSearch
 				.extractContentsFromFile(f)
-				.replaceAll("[\n\t\r ]+", " "); // erase tab, new line, return
+				.replaceAll("[\n\t\r ]+", " "); // erase tab, new line, return, space
 
 		return contents;
 	}
@@ -902,9 +969,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		checkIndexWriter();
 		final MediaType mimeType = JSearch.getContentType(path.toFile(), path
 				.getFileName().toString());
-		if (!mimeOption.isAllowMime(mimeType.toString()))
-			return;
-
+		
 		final FieldType type = new FieldType();
 		type.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
 		type.setStoreTermVectors(true);
@@ -985,36 +1050,41 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @param recursively
 	 * @throws IOException
 	 */
-	Size sizeOfindexDirectory(Path path, boolean recursively)
-			throws IOException {
+	Size sizeOfindexDirectory(Path path, boolean recursively) {
 		Size size = new Size();
-		if (Files.isDirectory(path)) {
+		if (Files.isDirectory(path) ) {
 			Path rootDirectory = path;
 			if (recursively) {
-				Files.walkFileTree(rootDirectory,
-						new SimpleFileVisitor<Path>() {
-					public FileVisitResult visitFile(Path file,
-							BasicFileAttributes attrs)
-									throws IOException {
-						if (attrs.isRegularFile()) {
-							size.add();
+				try {
+					Files.walkFileTree(rootDirectory,
+							new SimpleFileVisitor<Path>() {
+						public FileVisitResult visitFile(Path file,
+								BasicFileAttributes attrs){
+							if (attrs.isRegularFile()) {
+								size.add();
+							}
+							return FileVisitResult.CONTINUE;
 						}
-						return FileVisitResult.CONTINUE;
-					}
-				});
+					});
+				} catch (IOException e) {
+					LOG.error(ExceptionUtils.getStackTrace(e));
+				}
 			} else {
+				try {
 				Files.walkFileTree(rootDirectory,
 						EnumSet.noneOf(FileVisitOption.class), 1,
 						new SimpleFileVisitor<Path>() {
 					public FileVisitResult visitFile(Path file,
-							BasicFileAttributes attrs)
-									throws IOException {
+							BasicFileAttributes attrs){
 						if (attrs.isRegularFile()) {
 							size.add();
 						}
 						return FileVisitResult.CONTINUE;
 					}
 				});
+				} catch (IOException e) {
+					LOG.error(ExceptionUtils.getStackTrace(e));
+				}
 			}
 		}
 		return size;
@@ -1022,29 +1092,50 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 
 	BooleanQuery getHandyFinderQuery(String fullString)
 			throws QueryNodeException {
-		final String lowerFullString = fullString.toLowerCase();
-
 		final BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
-
-		if(basicOption.isPathMode()){
+		
+		final Iterator<Directory> dirIter = basicOption.getDirectoryList().iterator();
+		
+		//Directory filter
+		BooleanQuery.Builder dirQueryBuilder = new BooleanQuery.Builder();
+		while(dirIter.hasNext()){
+			final Directory dir = dirIter.next();
+			if(dir.isUsed())
+				dirQueryBuilder.add(new WildcardQuery( 
+						new Term("pathStringForQuery", getEscapedTermList(dir.getPathString(), false, true, Optional.empty()).get(0)))
+						, Occur.SHOULD);
+		}
+		queryBuilder.add(dirQueryBuilder.build(), Occur.FILTER);
+		
+		//Mime filter
+		final Iterator<String> notAllowedMimeIter = mimeOption.getNotAllowedMimeList().iterator();
+		while(notAllowedMimeIter.hasNext()){
+			final String mime = notAllowedMimeIter.next();
+			queryBuilder.add(new TermQuery(new Term("mimeType", mime)), Occur.MUST_NOT);
+		}
+		
+		//Path string query
+		if(basicOption.getTargetMode().contains(TARGET_MODE.PATH)){
 			BooleanQuery.Builder pathQueryBuilder = new BooleanQuery.Builder();
-			for(String e : getEscapedTermList(lowerFullString, true, true, Optional.empty())){
+			for(String e : getEscapedTermList(fullString, true, true, Optional.empty())){
 				Query query = new WildcardQuery(new Term("pathStringForQuery", e)); 
 				pathQueryBuilder.add(query, Occur.SHOULD);
 			}
 			queryBuilder.add(pathQueryBuilder.build(), Occur.SHOULD);
 		}
 
-		BooleanQuery.Builder contentsQueryBuilder = new BooleanQuery.Builder();
-		for(String e : getEscapedTermList(lowerFullString, false, false, Optional.of(maxGramSize))){
-			Query query = new TermQuery(new Term("contents", e));// parser.parse(e, "contents");
-			if(basicOption.getKeywordMode().equals(KEYWORD_MODE.OR))
-				contentsQueryBuilder.add(query, Occur.SHOULD);
-			else
-				contentsQueryBuilder.add(query, Occur.MUST);
+		//Content string query
+		if(basicOption.getTargetMode().contains(TARGET_MODE.CONTENT)){
+			BooleanQuery.Builder contentsQueryBuilder = new BooleanQuery.Builder();
+			for(String e : getEscapedTermList(fullString, false, false, Optional.of(maxGramSize))){
+				Query query = new TermQuery(new Term("contents", e));// parser.parse(e, "contents");
+				if(basicOption.getKeywordMode().equals(KEYWORD_MODE.OR))
+					contentsQueryBuilder.add(query, Occur.SHOULD);
+				else
+					contentsQueryBuilder.add(query, Occur.MUST);
+			}
+			queryBuilder.add(contentsQueryBuilder.build(), Occur.SHOULD);
 		}
-		queryBuilder.add(contentsQueryBuilder.build(), Occur.SHOULD);
-
 		return queryBuilder.build();
 	}
 

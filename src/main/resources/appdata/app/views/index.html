@@ -78,11 +78,20 @@
 						<div class="checkbox"
 							ng-repeat="typeObj in supportTypeModel.supportTypes | limitTo:supportTypeUI.totalDisplayed"
 							scroll-if="typeObj.type == supportTypeUI.searchedType">
-							<label ng-style="supportTypeUI.searchedTypeKeyword != '' && typeObj.type.indexOf(supportTypeUI.searchedTypeKeyword) > -1 && {'font-weight':800}"> <input type="checkbox" ng-model="typeObj.used"
+							<label ng-style="supportTypeUI.searchedTypeKeyword != '' && typeObj.type.indexOf(supportTypeUI.searchedTypeKeyword) > -1 && {'font-weight':800}"> 
+							<input type="checkbox" ng-model="typeObj.used"
 								ng-change="updateType(typeObj)"> {{typeObj.type}}
 							</label>
 						</div>
 					</div>
+					<!-- 
+					supportTypeUI, supportTypeModel
+					toggleTopcheckbox()
+					updateType(typeObj)		
+					changeSearchKeyword(supportTypeUI.searchedTypeKeyword)
+					loadMore()
+					nextSearch(supportTypeUI.searchedTypeKeyword)
+					 -->
 					<input type="text" placeholder="*.txt" style="width:100%" ng-change='changeSearchKeyword(supportTypeUI.searchedTypeKeyword)' ng-model='supportTypeUI.searchedTypeKeyword'
 					ng-keydown="$event.which === 13 && nextSearch(supportTypeUI.searchedTypeKeyword)"/>
     				<button ng-click="loadMore()" style="width:100%" type="submit" class="btn btn-default">Read More</button>

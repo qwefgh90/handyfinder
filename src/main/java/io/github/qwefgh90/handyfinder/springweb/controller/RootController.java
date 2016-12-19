@@ -63,6 +63,18 @@ public class RootController {
 	}
 
 	@RequestMapping(value = "/documents", method = RequestMethod.GET)
+	public ResponseEntity<List<String>> search() {
+		List<String> result;
+		try {
+			result = rootService.getTempPathForAllDocumentList();
+			return new ResponseEntity<List<String>>(result, HttpStatus.OK);
+		} catch (IOException e) {
+			LOG.error(ExceptionUtils.getStackTrace(e));
+			return new ResponseEntity<List<String>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}	
+
+	@RequestMapping(value = "/documents", method = RequestMethod.GET, params="keyword")
 	public ResponseEntity<List<DocumentDto>> search(@RequestParam String keyword) {
 		Optional<List<DocumentDto>> result = Optional.empty();
 		result = rootService.search(keyword);
