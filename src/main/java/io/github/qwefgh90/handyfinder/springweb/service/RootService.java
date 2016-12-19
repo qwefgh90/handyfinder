@@ -28,6 +28,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.BasicOption;
 import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
@@ -41,6 +43,9 @@ import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 import io.github.qwefgh90.jsearch.JSearch;
+
+import static io.github.qwefgh90.handyfinder.springweb.config.akka.SpringExtension.*;
+import static io.github.qwefgh90.handyfinder.springweb.service.IndexActor.*;
 
 @Service
 public class RootService {
@@ -61,6 +66,9 @@ public class RootService {
 
 	@Autowired
 	BasicOption globalAppData;
+	
+	@Autowired
+	ActorRef indexActor;
 
 	/**
 	 * Get directories to be indexed.
@@ -73,11 +81,13 @@ public class RootService {
 	}
 
 	/**
-	 * 
+	 * remove or add a directory
 	 * @param list
 	 * @throws SQLException
 	 */
 	public void updateDirectories(List<Directory> list) throws SQLException {
+		if(getDirectories().size() != list.size())
+			indexActor.tell(new Restart(), null);
 		indexProperty.save(list);
 	}
 
@@ -140,7 +150,6 @@ public class RootService {
 		//dto.setPathMode(globalAppData.getTargetMode());
 		dto.setPathTarget(globalAppData.getTargetMode().contains(TARGET_MODE.PATH));
 		dto.setContentTarget(globalAppData.getTargetMode().contains(TARGET_MODE.CONTENT));
-		
 		return dto;
 	}
 
@@ -149,6 +158,8 @@ public class RootService {
 	 * @param option will be applied
 	 */
 	public void setOption(OptionDto dto) {
+		final boolean isSizeChange = dto.getMaximumDocumentMBSize() != globalAppData.getMaximumDocumentMBSize();
+		
 		if (dto.getLimitCountOfResult() > 0)
 			globalAppData.setLimitCountOfResult(dto.getLimitCountOfResult());
 		if (dto.getMaximumDocumentMBSize() > 0)
@@ -162,6 +173,9 @@ public class RootService {
 			targetMode.add(TARGET_MODE.CONTENT);
 		globalAppData.setTargetMode(targetMode);
 		globalAppData.writeAppDataToDisk();
+		
+		if(isSizeChange)
+			indexActor.tell(new Restart(), null);
 	}
 
 	public void closeAppLucene() throws IOException {
@@ -193,10 +207,7 @@ public class RootService {
 	}
 
 	public Optional<List<DocumentDto>> search(String keyword) {
-		// HashMap<String, DocumentDto> docMap = new HashMap<>();
 		List<DocumentDto> list = new ArrayList<>();
-		// List<Callable<Optional<Map.Entry<String, String>>>> functionList =
-		// new ArrayList<>();
 		try {
 			List<ScoreDoc> docs = handler.search(keyword, 0);
 			for (ScoreDoc scoreDocument : docs){
@@ -204,8 +215,6 @@ public class RootService {
 				DocumentDto dto = new DocumentDto();
 				String pathString = document.get("pathString");
 				Path path = Paths.get(pathString);
-				// Callable<Optional<Map.Entry<String, String>>>
-				// getHightlightContent;
 				if (Files.exists(path)) {
 					dto.setExist(true);
 					dto.setModifiedTime(Files.getLastModifiedTime(path)
@@ -267,25 +276,27 @@ public class RootService {
 		Command inputCommand = command;
 		switch (inputCommand) {
 		case START_INDEXING: {
-			try {
-				List<Directory> list = indexProperty.selectDirectory();
+			//try {
+			//indexActor.tell(new Start(), null);
+			/*List<Directory> list = indexProperty.selectDirectory();
 				if (handler.isReady())
-					handler.startIndex(list);
-				return;
-			} catch (IOException e) {
-				LOG.warn(ExceptionUtils.getStackTrace(e));
-			}
+					handler.startIndex(list);*/
 			break;
+			/*} catch (IOException e) {
+				LOG.warn(ExceptionUtils.getStackTrace(e));
+			}*/
+			//break;
 		}
-		case UPDATE_INDEXING: {
+		/*case UPDATE_INDEXING: {
 			List<Directory> list;
 			list = indexProperty.selectDirectory();
 			if (handler.isReady())
 				handler.updateIndexedDocuments(list);
 			break;
-		}
+		}*/
 		case STOP_INDEXING: {
-			handler.stopIndex();
+			//handler.stopIndex();
+			//indexActor.tell(new Stop(), null);
 			break;
 		}
 		case OPEN_AND_SEND_DIRECTORY: {

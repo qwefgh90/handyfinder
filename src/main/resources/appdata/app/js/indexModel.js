@@ -142,13 +142,13 @@ define(['angular', 'webSocketModel'], function(angular){
 						self.running = 'RUNNING'
 							progressService.sendStartIndex();
 						self.intervalStopObject = $interval(function(){
-							if(self.intervalTurn % 2 == 0){
-								$log.debug('try update index...');
-								progressService.sendUpdateIndex();
-							}else{
-								$log.debug('try start index...');
-								progressService.sendStartIndex();
-							}
+							//if(self.intervalTurn % 2 == 0){
+							//	$log.debug('try update index...');
+							//	progressService.sendUpdateIndex();
+							//}else{
+							$log.debug('try start index...');
+							progressService.sendStartIndex();
+							//}
 
 							self.intervalTurn = self.intervalTurn + 1;
 							if(self.intervalTurn == 100)

@@ -183,8 +183,9 @@ public class GUIApplication extends Application {
 	public void stop() throws Exception {
 		final Callable<Boolean> doServerStop = () -> {
 			try {
+				LOG.info("try stop tomcat");
 				tomcat.stop();
-				LOG.info("tomcat stop()");
+				LOG.info("stopped tomcat");
 			} catch (Exception e) {
 				LOG.error(ExceptionUtils.getStackTrace(e));
 				return false;

@@ -120,21 +120,19 @@
 										<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>New
 										Directory <b>(where you find words)</b>
 									</button>
-								</div>
+								</div><!-- 
 								<div style="text-align: center">
 									<button class="btn btn-default"
 										ng-show="indexModel.running == 'READY'" ng-click="run()">
 										Run
-										<!--automatically update indexes. automatically clean deleted files.-->
 									</button>
 									<button class="btn btn-info"
 										ng-show="indexModel.running == 'RUNNING' || indexModel.running == 'WAITING'"
 										ng-click="stop()">
 										Running
-										<!--automatically update indexes. automatically clean deleted files.-->
 									</button>
-								</div>
-								<div><a href ng-click="loadIndexedFileList()">{{indexModel.indexDocumentCount}} files are indexed {{indexModel.state == 'PROGRESS' ? '(' + ((((indexModel.processIndex * 1.0) / indexModel.totalProcessCount) * 100) | number : 2 ) + '%)' : ''}}	</a></div>
+								</div> -->
+								<div><a href ng-click="loadIndexedFileList()">You can find {{indexModel.indexDocumentCount}} files {{indexModel.state == 'PROGRESS' ? '(' + ((((indexModel.processIndex * 1.0) / indexModel.totalProcessCount) * 100) | number : 2 ) + '%)' : ''}}	</a></div>
 							</div>
 						</div>
 						<!-- indexed files list -->
@@ -195,6 +193,17 @@
 				
 			</div>
 		</div>
-		
+		<div>
+			<button type="button" class="btn btn-default" aria-label="Left Align">
+				<span class="glyphicon glyphicon glyphicon-menu-left"
+					aria-hidden="true"></span>
+			</button>
+			<button type="button" class="btn btn-default" aria-label="Left Align">
+				<span class="glyphicon glyphicon glyphicon-menu-right"
+					aria-hidden="true"></span>
+			</button>
+
+		</div>
 	</div>
+	
 </div>

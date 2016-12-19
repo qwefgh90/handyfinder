@@ -3,7 +3,6 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 	var app = angular.module('handyfinderwebapp', ['ngRoute', 'ngSanitize', 'ngAnimate', 'ui.bootstrap', 'ngContextMenu', 'IndexModel', 'WebSocketModel', 'SearchModel', 'OptionModel']);
 	app.run(['OptionModel', '$log', function(OptionModel, $log){
 		var promise = OptionModel.getOptions();
-		
 	}]);
 	app.config(function($routeProvider) {
 		//Module의 config API를 사용하면 서비스 제공자provider에 접근할 수 있다. 여기선 $route 서비스 제공자를 인자로 받아온다.
@@ -12,9 +11,6 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		.when('/search', {
 			templateUrl : 'views/search.html',
 			controller : 'searchController'
-		}).when('/index', {
-			templateUrl : 'views/index.html',
-			controller : 'indexController'
 		})
 		//라우트 설정객체에 controller 속성을 통하여 해당 화면에 연결되는 컨트롤러 이름을 설정할 수 있다.
 		.otherwise({
@@ -35,7 +31,7 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 			var promise = OptionModel.getOptions();
 			promise.then( function(){
 				if(OptionModel.model.option.firstStart == true)
-					$scope.go('/index');
+					$scope.go('/search');
 
 			}, function(){}, function(){});
 
@@ -44,7 +40,7 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 				promise.then(function(frame) {
 					$log.info('Connection to web socket has been successful');
 					$log.debug(frame);
-					$scope.indexModel.run();
+					//$scope.indexModel.run();
 				}, function(error) {
 					$timeout(function() { connectAndStart(); }, 2000); //connect again
 					$log.warn('Connection to web socket has been failed');
@@ -272,7 +268,7 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		 */
 		
 		//save and run indexing
-		$scope.run = function() {
+		/*$scope.run = function() {
 			var promise = $scope.save();
 			promise.then(function(){
 				$scope.indexModel.run();
@@ -282,7 +278,7 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		//stop indexing in server
 		$scope.stop = function(){
 			$scope.indexModel.stop();
-		};
+		};*/
 		
 		/**
 		 * Code for support types 
@@ -291,6 +287,11 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		// show first result to contain keyword
 		$scope.changeSearchKeyword = function(searchedTypeKeyword){
 			$scope.supportTypeUI.changeSearchKeyword(searchedTypeKeyword);
+		};
+		
+		//go to page
+		$scope.go = function(page){
+			$scope.searchModel.page = page;
 		};
 		
 		//show next result to contain keyword

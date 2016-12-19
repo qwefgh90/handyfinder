@@ -7,7 +7,8 @@ define(['angular'], function(angular){
 					searchKeyword : '',
 					searchResult : [],
 					searchTime : 0,
-					searchTryCount : 0
+					searchTryCount : 0,
+					page : 0
 				},
 
 				setSearchFlag: function(b){
@@ -86,7 +87,7 @@ define(['angular'], function(angular){
 								var document = new Document(data.createdTime, data.modifiedTime, data.title, data.pathString
 										, data.contents, data.parentPathString, data.fileSize, data.mimeType, data.exist);
 								self.model.searchResult.push(document);
-								self.lazyLoadDocumentContent(document, keyword);
+								//self.lazyLoadDocumentContent(document, keyword);
 							}
 							self.model.searchTime = (toMiliseconds * 1.0 - milliseconds * 1.0) / 1000
 							self.model.searchFlag = false;

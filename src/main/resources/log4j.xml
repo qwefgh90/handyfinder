@@ -15,7 +15,7 @@
 	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
 		<param name="Target" value="System.out" />
 		<layout class="org.apache.log4j.PatternLayout">
-			<param name="ConversionPattern" value="%d{HH:mm:ss} %c{10} [%p][%L] - %m%n" />
+			<param name="ConversionPattern" value="%d{HH:mm:ss} [%t] %c{10} [%p][%L] - %m%n" />
 		</layout>
 	</appender>
 
@@ -34,7 +34,9 @@
 	<logger name="io.github.qwefgh90.handyfinder.lucene">
 		<level value="trace" />
 	</logger>
-
+	<logger name="io.github.qwefgh90.handyfinder.springweb.websocket.test">
+		<level value="debug" />
+	</logger>
 	<root>
 		<priority value="warn" />
 		<appender-ref ref="CONSOLE" />

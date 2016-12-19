@@ -21,6 +21,9 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -96,7 +99,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	final private org.apache.lucene.store.Directory dir;
 	final private Analyzer analyzer;
 	final private IndexWriterConfig indexConfig;
-	final int minGramSize = 1;
+	final int minGramSize = 2;
 	final int maxGramSize = 8;
 	
 	// mutable writer, reader, searcher
@@ -109,8 +112,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 		PROGRESS, STOPPING, READY
 	}
 
-	private int currentProgress = 0; // indexed documents count
-	private int totalProcess = 0; // total documents count to be indexed
+	private volatile int currentProgress = 0; // indexed documents count
+	private volatile int totalProcess = 0; // total documents count to be indexed
 	private CommandInvoker invokerForCommand; // for command to client
 	private BasicOption basicOption;
 	private MimeOption mimeOption;
@@ -257,7 +260,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	}
 
 	/**
-	 * handyfinder object indexing API
+	 * handyfinder synchronized index API
 	 * 
 	 * @param list
 	 * @throws IOException
@@ -281,7 +284,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	}
 
 	/**
-	 * remove or update indexed documents
+	 * synchronized remove or update indexed documents
 	 * 
 	 * @param rootIndexDirectory
 	 *            a list of index directory on top
@@ -289,29 +292,29 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	public void updateIndexedDocuments(List<Directory> rootIndexDirectory) {
 		if (!isReady())
 			throw new IllegalStateException("already indexing");
-		// checkDirectoryReader();
-		// checkIndexWriter();
-		// count variables
 		int nonPresentCount = 0;
 		int nonContainedCount = 0;
 		int updateCount = 0;
 		if(updateWriteState(INDEX_WRITE_STATE.PROGRESS)){
 			try {
 				invokerForCommand.startUpdateSummary();
-				Map.Entry<List<Document>, Integer> returnValue;
+				Map.Entry<List<Document>, Integer> tempReturnValue;
 
 				// clean non present file
-				List<Document> list = getDocumentList();
-				returnValue = cleanNonPresentInternalIndex(list);
-				list = returnValue.getKey();
-				nonPresentCount = returnValue.getValue();
+				final List<Document> list = getDocumentList();
+				tempReturnValue = cleanNonPresentInternalIndex(list);
+				nonPresentCount = tempReturnValue.getValue();
 				// clean non contained file
-				returnValue = cleanNonContainedInternalIndex(list,
+				tempReturnValue = cleanNonContainedInternalIndex(tempReturnValue.getKey(),
 						rootIndexDirectory);
-				list = returnValue.getKey();
-				nonContainedCount = returnValue.getValue();
+				nonContainedCount = tempReturnValue.getValue();
 				// update file
-				updateCount = updateContentInternalIndex(list);
+				updateCount = updateContentInternalIndex(tempReturnValue.getKey());
+				writer.forceMergeDeletes();
+				writer.deleteUnusedFiles();
+				writer.commit();
+			} catch (IOException e) {
+				LOG.warn(ExceptionUtils.getStackTrace(e));
 			} finally {
 				updateWriteState(INDEX_WRITE_STATE.READY);
 				invokerForCommand.terminateUpdateSummary(nonPresentCount,
@@ -321,7 +324,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	}
 
 	/**
-	 * stop indexing
+	 * stop API
 	 */
 	public void stopIndex() {
 		updateWriteState(LuceneHandler.INDEX_WRITE_STATE.STOPPING);
@@ -612,8 +615,10 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	@Override
 	public void close() throws IOException {
 		checkIndexWriter();
-		if (writer != null)
+		if (writer != null){
+			writer.commit();
 			writer.close();
+		}
 		if (reader != null)
 			reader.close();
 		if (dir != null)
@@ -625,23 +630,15 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 
 	void indexDocuments(final List<Directory> list) {
 		for (Directory dir : list) {
-			Path tmp = Paths.get(dir.getPathString());
+			Path path = Paths.get(dir.getPathString());
 			if (dir.isRecursively()) {
-				indexDirectory(tmp, true);
+				indexDirectory(path, true);
 			} else {
-				indexDirectory(tmp, false);
+				indexDirectory(path, false);
 			}
 			if (isStopping()) {
 				break;
 			}
-		}
-	}
-
-	void updateIndexReaderAndSearcher() throws IOException {
-		DirectoryReader temp = DirectoryReader.openIfChanged(reader);
-		if (temp != null) {
-			reader = temp;
-			searcher = new IndexSearcher(reader);
 		}
 	}
 
@@ -655,7 +652,8 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	void indexDirectory(final Path path, final boolean recursively) {
 		checkIndexWriter();
 		if (Files.isDirectory(path)) {
-			final List<Path> pathList = new ArrayList<>();
+			final List<Path> pathList = new ArrayList<>(1000);
+			
 			final Path rootDirectory = path;
 			if (recursively) {
 				try {
@@ -698,6 +696,46 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 					LOG.error(ExceptionUtils.getStackTrace(e));
 				}
 			}
+			
+			final ExecutorService threads = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+			pathList.forEach((file) -> {
+				threads.submit(new Runnable(){
+					@Override
+					public void run() {
+						if (isStopping()) {
+							return;
+						}
+						// check file size
+						try {
+							if (Files.size(file) / (1000 * 1000) <= basicOption
+									.getMaximumDocumentMBSize()
+									&& !isExistsInLuceneIndex(file.toAbsolutePath()
+											.toString())){
+								index(file);
+								currentProgress++; // STATE UPDATE
+								invokerForCommand
+								.updateProgress(currentProgress,
+										file, totalProcess); // STATE
+							} else {
+								LOG.debug("skip " + file.toString());
+								currentProgress++; // STATE UPDATE
+							}
+						} catch (Exception e) {
+							LOG.warn("Failed : " + file.toString());
+							LOG.warn(ExceptionUtils.getStackTrace(e));
+						}
+					}
+
+				});
+			});
+			threads.shutdown();
+			try {
+				threads.awaitTermination(24, TimeUnit.HOURS);
+			} catch (InterruptedException e) {
+				threads.shutdownNow();
+				LOG.error(ExceptionUtils.getStackTrace(e));
+			}
+			/*
 			pathList
 			.parallelStream()
 			.forEach(
@@ -712,23 +750,28 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 									&& !isExistsInLuceneIndex(file.toAbsolutePath()
 											.toString())){
 								index(file);
-								synchronized (this) {
-									currentProgress++; // STATE UPDATE
-									invokerForCommand
-									.updateProgress(currentProgress,
-											file, totalProcess); // STATE
-								}
+								currentProgress++; // STATE UPDATE
+								invokerForCommand
+								.updateProgress(currentProgress,
+										file, totalProcess); // STATE
 							} else
 								LOG.debug("skip " + file.toString());
 						} catch (Exception e) {
 							LOG.warn("Failed : " + file.toString());
 							LOG.warn(ExceptionUtils.getStackTrace(e));
 						}
-					});
+					});*/
 
 		}
 	}
 
+	void updateIndexReaderAndSearcher() throws IOException {
+		DirectoryReader temp = DirectoryReader.openIfChanged(reader);
+		if (temp != null) {
+			reader = temp;
+			searcher = new IndexSearcher(reader);
+		}
+	}
 	/**
 	 * check if indexed. function time test : 1000 of indexed documents consume
 	 * 200 millis. maybe 500 micro seconds
@@ -836,17 +879,9 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 							} catch (Exception e) {
 								LOG.error(e.toString());
 							}
-							return dirList.parallelStream().noneMatch(dir -> { // all
-								// test
-								// false
-								// ->
-								// return
-								// true
-								//if (!dir.isUsed())
-								//	return false;
+							return dirList.parallelStream().noneMatch(dir -> {
 								if (dir.isRecursively()) {
-									return path.startsWith(dir
-											.getPathString());
+									return path.startsWith(dir.getPathString());
 								} else {
 									return path.getParent().equals(
 											dir.getPathString());
