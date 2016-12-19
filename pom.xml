@@ -1,11 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>sing</groupId>
+	<groupId>io.github.qwefgh90</groupId>
 	<artifactId>handyfinder</artifactId>
-	<version>0.102</version>
+	<version>0.103</version>
 	<properties>
-		<project.version>0.102</project.version>
+		<project.version>0.103</project.version>
 		<project.artifactId>jsearch</project.artifactId>
 		<project.source.encoding>UTF-8</project.source.encoding>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -172,11 +172,6 @@
 		</resource>
   		<resource>
 			<directory>src/main/resources</directory>
-			<filtering>false</filtering>
-			<includes>
-				<include>**/*.woff</include>
-				<include>**/*.ttf</include>
-			</includes>
 		</resource>
 	</resources>
 	<finalName>
@@ -195,9 +190,9 @@
 					<needShortcut>true</needShortcut>
 					<needMenu>true</needMenu>
 					<verbose>true</verbose>
-					<nativeReleaseVersion>0.102</nativeReleaseVersion>
+					<nativeReleaseVersion>0.103</nativeReleaseVersion>
 					<bundleArguments>
-						<identifier>0.102</identifier>
+						<identifier>0.103</identifier>
 						<installdirChooser>true</installdirChooser>
 						<licenseFile>LICENSE</licenseFile>
 					</bundleArguments>

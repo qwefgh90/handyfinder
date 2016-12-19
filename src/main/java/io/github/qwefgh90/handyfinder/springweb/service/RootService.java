@@ -1,20 +1,27 @@
 package io.github.qwefgh90.handyfinder.springweb.service;
 
 import java.awt.Desktop;
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+
+import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.lucene.document.Document;
@@ -23,13 +30,15 @@ import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.tika.mime.MediaType;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.BasicOption;
 import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
@@ -41,11 +50,9 @@ import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
 import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
 import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
+import io.github.qwefgh90.handyfinder.springweb.service.IndexActor.Restart;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 import io.github.qwefgh90.jsearch.JSearch;
-
-import static io.github.qwefgh90.handyfinder.springweb.config.akka.SpringExtension.*;
-import static io.github.qwefgh90.handyfinder.springweb.service.IndexActor.*;
 
 @Service
 public class RootService {
@@ -91,6 +98,53 @@ public class RootService {
 		indexProperty.save(list);
 	}
 
+	/**
+	 * get version
+	 * @return
+	 */
+	public Map<String, String> getVersion(){
+		version.put("version", AppStartupConfig.versionOpt.orElse(""));
+		return version;
+	}
+	private final Map<String, String> version = new HashMap<>(); 
+	
+	/**
+	 * get version
+	 * @return
+	 */
+	public Map<String, String> getOnlineVersion(){
+		URL url;
+		String version = "0";
+		String link = "";
+		try {
+			url = new URL("https://api.github.com/repos/qwefgh90/handyfinder/releases");
+			try{
+				HttpsURLConnection connection = (HttpsURLConnection)url.openConnection();
+				try(BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()))){
+					final StringBuffer sb = new StringBuffer();
+					String temp = "";
+					while((temp = br.readLine()) != null){
+						sb.append(temp);
+					}
+					
+					final String jsonString = sb.toString();
+					final JSONArray obj = (JSONArray)JSONValue.parse(jsonString);
+					version = ((JSONObject)obj.get(0)).get("tag_name").toString().substring(1);
+					link = ((JSONObject)obj.get(0)).get("html_url").toString();
+				}
+			} catch (IOException e) {
+				LOG.warn(ExceptionUtils.getStackTrace(e));
+			}
+			onlineVersion.put("version", version);
+			onlineVersion.put("link", link);
+		} catch (MalformedURLException e) {
+			LOG.warn(ExceptionUtils.getStackTrace(e));
+		}
+		return onlineVersion;
+	}
+	
+	private final Map<String, String> onlineVersion = new HashMap<>(); 
+	
 	/**
 	 * update support type and save to disk
 	 * 
@@ -321,12 +375,12 @@ public class RootService {
 		}
 	}
 
-	public void openHomeURL() {
+	public void openURL(Optional<String> url) {
 		Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop()
 				: null;
 		if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
 			try {
-				desktop.browse(URI.create(AppStartupConfig.homeUrl));
+				desktop.browse(URI.create(url.orElse(AppStartupConfig.homeUrl)));
 			} catch (Exception e) {
 				LOG.warn(e.toString());
 			}
@@ -334,24 +388,34 @@ public class RootService {
 	}
 
 	public void openFile(String pathStr) {
-		Path path = Paths.get(pathStr);
-		if (Files.exists(path) && Files.isRegularFile(path)) {
-			try {
-				MediaType mime = JSearch.getContentType(path.toFile(),
-						path.getFileName().toString());
-
-				// if ok, run program
-				if (Desktop.isDesktopSupported()) {
+		try {
+			URL url = new URL(pathStr);
+			if(url.getProtocol().equals("http") || url.getProtocol().equals("https")){
+				openURL(Optional.of(pathStr));
+			}else{
+				Path path = Paths.get(pathStr);
+				if (Files.exists(path) && Files.isRegularFile(path)) {
 					try {
-						Desktop.getDesktop().open(path.toFile());
+						MediaType mime = JSearch.getContentType(path.toFile(),
+								path.getFileName().toString());
+
+						// if ok, run program
+						if (Desktop.isDesktopSupported()) {
+							try {
+								Desktop.getDesktop().open(path.toFile());
+							} catch (IOException e) {
+								LOG.warn(e.toString());
+							}
+						}
 					} catch (IOException e) {
-						LOG.warn(e.toString());
+						LOG.warn(ExceptionUtils.getStackTrace(e));
 					}
 				}
-			} catch (IOException e) {
-				LOG.warn(ExceptionUtils.getStackTrace(e));
 			}
+		} catch (MalformedURLException e) {
+			LOG.warn(ExceptionUtils.getStackTrace(e));
 		}
+
 	}
 
 	private void openAndSendDirectory() {

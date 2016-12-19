@@ -1,6 +1,7 @@
 package io.github.qwefgh90.handyfinder.springweb.service;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,6 +18,7 @@ import org.springframework.context.annotation.Scope;
 
 import akka.actor.UntypedActor;
 import akka.util.Timeout;
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
@@ -58,7 +60,18 @@ public class IndexActor extends UntypedActor {
 		this.luceneHandler = luceneHandler;
 		this.executorService = Executors.newSingleThreadExecutor();
 		this.context().system().scheduler().scheduleOnce(Duration.create(3000, TimeUnit.MILLISECONDS), () -> {
+			//if reset file exists, remove all indexes.
+			if(Files.exists(AppStartupConfig.resetFilePath)){
+				try {
+					luceneHandler.deleteAllIndexesFromFileSystem();
+					Files.delete(AppStartupConfig.resetFilePath);
+				} catch (IOException e) {
+					LOG.warn(ExceptionUtils.getStackTrace(e));
+				}
+			}
+			//on startup, start indexing.
 			self().tell(new Restart(), null);
+			
 		}, this.context().system().dispatcher());
 	}
 	

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.google.gson.JsonObject;
 
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.model.Command;
@@ -127,8 +130,17 @@ public class RootController {
 			return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
 
+	@RequestMapping(value = "/version", method = RequestMethod.GET)
+	public ResponseEntity<Map<String,String>> getVersion() {
+		return new ResponseEntity<Map<String,String>>(rootService.getVersion(), HttpStatus.OK);
+	}
+
+	@RequestMapping(value = "/onlineVersion", method = RequestMethod.GET)
+	public ResponseEntity<Map<String,String>> getOnlineVersion() {
+		return new ResponseEntity<Map<String,String>>(rootService.getOnlineVersion(), HttpStatus.OK);
+	}
+	
 	@RequestMapping(value = "/options", method = RequestMethod.GET)
 	public ResponseEntity<OptionDto> getOption() {
 		return new ResponseEntity<OptionDto>(rootService.getOption(), HttpStatus.OK);
@@ -177,7 +189,7 @@ public class RootController {
 		if (command.equals("open-file"))
 			rootService.openFile(path.getPath());
 		if (command.equals("open-home"))
-			rootService.openHomeURL();
+			rootService.openURL(Optional.empty());
 	}
 
 	private static class OpenCommand {

@@ -165,7 +165,7 @@ public class AppStartupConfig{
 					//read old file
 					try(final BufferedReader reader = Files.newBufferedReader(versionFilePath)){
 						final String oldVersion = reader.readLine();
-						final int selector = versionOpt.get().compareToIgnoreCase((oldVersion.trim()));
+						final int selector = versionOpt.get().compareToIgnoreCase((oldVersion == null ? "0.001" : oldVersion.trim()));
 						if(selector > 0){
 							if(!Files.exists(resetFilePath))
 								Files.createFile(resetFilePath);
@@ -264,6 +264,8 @@ public class AppStartupConfig{
 		else
 			parameterInit = true;
 
+		//disable same origin policy 
+		System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
 		getGuiApp().start(args); // sync function // can't bean in spring container.
 	}
 

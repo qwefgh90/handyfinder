@@ -18,8 +18,8 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		});
 		//otherwise 메소드를 통하여 브라우저의 URL이 $routeProivder에서 정의되지 않은 URL일 경우에 해당하는 설정을 할 수 있다. 여기선 ‘/home’으로 이동시키고 있다.
 	});
-	app.controller('MainApplicationController', ['$location', '$scope','NativeService', '$log' , '$timeout', 'OptionModel', 'IndexModel',
-	                                             function($location, $scope, NativeService, $log, $timeout, OptionModel, IndexModel) {
+	app.controller('MainApplicationController', ['$location', '$http', '$scope','NativeService', '$log' , '$timeout', 'OptionModel', 'IndexModel', 
+	                                             function($location, $http, $scope, NativeService, $log, $timeout, OptionModel, IndexModel) {
 		
 		$scope.indexModel = IndexModel.model;
 		$scope.path = '';
@@ -64,6 +64,10 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 					$scope.openBrowser = function(){
 						NativeService.openHome();
 					};
+					$scope.open = function(link){
+						NativeService.openFile(link);
+					}
+
 				}, function(error) {
 					$timeout(function() {$scope.initGUIService();}, 2000);//connect again
 					$log.error(error);
@@ -77,6 +81,37 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 			}
 		};
 
+		$scope.requireUpdate = false;
+		$scope.programVersion = "";
+		$scope.onlineVersion = "";
+		$scope.onlineLink = "";
+		$http.get('/version').then(function(response){
+			if (response.status == 200) {
+				var programVersion = response.data.version.trim() == "" ? 0.001 : parseFloat(response.data.version);
+				$log.info('programVersion : ' + programVersion);
+				$scope.programVersion = programVersion;
+				$http.get('/onlineVersion').then(function(response){
+					if (response.status == 200) {
+						var onlineVersion = parseFloat(response.data.version.trim());
+						$scope.onlineVersion = onlineVersion;
+						$scope.onlineLink = response.data.link;
+						$log.info('online version/link : ' + onlineVersion + ' / ' + $scope.onlineLink);
+						if((onlineVersion > programVersion)){
+							$scope.requireUpdate = true;
+						}
+					}else
+						$log.debug('failed ' + angular.toJson(response));
+				},function(response){
+					$log.debug('failed ' + angular.toJson(response));
+				});
+				
+			}else
+				$log.debug('failed ' + angular.toJson(response));
+			
+		},function(response){
+				$log.info('failed ' + angular.toJson(response));
+		});
+		
 		$scope.initJobs();
 		$scope.initGUIService();
 	}]);
