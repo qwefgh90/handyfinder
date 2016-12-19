@@ -171,38 +171,52 @@
 
 	<!-- result  -->
 	<div class="row">
-		
-		<div class="col-xs-12 content-wrapper-outer">
-			<div class="content-wrapper container-fluid" ng-repeat="object in searchModel.searchResult">
-				
-				<span class="col-xs-12" style="padding-left:0px;"><a class="title" href ng-click='openFile(object.pathString)'>{{object.title}}</a><small ng-show="object.exist == false"> (lost file)</small>
+
+		<div class="col-xs-12 content-wrapper-outer" >
+			<div class="content-wrapper container-fluid"
+				ng-repeat="object in searchModel.searchResult | limitTo: SHOWN_RESULT_COUNT: ((searchModel.page-1) * SHOWN_RESULT_COUNT)" in-view-container in-view="elementInViewport(object, $inview, $inviewInfo)">
+
+				<span class="col-xs-12" style="padding-left: 0px;"><a
+					class="title" href ng-click='openFile(object.pathString)'>{{object.title}}</a><small
+					ng-show="object.exist == false"> (lost file)</small> </span> <span
+					class="col-xs-12" style="padding-left: 0px;"> <a
+					class="url text-warning" style="padding-left: 0px;" href
+					ng-click='open(object.parentPathString)'>{{object.parentPathString}}</a>
 				</span>
-				<span class="col-xs-12" style="padding-left:0px;"> <a class="url text-warning" style="padding-left: 0px;" href ng-click='open(object.parentPathString)'>{{object.parentPathString}}</a>
-				</span>
-				
-				<div class="col-xs-12 description " style="padding-left:0px;">
-					<b>
-					<small ng-if="object.fileSize < 1000"> {{object.fileSize}} bytes,</small>
-					<small ng-if="object.fileSize >= 1000 && object.fileSize < 1000000">{{object.fileSize / 1000.0 | number:3}} KB,</small>
-					<small ng-if="object.fileSize >= 1000000">{{object.fileSize / 1000000.0 | number:3}} MB,</small></b>
-					<small>{{object.modifiedTime | date:'yyyy-MM-dd HH:mm:ss'}},</small>
-					<small>{{object.mimeType}}</small>
-					<p style="text-overflow: ellipsis;" style="max-height:5.1em;line-height:2em" ng-bind-html="object.contents">
-					</p>
+
+				<div class="col-xs-12 description " style="padding-left: 0px;">
+					<b> <small ng-if="object.fileSize < 1000">
+							{{object.fileSize}} bytes,</small> <small
+						ng-if="object.fileSize >= 1000 && object.fileSize < 1000000">{{object.fileSize
+							/ 1000.0 | number:3}} KB,</small> <small
+						ng-if="object.fileSize >= 1000000">{{object.fileSize /
+							1000000.0 | number:3}} MB,</small></b> <small>{{object.modifiedTime |
+						date:'yyyy-MM-dd HH:mm:ss'}},</small> <small>{{object.mimeType}}</small>
+					<p style="text-overflow: ellipsis;"
+						style="max-height:5.1em;line-height:2em"
+						ng-bind-html="object.contents"></p>
 				</div>
-				
+
 			</div>
 		</div>
-		<div>
-			<button type="button" class="btn btn-default" aria-label="Left Align">
-				<span class="glyphicon glyphicon glyphicon-menu-left"
-					aria-hidden="true"></span>
-			</button>
-			<button type="button" class="btn btn-default" aria-label="Left Align">
-				<span class="glyphicon glyphicon glyphicon-menu-right"
-					aria-hidden="true"></span>
-			</button>
-
+		<div class="col-xs-12" ng-show="searchModel.searchResult.length > 0">
+			<div style="text-align: center">
+				<button type="button" class="btn btn-default" ng-click="go(1)"
+					aria-label="Left Align">
+					<span class="glyphicon glyphicon glyphicon-menu-left"
+						aria-hidden="true"></span>
+				</button>
+				<button type="button" class="btn btn-default" ng-repeat="nop in getNumber(1 + ((searchModel.searchResult.length - 1) / SHOWN_RESULT_COUNT)) track by $index"
+				ng-click="go($index + 1)" ng-class="{active: ($index + 1) == searchModel.page}">
+					<span>{{$index + 1}}</span>
+				</button>
+				
+				<button type="button" class="btn btn-default" ng-click="go(1 + ((searchModel.searchResult.length - 1) / SHOWN_RESULT_COUNT))"
+					aria-label="Left Align">
+					<span class="glyphicon glyphicon glyphicon-menu-right"
+						aria-hidden="true"></span>
+				</button>
+			</div>
 		</div>
 	</div>
 	
