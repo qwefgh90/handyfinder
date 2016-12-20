@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
 /**
@@ -24,7 +24,7 @@ public class MetaRespository {
 	private final static Logger LOG = LoggerFactory.getLogger(MetaRespository.class);
 
 	@Autowired
-	LuceneHandlerBasicOptionView appData;
+	BasicOption appData;
 
 	public void save(List<Directory> list) throws SQLException {
 		appData.deleteDirectories();
@@ -49,7 +49,7 @@ public class MetaRespository {
 		appData.writeAppDataToDisk();
 	}
 
-	public List<Directory> selectDirectory() throws SQLException {
+	public List<Directory> selectDirectory() {
 		List<Directory> list = appData.getDirectoryList();
 		return list;
 	}

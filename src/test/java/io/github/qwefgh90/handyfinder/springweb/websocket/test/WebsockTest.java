@@ -46,7 +46,7 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 import javafx.application.Platform;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerMimeOptionView;
+import io.github.qwefgh90.handyfinder.lucene.MimeOption;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
 import io.github.qwefgh90.handyfinder.springweb.service.RootService;
@@ -59,7 +59,7 @@ public class WebsockTest {
 
 	RootService rootService;
 	MetaRespository metaRepo;
-	LuceneHandlerMimeOptionView xmlObject;
+	MimeOption xmlObject;
 	List<Directory> list = new ArrayList<>();
 	static Thread th;
 	@BeforeClass
@@ -83,7 +83,7 @@ public class WebsockTest {
 				TimeUnit.SECONDS);
 		rootService = AppStartupConfig.getBean(RootService.class);
 		metaRepo = AppStartupConfig.getBean(MetaRespository.class);
-		xmlObject = AppStartupConfig.getBean(LuceneHandlerMimeOptionView.class);
+		xmlObject = AppStartupConfig.getBean(MimeOption.class);
 		xmlObject.initGlobTrue();
 		Directory dir = new Directory();
 		dir.setRecursively(true);
@@ -92,7 +92,6 @@ public class WebsockTest {
 				.get(new ClassPathResource("").getFile().getAbsolutePath())
 				.resolve("index-test-files").toAbsolutePath().toString());
 		list.add(dir);
-		rootService.updateDirectories(list);
 		LOG.trace("test directory to be updated: " + dir.getPathString());
 	}
 
@@ -100,7 +99,7 @@ public class WebsockTest {
 	public void clean() throws Exception {
 		rootService.closeAppLucene();
 		metaRepo.deleteDirectories();
-		 AppStartupConfig.terminateProgram();
+		AppStartupConfig.terminateProgram();
 		// DON'T TERMINATE. "MVN TEST" IS FAILED IN UBUNTU. AFTER TOMCAT CLOSE,
 		// WHEN EXECUTE RESOURCE CODE,
 		// THROW
@@ -160,7 +159,6 @@ public class WebsockTest {
 		public void sendMsg() {
 			try {
 				session.send("/handyfinder/hello", "hello");
-				session.send("/handyfinder/command/index/start", "");
 			} catch (Exception e) {
 				LOG.info(ExceptionUtils.getStackTrace(e));
 			}
@@ -218,6 +216,12 @@ public class WebsockTest {
 				}
 			});
 
+			try {
+				rootService.updateDirectories(list); //internally start indexing
+			} catch (SQLException e) {
+				e.printStackTrace();
+				failure.set(e);
+			} //update directory
 			sendMsg();// send test msg
 		}
 	};

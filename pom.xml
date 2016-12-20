@@ -1,36 +1,26 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>sing</groupId>
+	<groupId>io.github.qwefgh90</groupId>
 	<artifactId>handyfinder</artifactId>
-	<version>0.102</version>
-
+	<version>0.103</version>
 	<properties>
+		<project.version>0.103</project.version>
+		<project.artifactId>jsearch</project.artifactId>
+		<project.source.encoding>UTF-8</project.source.encoding>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<org.apache.tomcat>8.0.33</org.apache.tomcat>
 		<spring.webmvc.version>4.2.5.RELEASE</spring.webmvc.version>
 		<org.springframework.security-version>4.1.0.RELEASE</org.springframework.security-version>
+		<project.source.version>1.8</project.source.version>
 	</properties>
 
-	<repositories>
-		<repository>
-			<id>local-repo</id>
-			<name>local-repo</name>
-			<url>https://github.com/qwefgh90/maven-repository/raw/master/repository</url>
-			<releases>
-				<enabled>true</enabled>
-				<updatePolicy>never</updatePolicy>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-				<updatePolicy>never</updatePolicy>
-			</snapshots>
-		</repository>
-	</repositories>
 	<dependencies>
 		<dependency>
-			<groupId>com.qwefgh90.io.jsearch</groupId>
-			<artifactId>JSearch</artifactId>
-			<version>1.0</version>
+			<groupId>io.github.qwefgh90</groupId>
+			<artifactId>jsearch</artifactId>
+			<version>0.3.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>
@@ -62,7 +52,6 @@
 			<artifactId>tomcat-embed-websocket</artifactId>
 			<version>${org.apache.tomcat}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-webmvc</artifactId>
@@ -75,13 +64,15 @@
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-core</artifactId>
-			<version>2.7.3</version>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.8.5</version>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>2.7.3</version>
+			<artifactId>jackson-annotations</artifactId>
+			<version>2.8.5</version>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -99,13 +90,28 @@
 			<artifactId>spring-messaging</artifactId>
 			<version>${spring.webmvc.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.typesafe.akka</groupId>
+			<artifactId>akka-actor_2.11</artifactId>
+			<version>2.4.14</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.inject</groupId>
+			<artifactId>javax.inject</artifactId>
+			<version>1</version>
+		</dependency>
 
 		<dependency>
 			<groupId>commons-lang</groupId>
 			<artifactId>commons-lang</artifactId>
 			<version>2.3</version>
 		</dependency>
-
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-test-framework</artifactId>
+			<version>6.0.0</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-core</artifactId>
@@ -155,7 +161,20 @@
 	</dependencies>
 
 	<build>
-		<finalName>
+	<resources>
+		<resource>
+			<directory>src/main/resources</directory>
+			<filtering>true</filtering>
+			<excludes>
+				<exclude>**/*.woff</exclude>
+				<exclude>**/*.ttf</exclude>
+			</excludes>
+		</resource>
+  		<resource>
+			<directory>src/main/resources</directory>
+		</resource>
+	</resources>
+	<finalName>
 			handyfinder
 		</finalName>
 		<plugins>
@@ -170,18 +189,19 @@
 					<vendor>Handyfinder</vendor>
 					<needShortcut>true</needShortcut>
 					<needMenu>true</needMenu>
-                    <verbose>true</verbose>
-					<nativeReleaseVersion>0.102</nativeReleaseVersion>
+					<verbose>true</verbose>
+					<nativeReleaseVersion>0.103</nativeReleaseVersion>
 					<bundleArguments>
-						<identifier>0.102</identifier>
+						<identifier>0.103</identifier>
 						<installdirChooser>true</installdirChooser>
-                        <licenseFile>LICENSE</licenseFile>
+						<licenseFile>LICENSE</licenseFile>
 					</bundleArguments>
-                    <additionalBundlerResources>src/main/deploy/package/windows</additionalBundlerResources>
-		            <additionalAppResources>src/main/deploy/package/windows</additionalAppResources>
+					<additionalBundlerResources>src/main/deploy/package/windows</additionalBundlerResources>
+					<additionalAppResources>src/main/deploy/package/windows</additionalAppResources>
+
 				</configuration>
 			</plugin>
-			
+
 			<plugin><!-- for test -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -193,6 +213,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.6.0</version>
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
@@ -202,6 +223,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.0.2</version>
 				<configuration>
 					<excludes>
 						<exclude>**/log4j.properties</exclude>

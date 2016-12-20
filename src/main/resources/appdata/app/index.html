@@ -3,7 +3,8 @@
 	<head>
 		<meta charset="utf-8">
 		<title>Handyfinder</title>
-		<link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
+		<!-- <script type='text/javascript' src='http://getfirebug.com/releases/lite/1.2/firebug-lite-compressed.js'></script> -->  
+		<link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css">
 		<link rel="stylesheet" href="bower_components/bootstrap-switch/dist/css/bootstrap3/bootstrap-switch.css">
 		<link rel="stylesheet" href="css/custom.css">
 		<script data-main="js/entry.js" src="bower_components/requirejs/require.js"></script>
@@ -11,7 +12,6 @@
 	</head>
 
 	<body>
-
 		<div class="common-layout header-layout container">
 			<!-- app title  -->
 			<div class="row text-left " style="">
@@ -22,10 +22,10 @@
 				<div class="text-right col-xs-4">
 					<button ng-click="go('/search')" type="button" ng-style="{ 'background-color': path.toLowerCase().indexOf('search') > -1 && false ? '#549AD7' : '' }" class="btn btn-default" aria-label="Left Align" > <!-- uib-popover="Search" popover-trigger="mouseenter"  popover-placement="bottom" -->
 						<span class="glyphicon glyphicon-search" aria-hidden="true"></span>
-					</button>
+					</button><!-- 
 					<button ng-click="go('/index')" type="button" ng-style="{ 'background-color': path.toLowerCase().indexOf('index') > -1 && false ? '#549AD7' : '' }" class="btn btn-default" aria-label="Left Align">
 						<span class="glyphicon glyphicon-plus"></span>
-					</button>
+					</button> -->
 					<button ng-click="openBrowser()" type="button" ng-style="{ 'background-color': path.toLowerCase().indexOf('setting') > -1 && false ? '#549AD7' : ''}" class="btn btn-default" aria-label="Left Align">
 						<span class="glyphicon glyphicon-cloud" aria-hidden="true"></span>
 					</button>
@@ -33,10 +33,31 @@
 			</div>
 		</div>
 
-		<div ng-view></div>
+		<div style="margin-bottom: 100px" ng-view></div>
+		
+		<footer style="" class="fixed-bottom">
+			<div class="common-layout container">
+				<!-- app title  -->
+				<div class="row text-left " style="text-align: right">
+					<div class="col-xs-12">
+						<div style="text-align: right">
+							<a ng-show="requireUpdate" href ng-click="open(onlineLink)">&nbsp;&nbsp;new version released!</a>
+						</div>
+						<div style="text-align: right">
+							<a href ng-click="open('http://software.naver.com/search.nhn?query=%ED%95%B8%EB%94%94%ED%8C%8C%EC%9D%B8%EB%8D%94')">Naver</a>
+							<a href ng-click="open('https://github.com/qwefgh90/handyfinder')">&nbsp;&nbsp;Github</a>
+							<a href ng-click="open('https://github.com/qwefgh90/handyfinder/issues')">&nbsp;&nbsp;Issue</a>
+							<a href ng-click="open('https://github.com/qwefgh90/handyfinder/releases')">&nbsp;&nbsp;Release</a>
+						</div>	
+						<div style="text-align: right">
+							<span style="color: white">&nbsp;&nbsp;Handyfinder {{programVersion == '0.001' ? 'v0' : 'v' + programVersion }}</span>
+							<span style="color: white">&nbsp;&nbsp;qwefgh90@naver.com</span>
+						</div>
+					</div>
+			</div>
+		</footer>
 
 	</body>
-	<!-- <script type='text/javascript' src='http://getfirebug.com/releases/lite/1.2/firebug-lite-compressed.js'></script>  -->
 	<!-- <script src="bower_components/jquery/dist/jquery.min.js"></script> -->
 	<!-- <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script> -->
 	<!-- <script src="bower_components/bootstrap-switch/dist/js/bootstrap-switch.min.js"></script> -->
@@ -53,4 +74,5 @@
 	<script src="js/indexModelApp.js"></script>
 	<script src="js/apiServiceApp.js"></script>
 	<script src="js/handyfinderwebapp.js"></script> -->
+
 </html>

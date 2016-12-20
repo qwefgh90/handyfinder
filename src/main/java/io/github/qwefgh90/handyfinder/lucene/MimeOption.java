@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
@@ -24,9 +25,9 @@ import javax.xml.parsers.SAXParserFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * instance is created by <b>TikaMimeXmlObjectFactory</b>
@@ -34,12 +35,11 @@ import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
  * @author choechangwon
  *
  */
-public final class LuceneHandlerMimeOptionView implements
-		ILuceneHandlerMimeOptionView {
+public final class MimeOption {
 	private final static Logger LOG = LoggerFactory
-			.getLogger(LuceneHandlerMimeOptionView.class);
+			.getLogger(MimeOption.class);
 
-	private LuceneHandlerMimeOptionView() {
+	private MimeOption() {
 	}
 
 	private Map<String, Set<String>> mimeToGlobListMap = new HashMap<>();
@@ -64,8 +64,31 @@ public final class LuceneHandlerMimeOptionView implements
 			globMap.put(iter.next(), Boolean.TRUE);
 		}
 	}
-
-	@Override
+	
+	public Set<String> getAllowedMimeList(){
+		final HashSet<String> list = new HashSet<>();
+		final Iterator<String> iter = mimeToGlobListMap.keySet().iterator();
+		while(iter.hasNext()){
+			String mimeString = iter.next();
+			if(isAllowMime(mimeString)){
+				list.add(mimeString);
+			}
+		}
+		return list;
+	}
+	
+	public Set<String> getNotAllowedMimeList(){
+		final HashSet<String> list = new HashSet<>();
+		final Iterator<String> iter = mimeToGlobListMap.keySet().iterator();
+		while(iter.hasNext()){
+			String mimeString = iter.next();
+			if(!isAllowMime(mimeString)){
+				list.add(mimeString);
+			}
+		}
+		return list;
+	}
+	
 	public boolean isAllowMime(String mime) {
 		Iterator<String> iter = getGlobIterator(mime);
 		if (iter == null)
@@ -85,7 +108,7 @@ public final class LuceneHandlerMimeOptionView implements
 	 * @throws FileNotFoundException
 	 */
 	public void updateGlobPropertiesFile() throws FileNotFoundException,
-			IOException {
+	IOException {
 		Properties properties = new Properties();
 		Iterator<String> iter = getGlobIterator();
 		while (iter.hasNext()) {
@@ -117,7 +140,6 @@ public final class LuceneHandlerMimeOptionView implements
 	 * @param mime
 	 * @return -1 if not exist.
 	 */
-	@Override
 	public Set<String> getGlobSet(String mime) {
 		return Collections.unmodifiableSet(mimeToGlobListMap.get(mime));
 	}
@@ -160,20 +182,20 @@ public final class LuceneHandlerMimeOptionView implements
 	 * @author choechangwon
 	 *
 	 */
-	public static class TikaMimeXmlObjectFactory {
-		private static Map<String, LuceneHandlerMimeOptionView> container = new HashMap<String, LuceneHandlerMimeOptionView>();
+	public static class MimeXmlObjectFactory {
+		private static Map<String, MimeOption> container = new HashMap<String, MimeOption>();
 
-		private TikaMimeXmlObjectFactory() {
+		private MimeXmlObjectFactory() {
 		}
 
-		public static LuceneHandlerMimeOptionView getInstanceFromXml(
+		public static MimeOption getInstanceFromXml(
 				String xmlPath, Path propertiesPath,
 				Path customTikaGlobPropertiesPath)
-				throws ParserConfigurationException, SAXException, IOException {
+						throws ParserConfigurationException, SAXException, IOException {
 			if (container.keySet().contains(xmlPath)) {
 				return container.get(xmlPath);
 			}
-			LuceneHandlerMimeOptionView obj = new LuceneHandlerMimeOptionView();
+			MimeOption obj = new MimeOption();
 			obj.propertiesPath = propertiesPath;
 
 			Properties p = new Properties();
@@ -205,7 +227,7 @@ public final class LuceneHandlerMimeOptionView implements
 		}
 
 		private static void addCustomMimeAndGlob(
-				LuceneHandlerMimeOptionView obj,
+				MimeOption obj,
 				Path customTikaGlobPropertiesPath) {
 			try {
 				Properties p = new Properties();
@@ -222,6 +244,78 @@ public final class LuceneHandlerMimeOptionView implements
 				LOG.info(e.toString());
 			}
 
+		}
+
+	}
+
+	/**
+	 * not-thread-safe parser of xml below link
+	 * http://grepcode.com/file/repo1.maven.org/maven2/org.apache.tika/tika-core/1.9
+	 * /org/apache/tika/mime/tika-mimetypes.xml?av=f
+	 * 
+	 * @author choechangwon
+	 *
+	 */
+	static class TikaMimeTypesSaxHandler extends DefaultHandler {
+		/*
+		 * <mime-type type="text/x-asciidoc"> 
+		 * <_comment>Asciidoc source
+		 * code
+		 * </_comment> 
+		 * <glob pattern="*.asciidoc"/> 
+		 * <glob pattern="*.adoc"/>
+		 * <glob pattern="*.ad"/> 
+		 * <glob pattern="*.ad.txt"/> 
+		 * <glob pattern="*.adoc.txt"/> 
+		 * <sub-class-of type="text/plain"/> 
+		 * </mime-type>
+		 */
+
+		public TikaMimeTypesSaxHandler(MimeOption xmlObject){
+			this.xmlObject = xmlObject;
+		}
+
+		MimeOption xmlObject;
+
+		private enum TikaMimeEnum{
+			MIME_TYPE_TAG("mime-type",Boolean.TRUE),
+			GLOB_TAG("glob",Boolean.FALSE),
+			MIME_TYPE_TYPE_ATTR("type",null),
+			GLOB_PATTERN_ATTR("pattern",null);
+			private final String nameInGrammar;
+			private final Boolean slashNeed;
+			private TikaMimeEnum(String name, Boolean slashNeed) {
+				this.nameInGrammar = name;
+				this.slashNeed = slashNeed;
+			}
+			public String getNameInGrammar() {
+				return nameInGrammar;
+			}
+			public Boolean getSlashNeed() {
+				return slashNeed;
+			}
+
+		}
+
+		String currentType = null;
+
+		@Override
+		public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+			if (TikaMimeEnum.MIME_TYPE_TAG.getNameInGrammar().equals(qName)) {
+				currentType = attributes.getValue(TikaMimeEnum.MIME_TYPE_TYPE_ATTR.getNameInGrammar());
+			}
+			if (TikaMimeEnum.GLOB_TAG.getNameInGrammar().equals(qName)) {
+				String glob = attributes.getValue(TikaMimeEnum.GLOB_PATTERN_ATTR.getNameInGrammar());
+				xmlObject.addGlobType(currentType, glob);
+			}
+		}
+
+		@Override
+		public void endElement(String uri, String localName, String qName) throws SAXException {
+		}
+
+		@Override
+		public void characters(char[] ch, int start, int length) throws SAXException {
 		}
 
 	}

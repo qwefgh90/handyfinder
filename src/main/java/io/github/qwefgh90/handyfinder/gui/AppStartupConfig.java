@@ -1,11 +1,13 @@
 package io.github.qwefgh90.handyfinder.gui;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -15,6 +17,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
@@ -60,6 +64,8 @@ public class AppStartupConfig{
 	public final static Path deployedPath;
 	public final static Path parentOfClassPath;
 	public final static Path pathForLog4j;
+	public final static Path resetFilePath;
+	public final static Path versionFilePath;
 	public final static Path pathForAppdata;
 	public final static Path pathForDatabase;
 	public final static Path pathForIndex;
@@ -72,6 +78,7 @@ public class AppStartupConfig{
 	public final static String address;
 	public final static int port;
 	public final static String homeUrl;
+	public final static Optional<String> versionOpt;
 
 	public final static String RESOURCE_LOADING_PAGE = "/" + APP_DATA_DIR_NAME
 			+ "/" + WEB_APP_DIRECTORY_NAME + "/loading.html";
@@ -93,10 +100,14 @@ public class AppStartupConfig{
 		parentOfClassPath = deployedPath.getParent();
 		
 		if (isProduct) {
+			versionFilePath = parentOfClassPath.resolve("version");
+			resetFilePath = parentOfClassPath.resolve("INVALIDATE_INDEX");
 			pathForLog4j = parentOfClassPath.resolve("log4j.xml");
 			pathForAppdata = parentOfClassPath.resolve(APP_DATA_DIR_NAME);
 		}
 		else{
+			versionFilePath = deployedPath.resolve("version");
+			resetFilePath = deployedPath.resolve("INVALIDATE_INDEX");
 			pathForLog4j = deployedPath.resolve("log4j.xml");			//possible to redeploy on dev mode
 			pathForAppdata = deployedPath.resolve(APP_DATA_DIR_NAME);	//possible to redeploy on dev mode
 		}
@@ -133,21 +144,49 @@ public class AppStartupConfig{
 			if (isProduct) { // jar start
 				AppStartupConfig.copyFileInJar(deployedPath.toString(), pathForLog4j.getFileName().toString(),
 						parentOfClassPath.toFile(), (file) -> {return !file.exists();});
+				
 				System.out.println("Initializing log4j with: " + pathForLog4j);
 				DOMConfigurator.configureAndWatch(pathForLog4j.toAbsolutePath().toString());
 				
 				// resources which is in jar copy to appdata deployed.
 				copyDirectoryInJar(deployedPath.toString(), APP_DATA_DIR_NAME,
 						parentOfClassPath.toFile(), (File file, JarEntry entry) -> file.lastModified() < entry.getLastModifiedTime().toMillis());
+				
+				//extract version string from jar
+				try(InputStream is = getResourceInputstream("version.properties")){
+					final Properties prop = new Properties();
+					prop.load(is);
+					versionOpt = Optional.of(prop.getProperty("version").trim());
+					LOG.info("version : " + versionOpt.get());
+				}
+				
+				//compare new version to old version, then create or not file 
+				if(Files.exists(versionFilePath)){
+					//read old file
+					try(final BufferedReader reader = Files.newBufferedReader(versionFilePath)){
+						final String oldVersion = reader.readLine();
+						final int selector = versionOpt.get().compareToIgnoreCase((oldVersion == null ? "0.001" : oldVersion.trim()));
+						if(selector > 0){
+							if(!Files.exists(resetFilePath))
+								Files.createFile(resetFilePath);
+						}
+					}
+					//remove old
+					Files.delete(versionFilePath);
+				}else{
+					if(!Files.exists(resetFilePath))
+						Files.createFile(resetFilePath);
+				}
+
+				//create new version file
+				try(PrintWriter writer = new PrintWriter(versionFilePath.toFile())){
+					writer.print(versionOpt.get());
+				}
+				
 			} else { // no jar start
-				// all files copied in classpath
-				Path classsSourcePath = deployedPath.getParent().resolve("classes");
-				Path log4jSourcePath = classsSourcePath.resolve(pathForLog4j.getFileName().toString());
-				//FileUtils.copyFileToDirectory(log4jSourcePath.toFile(), parentOfClassPath.toFile());
-				System.out.println("Initializing log4j with: " + pathForLog4j);
 				DOMConfigurator.configureAndWatch(pathForLog4j.toAbsolutePath().toString());
-				//FileUtils.copyDirectory(classsSourcePath.toFile(),
-				//		parentOfClassPath.toFile(), (File f) -> !f.getName().endsWith(".class"));
+				versionOpt = Optional.empty();
+				LOG.info("version : not found");
 			}
 			// tika-mimetypes.xml copy to appdata
 			copyTikaXml();
@@ -161,21 +200,13 @@ public class AppStartupConfig{
 
 		StringBuilder logBuilder = new StringBuilder();
 		logBuilder.append("\n")
-				.append("handyfinder environment is initialized").append("\n")
-				.append("current classpath: ").append(getCurrentBuildPath())
-				.append("\n").append("appdata: ")
-				.append(pathForAppdata.toString());
+				.append("[Handyfinder information]").append("\n")
+				.append("* classpath: ").append(getCurrentBuildPath()).append("\n")
+				.append("* appdata path: ").append(pathForAppdata.toString()).append("\n")
+				.append("* log4j path: ").append(pathForLog4j.toString());
 		LOG.info(logBuilder.toString());
 
 		logBuilder.setLength(0);
-		/*
-		 * String[] allPath = allClassPath(); for (int i = 0; i <
-		 * allPath.length; i++) {
-		 * logBuilder.append("classpath: ").append("\n").append(String.valueOf(i
-		 * + 1)).append(") ").append(allPath[i]); }
-		 * 
-		 * LOG.debug(logBuilder.toString());
-		 */
 	}
 
 	public static GUIApplication getGuiApp(){return GUIApplication.getSingleton();}
@@ -233,6 +264,8 @@ public class AppStartupConfig{
 		else
 			parameterInit = true;
 
+		//disable same origin policy 
+		System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
 		getGuiApp().start(args); // sync function // can't bean in spring container.
 	}
 
@@ -408,7 +441,7 @@ public class AppStartupConfig{
 		}
 		jis.close();
 	}
-
+	
 	public static void copyFileInJar(String jarPath, String resourcePathInJar,
 			File destinationRootDir, FileFilter destFileFilter)
 			throws URISyntaxException, IOException {

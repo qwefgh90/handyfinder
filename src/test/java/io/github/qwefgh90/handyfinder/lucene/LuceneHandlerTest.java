@@ -1,12 +1,6 @@
 package io.github.qwefgh90.handyfinder.lucene;
 
 import static org.junit.Assert.assertTrue;
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
-import io.github.qwefgh90.handyfinder.lucene.model.Directory;
-import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
-import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
-import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
-import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
@@ -15,11 +9,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
-import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.hamcrest.Matchers;
 import org.junit.After;
@@ -36,7 +31,17 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import com.qwefgh90.io.jsearch.JSearch.ParseException;
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.KEYWORD_MODE;
+import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandler.INDEX_WRITE_STATE;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
+import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
+import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
+import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
+import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -51,9 +56,12 @@ public class LuceneHandlerTest {
 	CommandInvoker invoker;
 
 	@Autowired
-	ILuceneHandlerMimeOptionView mimeOption;
+	MetaRespository metaRepository;
+	
 	@Autowired
-	ILuceneHandlerBasicOptionView basicOption;
+	MimeOption mimeOption;
+	@Autowired
+	BasicOption basicOption;
 
 	LuceneHandler handler;
 	LuceneHandler handler2;
@@ -69,7 +77,6 @@ public class LuceneHandlerTest {
 		}
 	}
 	//test files
-	Path texttxt;
 	Path temptxt;
 	Path temp2txt;
 	
@@ -81,13 +88,16 @@ public class LuceneHandlerTest {
 		mimeOption.initGlobTrue();
 		basicOption.setLimitCountOfResult(100);
 		basicOption.setMaximumDocumentMBSize(100);
-		
+		basicOption.setTargetMode(EnumSet.of(TARGET_MODE.PATH, TARGET_MODE.CONTENT));
+		basicOption.setKeywordMode(KEYWORD_MODE.OR.toString());
 		handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex,
 				invoker, basicOption, mimeOption);
 		handler.deleteAllIndexesFromFileSystem();
+		handler.stopIndex();
+		
 
 		testFilesPath = AppStartupConfig.deployedPath.resolve("index-test-files");
-
+		
 		Directory testFileiDir = new Directory();
 		testFileiDir.setRecursively(true);
 		testFileiDir.setUsed(true);
@@ -95,8 +105,9 @@ public class LuceneHandlerTest {
 		
 		indexDirList = new ArrayList<>();
 		indexDirList.add(testFileiDir);
-		
-		texttxt = testFilesPath.resolve("text.txt");
+		indexDirList.forEach(dir -> {
+			basicOption.addDirectory(dir);
+		});
 		
 		//create new files
 		temp2txt = testFilesPath.resolve("temp2.txt");
@@ -114,6 +125,10 @@ public class LuceneHandlerTest {
 	
 	@After
 	public void clean() throws IOException {
+		if(Files.exists(temptxt))
+			Files.delete(temptxt);
+		if(Files.exists(temp2txt))
+			Files.delete(temp2txt);
 		mimeOption.initGlobTrue();
 		LuceneHandler.closeResources();
 		try {
@@ -133,26 +148,40 @@ public class LuceneHandlerTest {
 		assertTrue(handler == handler2);
 	}
 
+	
 	@Test
 	public void searchTest() throws IOException,
 			org.apache.lucene.queryparser.classic.ParseException,
-			InvalidTokenOffsetsException, QueryNodeException, ParseException {
+			InvalidTokenOffsetsException, QueryNodeException {
+		handler.indexDirectory(
+				testFilesPath, true);
+		
+		List<ScoreDoc> docs = handler.search("javageek", 0);
+		Assert.assertThat(docs.size(), Matchers.is(5));
+	}
+	
+	@Test
+	public void searchTestWithMime() throws IOException,
+			org.apache.lucene.queryparser.classic.ParseException,
+			InvalidTokenOffsetsException, QueryNodeException {
 		handler.indexDirectory(
 				testFilesPath, true);
 
-		TopDocs docs = handler.search("javageeks _javageeks");
-		Assert.assertThat(docs.scoreDocs.length, Matchers.is(5));
+		mimeOption.setGlob("*.txt", false);
+		
+		List<ScoreDoc> docs = handler.search("javageek", 0);
+		Assert.assertThat(docs.size(), Matchers.is(0));
 	}
 
 	@Test
 	public void searchTest2() throws IOException,
 			org.apache.lucene.queryparser.classic.ParseException,
-			InvalidTokenOffsetsException, QueryNodeException, ParseException {
+			InvalidTokenOffsetsException, QueryNodeException {
 		handler.indexDirectory(
 				testFilesPath, true);
 
-		TopDocs docs = handler.search("PageBase");
-		Assert.assertThat(docs.scoreDocs.length, Matchers.is(1));
+		List<ScoreDoc> docs = handler.search("PageBase", 0);
+		Assert.assertThat(docs.size(), Matchers.is(1));
 	}
 	
 	@Test
@@ -167,7 +196,8 @@ public class LuceneHandlerTest {
 
 		Files.delete(temp2txt);
 		temptxt.toFile().delete();
-
+		
+		handler.updateWriteState(INDEX_WRITE_STATE.READY);
 		handler.updateIndexedDocuments(indexDirList);
 		int countAfter = handler.getDocumentCount();
 		
@@ -186,24 +216,14 @@ public class LuceneHandlerTest {
 	}
 
 	@Test
-	public void mimeExceptTest() throws IOException {
-		mimeOption.setGlob("*.txt", false);
-		handler.indexDirectory(
-				testFilesPath, true);
-		int count = handler.getDocumentCount();
-		Assert.assertThat(count, Matchers.is(4));
-		LOG.info("mime except : " + count);
-	}
-
-	@Test
 	public void fileURITest()
 			throws org.apache.lucene.queryparser.classic.ParseException,
-			QueryNodeException, InvalidTokenOffsetsException, ParseException,
+			QueryNodeException, InvalidTokenOffsetsException,
 			IOException {
 		handler.indexDirectory(
 				testFilesPath, true);
 
-		TopDocs docs = handler.search("http");
-		Assert.assertThat(docs.scoreDocs.length, Matchers.is(1));
+		List<ScoreDoc> docs = handler.search("http",0);
+		Assert.assertThat(docs.size(), Matchers.is(1));
 	}
 }

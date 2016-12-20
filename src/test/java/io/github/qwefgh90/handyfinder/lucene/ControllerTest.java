@@ -10,7 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOptionView;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption;
 import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
 import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
 import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
@@ -20,6 +21,7 @@ import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,11 +69,15 @@ public class ControllerTest {
 	LuceneHandler handler;
 
 	@Autowired
-	LuceneHandlerBasicOptionView basicOption;
+	BasicOption basicOption;
+	
 	@Autowired
-	LuceneHandlerMimeOptionView mimeOption;
+	MimeOption mimeOption;
 
 	MockMvc mvc;
+	
+	final ObjectMapper om = new ObjectMapper();
+	final List<Directory> indexDirList = new ArrayList<>();
 	
 	@Before
 	public void setup() throws IOException {
@@ -79,6 +85,19 @@ public class ControllerTest {
 		basicOption.setMaximumDocumentMBSize(100);
 		mimeOption.initGlobTrue();
 		handler.deleteAllIndexesFromFileSystem();
+		
+		final Path indexPath = AppStartupConfig.deployedPath.resolve("index-test-files");
+		
+		Directory testFileiDir = new Directory();
+		testFileiDir.setRecursively(true);
+		testFileiDir.setUsed(true);
+		testFileiDir.setPathString(indexPath.toAbsolutePath().toString());;
+		
+		indexDirList.add(testFileiDir);
+		indexDirList.forEach(dir -> {
+			basicOption.addDirectory(dir);
+		});
+		
 		handler.indexDirectory(
 				AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 		mvc = MockMvcBuilders.webAppContextSetup(wac).build();
@@ -87,8 +106,6 @@ public class ControllerTest {
 	@After
 	public void clean() throws IOException {
 	}
-
-	ObjectMapper om = new ObjectMapper();
 
 	@Test
 	public void optionTest() throws Exception {
@@ -122,12 +139,23 @@ public class ControllerTest {
 		
 		String responseString = mvcResult.getResponse().getContentAsString();
 		List<DocumentDto> list = om.readValue(responseString, List.class);
-		Assert.assertThat(list.size(), Matchers.is(4));
+		Assert.assertThat(list.size(), Matchers.is(5));
+	}
+
+	@Test
+	public void searchAllDocumentTest() throws Exception {
+		MvcResult mvcResult = mvc.perform(
+				get("/documents").contentType(MediaType.APPLICATION_JSON_UTF8))
+				.andExpect(status().isOk())
+				.andDo(MockMvcResultHandlers.print()).andReturn();
+		
+		String responseString = mvcResult.getResponse().getContentAsString();
+		List<String> list = om.readValue(responseString, List.class);
+		Assert.assertThat(list.size(), Matchers.is(12));
 	}
 
 	@Test
 	public void supportTypeTest() throws Exception {
-
 		MvcResult result = mvc
 				.perform(
 						get("/supportTypes").contentType(
@@ -148,21 +176,15 @@ public class ControllerTest {
 		String json = om.writeValueAsString(dto);
 
 		// update type -> true
-		mvc.perform(
-				post("/supportType").contentType(
-						MediaType.APPLICATION_JSON_UTF8).content(json))
+		mvc.perform(post("/supportType").contentType(MediaType.APPLICATION_JSON_UTF8).content(json))
 				.andExpect(status().isOk());
 
 		// check -> true
-		mvc.perform(
-				get("/supportTypes").contentType(
-						MediaType.APPLICATION_JSON_UTF8))
+		mvc.perform(get("/supportTypes").contentType(MediaType.APPLICATION_JSON_UTF8))
 				.andExpect(status().isOk())
 				.andDo(MockMvcResultHandlers.print())
 				.andExpect(jsonPath("$[0].type", Matchers.is(dto.getType())))
-				.andExpect(
-						jsonPath("$[0].used",
-								Matchers.is(Boolean.valueOf(dto.isUsed()))));
+				.andExpect(jsonPath("$[0].used", Matchers.is(Boolean.valueOf(dto.isUsed()))));
 
 		dto.setUsed(false);
 		json = om.writeValueAsString(dto);
@@ -179,19 +201,14 @@ public class ControllerTest {
 				.andExpect(status().isOk())
 				.andDo(MockMvcResultHandlers.print())
 				.andExpect(jsonPath("$[0].type", Matchers.is(dto.getType())))
-				.andExpect(
-						jsonPath("$[0].used",
-								Matchers.is(Boolean.valueOf(dto.isUsed()))));
+				.andExpect(jsonPath("$[0].used", Matchers.is(Boolean.valueOf(dto.isUsed()))));
 
 	}
 	
 	@Test
 	public void supportTypeTest2() throws Exception {
-
 		MvcResult result = mvc
-				.perform(
-						get("/supportTypes").contentType(
-								MediaType.APPLICATION_JSON_UTF8))
+				.perform(get("/supportTypes").contentType(MediaType.APPLICATION_JSON_UTF8))
 				.andExpect(status().isOk())
 				.andDo(MockMvcResultHandlers.print()).andReturn();
 
@@ -208,15 +225,11 @@ public class ControllerTest {
 		}
 		String json = om.writeValueAsString(list);
 
-		mvc.perform(
-				post("/supportTypes").contentType(
-						MediaType.APPLICATION_JSON_UTF8).content(json))
+		mvc.perform(post("/supportTypes").contentType(MediaType.APPLICATION_JSON_UTF8).content(json))
 				.andExpect(status().isOk());
 		
 		result = mvc
-				.perform(
-						get("/supportTypes").contentType(
-								MediaType.APPLICATION_JSON_UTF8))
+				.perform(get("/supportTypes").contentType(MediaType.APPLICATION_JSON_UTF8))
 				.andExpect(status().isOk())
 				.andDo(MockMvcResultHandlers.print()).andReturn();
 
@@ -226,5 +239,4 @@ public class ControllerTest {
 			assertFalse(Boolean.valueOf(((JSONObject) arr.get(i)).get("used").toString()));
 		}
 	}
-
 }

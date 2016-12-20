@@ -7,15 +7,17 @@ define(['angular'], function(angular){
 					searchKeyword : '',
 					searchResult : [],
 					searchTime : 0,
-					searchTryCount : 0
+					searchTryCount : 0,
+					page : 1
 				},
 
 				setSearchFlag: function(b){
 					this.searchFlag = b;
 				},
 
-				lazyLoadDocumentContent: function(document, keyword){
+				lazyLoadDocumentContent: function(document){
 					var pathString = document.pathString;
+					var keyword = document.keyword;
 					var deferred = $q.defer();
 
 					// ajax $http
@@ -52,6 +54,8 @@ define(['angular'], function(angular){
 				},
 
 				search : function(keyword){
+					this.model.page = 1;
+					
 					var deferred = $q.defer();
 
 					// ajax $http
@@ -84,9 +88,9 @@ define(['angular'], function(angular){
 							for(var i = 0 ; i < json.length ; i ++){
 								var data = json[i];
 								var document = new Document(data.createdTime, data.modifiedTime, data.title, data.pathString
-										, data.contents, data.parentPathString, data.fileSize, data.mimeType, data.exist);
+										, data.contents, data.parentPathString, data.fileSize, data.mimeType, data.exist, keyword);
 								self.model.searchResult.push(document);
-								self.lazyLoadDocumentContent(document, keyword);
+								//self.lazyLoadDocumentContent(document, keyword);
 							}
 							self.model.searchTime = (toMiliseconds * 1.0 - milliseconds * 1.0) / 1000
 							self.model.searchFlag = false;
@@ -129,7 +133,7 @@ define(['angular'], function(angular){
 
 	app.factory("Document", function() {
 		// Define the constructor function.
-		function Document(createdTime, modifiedTime, title, pathString, contents, parentPathString, fileSize, mimeType, exist) {
+		function Document(createdTime, modifiedTime, title, pathString, contents, parentPathString, fileSize, mimeType, exist, keyword) {
 			/*
 			 * private long createdTime; private long modifiedTime; private String
 			 * title; private String pathString; private String contents;
@@ -143,6 +147,8 @@ define(['angular'], function(angular){
 			this.fileSize = fileSize;
 			this.mimeType = mimeType;
 			this.exist = exist;
+			this.loaded = false;
+			this.keyword = keyword;
 		}
 
 		// Define the "instance" methods using the prototype

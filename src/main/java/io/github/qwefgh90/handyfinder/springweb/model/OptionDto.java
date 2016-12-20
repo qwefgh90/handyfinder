@@ -5,13 +5,21 @@ public class OptionDto {
 	private int maximumDocumentMBSize;
 	private String keywordMode;
 	private boolean firstStart;
-	private boolean pathMode;
+	private boolean pathTarget;
+	private boolean contentTarget;
 	
-	public boolean isPathMode() {
-		return pathMode;
+	
+	public boolean isPathTarget() {
+		return pathTarget;
 	}
-	public void setPathMode(boolean pathMode) {
-		this.pathMode = pathMode;
+	public void setPathTarget(boolean pathTarget) {
+		this.pathTarget = pathTarget;
+	}
+	public boolean isContentTarget() {
+		return contentTarget;
+	}
+	public void setContentTarget(boolean contentTarget) {
+		this.contentTarget = contentTarget;
 	}
 	public boolean isFirstStart() {
 		return firstStart;

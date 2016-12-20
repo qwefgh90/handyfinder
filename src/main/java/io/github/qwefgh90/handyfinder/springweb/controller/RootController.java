@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +25,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.google.gson.JsonObject;
+
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
-import io.github.qwefgh90.handyfinder.springweb.model.COMMAND;
+import io.github.qwefgh90.handyfinder.springweb.model.Command;
 import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
 import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
 import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
@@ -63,6 +66,18 @@ public class RootController {
 	}
 
 	@RequestMapping(value = "/documents", method = RequestMethod.GET)
+	public ResponseEntity<List<String>> search() {
+		List<String> result;
+		try {
+			result = rootService.getTempPathForAllDocumentList();
+			return new ResponseEntity<List<String>>(result, HttpStatus.OK);
+		} catch (IOException e) {
+			LOG.error(ExceptionUtils.getStackTrace(e));
+			return new ResponseEntity<List<String>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}	
+
+	@RequestMapping(value = "/documents", method = RequestMethod.GET, params="keyword")
 	public ResponseEntity<List<DocumentDto>> search(@RequestParam String keyword) {
 		Optional<List<DocumentDto>> result = Optional.empty();
 		result = rootService.search(keyword);
@@ -115,8 +130,17 @@ public class RootController {
 			return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
 
+	@RequestMapping(value = "/version", method = RequestMethod.GET)
+	public ResponseEntity<Map<String,String>> getVersion() {
+		return new ResponseEntity<Map<String,String>>(rootService.getVersion(), HttpStatus.OK);
+	}
+
+	@RequestMapping(value = "/onlineVersion", method = RequestMethod.GET)
+	public ResponseEntity<Map<String,String>> getOnlineVersion() {
+		return new ResponseEntity<Map<String,String>>(rootService.getOnlineVersion(), HttpStatus.OK);
+	}
+	
 	@RequestMapping(value = "/options", method = RequestMethod.GET)
 	public ResponseEntity<OptionDto> getOption() {
 		return new ResponseEntity<OptionDto>(rootService.getOption(), HttpStatus.OK);
@@ -137,15 +161,15 @@ public class RootController {
 	public void command1(@DestinationVariable String command, SimpMessageHeaderAccessor accessor) {
 		if (command == null)
 			return;
-		COMMAND dto;
+		Command dto;
 		if (command.equals("start"))
-			dto = COMMAND.START_INDEXING;
+			dto = Command.START_INDEXING;
 		else if (command.equals("stop"))
-			dto = COMMAND.STOP_INDEXING;
+			dto = Command.STOP_INDEXING;
 		else if (command.equals("update"))
-			dto = COMMAND.UPDATE_INDEXING;
+			dto = Command.UPDATE_INDEXING;
 		else if (command.equals("openAndSelectDirectory"))
-			dto = COMMAND.OPEN_AND_SEND_DIRECTORY;
+			dto = Command.OPEN_AND_SEND_DIRECTORY;
 		else
 			return;
 
@@ -165,7 +189,7 @@ public class RootController {
 		if (command.equals("open-file"))
 			rootService.openFile(path.getPath());
 		if (command.equals("open-home"))
-			rootService.openHomeURL();
+			rootService.openURL(Optional.empty());
 	}
 
 	private static class OpenCommand {

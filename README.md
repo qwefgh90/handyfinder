@@ -1,6 +1,6 @@
 # handyfinder
 
-[![Build Status](https://travis-ci.org/qwefgh90/handyfinder.svg?branch=master)](https://travis-ci.org/qwefgh90/handyfinder)
+[![Build Status](https://travis-ci.org/qwefgh90/handyfinder.svg?branch=develop)](https://travis-ci.org/qwefgh90/handyfinder)
 
 A handyfinder is tiny search program working on desktop to support multiple type of files
 

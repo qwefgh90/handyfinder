@@ -3,6 +3,7 @@ package io.github.qwefgh90.handyfinder.lucene;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -10,61 +11,66 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerBasicOption.KEYWORD_MODE;
+import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.KEYWORD_MODE;
+import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 
-public class LuceneHandlerBasicOptionView implements
-		ILuceneHandlerBasicOptionView {
+/**
+ * Service class of BasicOptionModel
+ * @author qwefgh90
+ *
+ */
+public class BasicOption {
 	private final static Logger LOG = LoggerFactory
-			.getLogger(LuceneHandlerBasicOptionView.class);
+			.getLogger(BasicOption.class);
 
-	private LuceneHandlerBasicOption app;
+	private BasicOptionModel model;
 
-	private LuceneHandlerBasicOptionView(Path appDataJsonPath) {
+	private BasicOption(Path appDataJsonPath) {
 		try {
-			app = LuceneHandlerBasicOption.getInstance(appDataJsonPath);
+			model = new BasicOptionModel(appDataJsonPath);
 		} catch (IOException e) {
 			LOG.error(ExceptionUtils.getStackTrace(e));
 			throw new RuntimeException(e.toString());
 		}
 	}
 
-	private static LuceneHandlerBasicOptionView singleton = null;
+	private static BasicOption singleton = null;
 
-	public static LuceneHandlerBasicOptionView getInstance(Path appDataJsonPath) {
+	public static BasicOption getInstance(Path appDataJsonPath) {
 		if (singleton == null)
-			singleton = new LuceneHandlerBasicOptionView(appDataJsonPath);
+			singleton = new BasicOption(appDataJsonPath);
 		return singleton;
 	}
 
 	public List<Directory> getDirectoryList() {
-		return Collections.unmodifiableList(app.getDirectoryList());
+		return Collections.unmodifiableList(model.getDirectoryList());
 	}
 
 	public KEYWORD_MODE getKeywordMode(){
-		return app.getKeywordMode();
+		return model.getKeywordMode();
 	}
-	
+
 	public void setKeywordMode(String keywordMode){
 		for(KEYWORD_MODE mode : KEYWORD_MODE.values()){
 			if(mode.name().equals(keywordMode)){
-				app.setKeywordMode(KEYWORD_MODE.valueOf(keywordMode));
+				model.setKeywordMode(KEYWORD_MODE.valueOf(keywordMode));
 				break;
 			}
 		}
 	}
-	
+
 	public void addDirectory(Directory d) {
-		app.getDirectoryList().add(d);
+		model.getDirectoryList().add(d);
 	}
 
 	public void setDirectory(Directory d) {
 		deleteDirectory(d);
-		app.getDirectoryList().add(d);
+		model.getDirectoryList().add(d);
 	}
-	
+
 	public void deleteDirectory(Directory d) {
-		Iterator<Directory> iter = app.getDirectoryList().iterator();
+		Iterator<Directory> iter = model.getDirectoryList().iterator();
 		while (iter.hasNext()) {
 			Directory dir = iter.next();
 			if (dir.getPathString().equals(d.getPathString())) {
@@ -75,40 +81,43 @@ public class LuceneHandlerBasicOptionView implements
 	}
 
 	public void deleteDirectories() {
-		app.getDirectoryList().clear();
+		model.getDirectoryList().clear();
 	}
 
-	public boolean isPathMode() {
-		return app.isPathMode();
+
+	public EnumSet<TARGET_MODE> getTargetMode() {
+		return model.getTargetMode();
 	}
 
-	public void setPathMode(boolean pathMode) {
-		app.setPathMode(pathMode);
+	public void setTargetMode(EnumSet<TARGET_MODE> targetMode) {
+		model.setTargetMode(targetMode);
 	}
-
+	
 	public void writeAppDataToDisk() {
-		app.writeAppDataToDisk();
+		model.writeAppDataToDisk();
 	}
 
 	public void deleteAppDataFromDisk() throws IOException {
-		app.deleteAppDataFromDisk();
+		model.deleteAppDataFromDisk();
 	}
 
 	public void setMaximumDocumentMBSize(int size) {
-		app.setMaximumDocumentMBSize(size);
+		model.setMaximumDocumentMBSize(size);
 	}
 
 	public void setLimitCountOfResult(int limit) {
-		app.setLimitCountOfResult(limit);
+		model.setLimitCountOfResult(limit);
 	}
 
-	@Override
 	public int getMaximumDocumentMBSize() {
-		return app.getMaximumDocumentMBSize();
+		return model.getMaximumDocumentMBSize();
 	}
 
-	@Override
 	public int getLimitCountOfResult() {
-		return app.getLimitCountOfResult();
+		return model.getLimitCountOfResult();
 	}
+
+	/*public static class BasicOptionModel {
+
+	}*/
 }
