@@ -1,6 +1,6 @@
 # handyfinder
 
-[![Build Status](https://travis-ci.org/qwefgh90/handyfinder.svg?branch=master)](https://travis-ci.org/qwefgh90/handyfinder)
+[![Build Status](https://travis-ci.org/qwefgh90/handyfinder.svg?branch=develop)](https://travis-ci.org/qwefgh90/handyfinder)
 
 A handy finder is search program for document indexing and searching on multiple platforms
 

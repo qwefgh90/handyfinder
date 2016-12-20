@@ -89,7 +89,7 @@ import io.github.qwefgh90.jsearch.JSearch;
  * @since 16/05/13
  *
  */
-public class LuceneHandler implements Cloneable, AutoCloseable {
+public final class LuceneHandler implements Cloneable, AutoCloseable {
 
 	private final static Logger LOG = LoggerFactory
 			.getLogger(LuceneHandler.class);
@@ -127,7 +127,7 @@ public class LuceneHandler implements Cloneable, AutoCloseable {
 	 * 
 	 * @param state
 	 */
-	private synchronized boolean updateWriteState(INDEX_WRITE_STATE state) {
+	synchronized boolean updateWriteState(INDEX_WRITE_STATE state) {
 		// progress
 		switch(state){			
 		case READY:{

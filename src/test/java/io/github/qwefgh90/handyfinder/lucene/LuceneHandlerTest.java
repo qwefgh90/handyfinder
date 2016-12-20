@@ -34,6 +34,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.KEYWORD_MODE;
 import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandler.INDEX_WRITE_STATE;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
 import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
@@ -195,7 +196,8 @@ public class LuceneHandlerTest {
 
 		Files.delete(temp2txt);
 		temptxt.toFile().delete();
-
+		
+		handler.updateWriteState(INDEX_WRITE_STATE.READY);
 		handler.updateIndexedDocuments(indexDirList);
 		int countAfter = handler.getDocumentCount();
 		
