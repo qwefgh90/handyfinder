@@ -198,6 +198,7 @@
 					</bundleArguments>
 					<additionalBundlerResources>src/main/deploy/package/windows</additionalBundlerResources>
 					<additionalAppResources>src/main/deploy/package/windows</additionalAppResources>
+
 				</configuration>
 			</plugin>
 
@@ -231,6 +232,7 @@
 						<manifest>
 							<addClasspath>true</addClasspath>
 							<mainClass>es.uvigo.ei.sing.webviewdemo.WebViewMain</mainClass>
+
 							<classpathPrefix>dependency-jars/</classpathPrefix>
 						</manifest>
 					</archive>
