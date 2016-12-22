@@ -1,9 +1,10 @@
 ;This file will be executed next to the application bundle image
 ;I.e. current directory will contain folder handyfinder with application files
-[Setup]AppId={{0.102}}
+[Setup]
+SignTool=signtoolAppId={{0.103}}
 AppName=handyfinder
-AppVersion=0.102
-AppVerName=handyfinder 0.102
+AppVersion=0.103
+AppVerName=handyfinder 0.103
 AppPublisher=Handyfinder
 AppComments=handyfinder
 AppCopyright=Copyright (C) 2016
@@ -23,7 +24,7 @@ InfoAfterFile=..\AFTER
 LicenseFile=LICENSE
 ;WinXP or above
 MinVersion=0,5.1 
-OutputBaseFilename=handyfinder-0.102
+OutputBaseFilename=handyfinder
 Compression=lzma
 SolidCompression=yes
 PrivilegesRequired=lowest
@@ -39,8 +40,8 @@ ArchitecturesInstallIn64BitMode=x64
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "handyfinder\handyfinder.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "handyfinder\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "handyfinder\handyfinder.exe"; DestDir: "{app}"; Flags: ignoreversion sign 
+Source: "handyfinder\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs   overwritereadonly  
 
 [Icons]
 Name: "{group}\handyfinder"; Filename: "{app}\handyfinder.exe"; IconFilename: "{app}\handyfinder.ico"; Check: returnTrue()
