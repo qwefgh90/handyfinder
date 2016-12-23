@@ -388,34 +388,28 @@ public class RootService {
 	}
 
 	public void openFile(String pathStr) {
-		try {
-			URL url = new URL(pathStr);
-			if(url.getProtocol().equals("http") || url.getProtocol().equals("https")){
-				openURL(Optional.of(pathStr));
-			}else{
-				Path path = Paths.get(pathStr);
-				if (Files.exists(path) && Files.isRegularFile(path)) {
-					try {
-						MediaType mime = JSearch.getContentType(path.toFile(),
-								path.getFileName().toString());
+		if(pathStr.startsWith("http://") || pathStr.startsWith("https://")){
+			openURL(Optional.of(pathStr));
+		}else{
+			final Path path = Paths.get(pathStr);
+			if (Files.exists(path) && Files.isRegularFile(path)) {
+				try {
+					final MediaType mime = JSearch.getContentType(path.toFile(),
+							path.getFileName().toString());
 
-						// if ok, run program
-						if (Desktop.isDesktopSupported()) {
-							try {
-								Desktop.getDesktop().open(path.toFile());
-							} catch (IOException e) {
-								LOG.warn(e.toString());
-							}
+					// if ok, run program
+					if (Desktop.isDesktopSupported()) {
+						try {
+							Desktop.getDesktop().open(path.toFile());
+						} catch (IOException e) {
+							LOG.warn(e.toString());
 						}
-					} catch (IOException e) {
-						LOG.warn(ExceptionUtils.getStackTrace(e));
 					}
+				} catch (IOException e) {
+					LOG.warn(ExceptionUtils.getStackTrace(e));
 				}
 			}
-		} catch (MalformedURLException e) {
-			LOG.warn(ExceptionUtils.getStackTrace(e));
 		}
-
 	}
 
 	private void openAndSendDirectory() {
