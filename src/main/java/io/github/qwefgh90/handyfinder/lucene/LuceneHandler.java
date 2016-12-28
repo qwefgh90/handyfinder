@@ -696,8 +696,9 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 					LOG.error(ExceptionUtils.getStackTrace(e));
 				}
 			}
-			
+
 			final ExecutorService threads = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+			
 			pathList.forEach((file) -> {
 				threads.submit(new Runnable(){
 					@Override
@@ -707,8 +708,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 						}
 						// check file size
 						try {
-							if (Files.size(file) / (1000 * 1000) <= basicOption
-									.getMaximumDocumentMBSize()
+							if (Files.size(file) / (1000 * 1000) <= basicOption.getMaximumDocumentMBSize()
 									&& !isExistsInLuceneIndex(file.toAbsolutePath()
 											.toString())){
 								index(file);
@@ -994,7 +994,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		final Field pathStringForQueryField = new Field("pathStringForQuery", path.toAbsolutePath().toString(), typeWithStore);
 
 		final Field contentsField = new Field("contents", extractContentsFromFile(path.toFile()), type);
-			
+
 		final Document doc = new Document();
 		doc.add(mimeTypeString);
 		doc.add(title);
