@@ -3,7 +3,6 @@ package io.github.qwefgh90.handyfinder.lucene;
 
 import static org.hamcrest.CoreMatchers.is;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
@@ -18,7 +17,6 @@ import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.custom.CustomAnalyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.ngram.NGramTokenizerFactory;
-import org.apache.lucene.analysis.path.PathHierarchyTokenizerFactory;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -49,6 +47,7 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.TestRuleLimitSysouts.Limit;
 
+import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 import com.google.common.io.Files;
 
 
@@ -77,7 +76,6 @@ public class NGramTest extends LuceneTestCase {
 				.withTokenizer(KeywordTokenizerFactory.class)
 				.addTokenFilter(LowerCaseFilterFactory.class)
 				.build();
-		WhitespaceAnalyzer a;
 		final Map<String, Analyzer> perFieldAnalyzer = new TreeMap<>();
 		perFieldAnalyzer.put("content", ngramAnalyzer);
 		perFieldAnalyzer.put("hidingContentForTest", ngramAnalyzer);

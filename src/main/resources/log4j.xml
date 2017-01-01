@@ -25,6 +25,9 @@
 	<logger name="org.springframework.web">
 		<level value="warn" />
 	</logger>
+	<logger name="io.github.qwefgh90.handyfinder.memory.monitor">
+		<level value="debug" />
+	</logger>
 	<logger name="io.github.qwefgh90.handyfinder.gui">
 		<level value="debug" />
 	</logger>
