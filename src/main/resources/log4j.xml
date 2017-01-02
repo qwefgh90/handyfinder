@@ -35,7 +35,7 @@
 		<level value="debug" />
 	</logger>
 	<logger name="io.github.qwefgh90.handyfinder.lucene">
-		<level value="trace" />
+		<level value="debug" />
 	</logger>
 	<logger name="io.github.qwefgh90.handyfinder.springweb.websocket.test">
 		<level value="debug" />
