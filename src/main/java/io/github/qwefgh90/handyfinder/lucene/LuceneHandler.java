@@ -668,7 +668,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 			}
 			final long maxHeapSize = Runtime.getRuntime().maxMemory();
 			final Consumer<List<Path>> submitAllTask = (list) -> {
-				final ExecutorService threads = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+				final ExecutorService threads = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 				list.forEach((file) -> {
 					threads.submit(new Runnable(){
 						@Override
@@ -697,6 +697,12 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 				} catch (InterruptedException e) {
 					threads.shutdownNow();
 					LOG.error(ExceptionUtils.getStackTrace(e));
+				}finally{
+					try {
+						writer.commit();
+					} catch (IOException e) {
+						LOG.error(ExceptionUtils.getStackTrace(e));
+					} // commit() is important for real-time search
 				}
 			};
 			final FileSize size = new FileSize();
@@ -723,6 +729,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 												"\n* current heap : " + String.format("%,d", currentHeap)
 												+"\n* max heap : " + String.format("%,d", maxHeapSize));
 										submitAllTask.accept(pathList);
+										
 										pathList.clear();
 										size.size = 0;
 									}
@@ -1020,8 +1027,8 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		
 		final FieldType type = new FieldType();
 		type.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
-		type.setStoreTermVectors(true);
-		type.setStoreTermVectorOffsets(true);
+		type.setStoreTermVectors(false);
+		type.setStoreTermVectorOffsets(false);
 
 		final FieldType typeWithStore = new FieldType(type);
 		typeWithStore.setStored(true);
@@ -1054,29 +1061,36 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		
 		final long maxHeapSize = Runtime.getRuntime().maxMemory();					
 		final long currentHeap = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory(); 
-		LOG.debug("\n* Memory check - \n* limit : " +(maxHeapSize) + " / size : " + (currentHeap + (Files.size(path) * multiplyForNGram) ));
+		LOG.debug("\n* Memory check - \n* limit : " +(maxHeapSize) + " / size : " + (currentHeap + (Files.size(path) * multiplyForNGram) 
+				+ "\n* Ram buffer for index : " + indexConfig.getRAMBufferSizeMB()
+				+","+indexConfig.getMaxBufferedDeleteTerms()+","+indexConfig.getMaxBufferedDocs()
+				));
 		if((maxHeapSize) < (currentHeap + (Files.size(path) * multiplyForNGram))){	//if over size of max heap
 			LOG.info("Await Handyfinder no have memory space for running index");
 			try {
 				latch.await(() -> {
 					try {
-						if((maxHeapSize) > (currentHeap + (Files.size(path) * multiplyForNGram))){
+						final long _currentHeap = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory(); 
+						if((maxHeapSize) > (_currentHeap + (Files.size(path) * multiplyForNGram))){
 							LOG.debug("release thread");
 							return true;	//have enough memory space
-						}else 
+						}else {
+							LOG.debug("lock thread");
 							return false;	//no have enough memory space
+						}
 					} catch (IOException e) {
 						LOG.warn("Exception in functional latch\n" + ExceptionUtils.getStackTrace(e));
 						return true;
 					}
-				}, 1);
+				}, 1, 10, TimeUnit.SECONDS);
+				LOG.debug("go thread");
 			} catch (InterruptedException e) {
 				LOG.warn(ExceptionUtils.getStackTrace(e));
 			}
 		}
 		
 		writer.updateDocument(new Term("pathString", path.toAbsolutePath().toString()), doc);
-		writer.commit(); // commit() is important for real-time search
+		writer.flush();
 		LOG.info("Indexed : " + path);
 	}
 
