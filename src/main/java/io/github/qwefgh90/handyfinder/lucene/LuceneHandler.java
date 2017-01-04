@@ -278,13 +278,14 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	public void startIndex(final List<Directory> list) throws IOException {
 		if (!isReady())
 			throw new IllegalStateException("already indexing");
-		// checkIndexWriter();
 		if(updateWriteState(INDEX_WRITE_STATE.PROGRESS)){
 			try {
+				compactAndCleanIndex();
 				totalProcess = sizeOfindexDirectories(list);
 				invokerForCommand.startProgress(totalProcess);
 				indexDocuments(list);
 			} finally {
+				compactAndCleanIndex();
 				updateWriteState(INDEX_WRITE_STATE.READY);
 				invokerForCommand.terminateProgress(totalProcess);
 			}
@@ -316,11 +317,10 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 				tempReturnValue = cleanNonContainedInternalIndex(tempReturnValue.getKey(),
 						rootIndexDirectory);
 				nonContainedCount = tempReturnValue.getValue();
-				// update file
+				// update index
 				updateCount = updateContentInternalIndex(tempReturnValue.getKey());
-				writer.forceMergeDeletes();
-				writer.deleteUnusedFiles();
-				writer.commit();
+				// compact and clean
+				compactAndCleanIndex();
 			} catch (IOException e) {
 				LOG.warn(ExceptionUtils.getStackTrace(e));
 			} finally {
@@ -336,6 +336,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	 */
 	public void stopIndex() {
 		updateWriteState(LuceneHandler.INDEX_WRITE_STATE.STOPPING);
+		latch.signalAll();
 	}
 
 	/**
@@ -622,6 +623,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 
 	@Override
 	public void close() throws IOException {
+		latch.terminate();
 		checkIndexWriter();
 		if (writer != null){
 			writer.commit();
@@ -684,7 +686,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 								.updateProgress(currentProgress,
 										file, totalProcess); // STATE
 							} catch (Exception e) {
-								LOG.warn("Failed : " + file.toString());
+								LOG.warn("Failed and retry later : " + file.toString());
 								LOG.warn(ExceptionUtils.getStackTrace(e));
 							}
 						}
@@ -697,12 +699,6 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 				} catch (InterruptedException e) {
 					threads.shutdownNow();
 					LOG.error(ExceptionUtils.getStackTrace(e));
-				}finally{
-					try {
-						writer.commit();
-					} catch (IOException e) {
-						LOG.error(ExceptionUtils.getStackTrace(e));
-					} // commit() is important for real-time search
 				}
 			};
 			final FileSize size = new FileSize();
@@ -731,7 +727,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 										submitAllTask.accept(pathList);
 										
 										pathList.clear();
-										size.size = 0;
+										size.init();
 									}
 								} else {
 									LOG.trace("skip " + file.toString());
@@ -769,8 +765,9 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 												"\n* current heap : " + String.format("%,d", currentHeap)
 												+"\n* max heap : " + String.format("%,d", maxHeapSize));
 										submitAllTask.accept(pathList);
+										
 										pathList.clear();
-										size.size = 0;
+										size.init();
 									}
 								} else {
 									LOG.trace("skip " + file.toString());
@@ -789,33 +786,6 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 			}
 			
 			submitAllTask.accept(pathList);
-			/*
-			pathList
-			.parallelStream()
-			.forEach(
-					file -> {
-						if (isStopping()) {
-							return;
-						}
-						// check file size
-						try {
-							if (Files.size(file) / (1000 * 1000) <= basicOption
-									.getMaximumDocumentMBSize()
-									&& !isExistsInLuceneIndex(file.toAbsolutePath()
-											.toString())){
-								index(file);
-								currentProgress++; // STATE UPDATE
-								invokerForCommand
-								.updateProgress(currentProgress,
-										file, totalProcess); // STATE
-							} else
-								LOG.debug("skip " + file.toString());
-						} catch (Exception e) {
-							LOG.warn("Failed : " + file.toString());
-							LOG.warn(ExceptionUtils.getStackTrace(e));
-						}
-					});*/
-
 		}
 	}
 
@@ -1005,6 +975,12 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		return Integer.valueOf(countOfProcessed);
 	}
 	
+	void compactAndCleanIndex() throws IOException{
+		writer.forceMergeDeletes();
+		writer.deleteUnusedFiles();
+		writer.commit();
+	}
+	
 	String extractContentsFromFile(File f) throws IOException{
 		final String contents = JSearch
 				.extractContentsFromFile(f)
@@ -1027,8 +1003,8 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		
 		final FieldType type = new FieldType();
 		type.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
-		type.setStoreTermVectors(false);
-		type.setStoreTermVectorOffsets(false);
+		type.setStoreTermVectors(true);
+		type.setStoreTermVectorOffsets(true);
 
 		final FieldType typeWithStore = new FieldType(type);
 		typeWithStore.setStored(true);
@@ -1061,10 +1037,6 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		
 		final long maxHeapSize = Runtime.getRuntime().maxMemory();					
 		final long currentHeap = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory(); 
-		LOG.debug("\n* Memory check - \n* limit : " +(maxHeapSize) + " / size : " + (currentHeap + (Files.size(path) * multiplyForNGram) 
-				+ "\n* Ram buffer for index : " + indexConfig.getRAMBufferSizeMB()
-				+","+indexConfig.getMaxBufferedDeleteTerms()+","+indexConfig.getMaxBufferedDocs()
-				));
 		if((maxHeapSize) < (currentHeap + (Files.size(path) * multiplyForNGram))){	//if over size of max heap
 			LOG.info("Await Handyfinder no have memory space for running index");
 			try {
@@ -1072,10 +1044,10 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 					try {
 						final long _currentHeap = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory(); 
 						if((maxHeapSize) > (_currentHeap + (Files.size(path) * multiplyForNGram))){
-							LOG.debug("release thread");
+							//LOG.debug("release thread");
 							return true;	//have enough memory space
 						}else {
-							LOG.debug("lock thread");
+							//LOG.debug("lock thread");
 							return false;	//no have enough memory space
 						}
 					} catch (IOException e) {
@@ -1088,10 +1060,22 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 				LOG.warn(ExceptionUtils.getStackTrace(e));
 			}
 		}
-		
+
+		LOG.debug("\n before update Document\n* Memory check - \n* limit : " +(maxHeapSize) + " / size : " + (currentHeap + (Files.size(path) * multiplyForNGram) 
+				+ "\n* Ram buffer for index : " + indexConfig.getRAMBufferSizeMB()
+				+","+indexConfig.getMaxBufferedDeleteTerms()+","+indexConfig.getMaxBufferedDocs()
+				));
+
+		if(!writer.isOpen()){
+			LOG.debug("Reopen IndexWriter");
+			writer = new IndexWriter(dir, new IndexWriterConfig(analyzer));
+		}
+		// WARNING) This is high memory cost operation
 		writer.updateDocument(new Term("pathString", path.toAbsolutePath().toString()), doc);
-		writer.flush();
+		writer.commit(); // commit() is important for real-time search
+
 		LOG.info("Indexed : " + path);
+
 	}
 
 	/**
