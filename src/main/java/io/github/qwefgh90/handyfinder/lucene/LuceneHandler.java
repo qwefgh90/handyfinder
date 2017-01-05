@@ -99,6 +99,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 
 	private final static Logger LOG = LoggerFactory
 			.getLogger(LuceneHandler.class);
+	private final static long REMAINING_DISK_SIZE_MB = 5000; // 5GB
 
 	// failed paths set
 	private final Set<Path> failedPathSet = new HashSet<>();
@@ -631,14 +632,17 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 
 	void indexDocuments(final List<Directory> list) {
 		for (Directory dir : list) {
+			if (isStopping()) {
+				break;
+			}
+			if (!isDiskAvailable()){
+				break;
+			}
 			Path path = Paths.get(dir.getPathString());
 			if (dir.isRecursively()) {
 				indexDirectory(path, true);
 			} else {
 				indexDirectory(path, false);
-			}
-			if (isStopping()) {
-				break;
 			}
 		}
 	}
@@ -951,6 +955,20 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 			}
 		}
 		return Integer.valueOf(countOfProcessed);
+	}
+	
+	boolean isDiskAvailable(){
+		 long mb;
+		try {
+			mb = (FileSystemUtils.freeSpaceKb() / 1000);
+		 if(mb > REMAINING_DISK_SIZE_MB)
+			 return true;
+		 else
+			 return false;
+		} catch (IOException e) {
+			LOG.warn(ExceptionUtils.getStackTrace(e));
+			return false;
+		}
 	}
 	
 	void compactAndCleanIndex() throws IOException{
