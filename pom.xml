@@ -3,9 +3,9 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.qwefgh90</groupId>
 	<artifactId>handyfinder</artifactId>
-	<version>0.103</version>
+	<version>0.104</version>
 	<properties>
-		<project.version>0.103</project.version>
+		<project.version>0.104</project.version>
 		<project.artifactId>jsearch</project.artifactId>
 		<project.source.encoding>UTF-8</project.source.encoding>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -58,11 +58,6 @@
 			<version>${spring.webmvc.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>2.5</version>
-		</dependency>
-		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<version>2.8.5</version>
@@ -100,7 +95,6 @@
 			<artifactId>javax.inject</artifactId>
 			<version>1</version>
 		</dependency>
-
 		<dependency>
 			<groupId>commons-lang</groupId>
 			<artifactId>commons-lang</artifactId>
@@ -143,7 +137,6 @@
 			<version>1.1</version>
 			<scope>test</scope>
 		</dependency><!-- http://mvnrepository.com/artifact/org.projectodd.stilts/stilts-stomp-client -->
-
 		<dependency>
 			<groupId>org.hamcrest</groupId>
 			<artifactId>hamcrest-core</artifactId>
@@ -201,9 +194,9 @@
 					<needShortcut>true</needShortcut>
 					<needMenu>true</needMenu>
 					<verbose>true</verbose>
-					<nativeReleaseVersion>0.103</nativeReleaseVersion>
+					<nativeReleaseVersion>0.104</nativeReleaseVersion>
 					<bundleArguments>
-						<identifier>0.103</identifier>
+						<identifier>0.104</identifier>
 						<installdirChooser>true</installdirChooser>
 						<licenseFile>LICENSE</licenseFile>
 					</bundleArguments>

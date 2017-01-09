@@ -12,7 +12,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.security.InvalidParameterException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,7 +33,6 @@ import java.util.stream.Stream;
 
 import javax.activity.InvalidActivityException;
 
-import org.apache.commons.io.FileSystemUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -1081,7 +1079,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 
 		LOG.debug("\n before update Document\n* Memory check - \n* limit : " +(maxHeapSize) + " / size : " + (currentHeap + (Files.size(path) * multiplyForNGram) 
 				+ "\n* Ram buffer for index : " + indexConfig.getRAMBufferSizeMB() + "," + indexConfig.getMaxBufferedDeleteTerms() + "," + indexConfig.getMaxBufferedDocs()
-				+ "\n* Disk : " + FileSystemUtils.freeSpaceKb() / 1000));
+				));
 		
 		if(isStopping())
 			return false;
