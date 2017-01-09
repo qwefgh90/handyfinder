@@ -1,10 +1,11 @@
 ;This file will be executed next to the application bundle image
 ;I.e. current directory will contain folder handyfinder with application files
 [Setup]
-SignTool=signtoolAppId={{0.103}}
+SignTool=signtool
+AppId={{0.104}}
 AppName=handyfinder
-AppVersion=0.103
-AppVerName=handyfinder 0.103
+AppVersion=0.104
+AppVerName=handyfinder 0.104
 AppPublisher=Handyfinder
 AppComments=handyfinder
 AppCopyright=Copyright (C) 2016

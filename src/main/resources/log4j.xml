@@ -3,12 +3,13 @@
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
 
 	<!-- Appenders -->
-	<appender name="FILE_APPENDER" class="org.apache.log4j.FileAppender">
-		<param name="file" value="log.out" />
+	<appender name="FILE_APPENDER" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="app.log" />
+		<param name="DatePattern" value="'.'yyyy-MM-dd" />
 		<param name="immediateFlush" value="true" />
 		<param name="append" value="true" />
 		<layout class="org.apache.log4j.PatternLayout">
-			<param name="ConversionPattern" value="%d{HH:mm:ss} %c{10} [%p][%L] - %m%n" /> <!--  [%t] -->
+			<param name="ConversionPattern" value="%d{HH:mm:ss} %c{10} [%p][%L] - %m%n" /> <!-- [%t] -->
 		</layout>
 	</appender>
 
@@ -25,6 +26,9 @@
 	<logger name="org.springframework.web">
 		<level value="warn" />
 	</logger>
+	<logger name="io.github.qwefgh90.handyfinder.memory.monitor">
+		<level value="debug" />
+	</logger>
 	<logger name="io.github.qwefgh90.handyfinder.gui">
 		<level value="debug" />
 	</logger>
@@ -32,7 +36,7 @@
 		<level value="debug" />
 	</logger>
 	<logger name="io.github.qwefgh90.handyfinder.lucene">
-		<level value="trace" />
+		<level value="debug" />
 	</logger>
 	<logger name="io.github.qwefgh90.handyfinder.springweb.websocket.test">
 		<level value="debug" />

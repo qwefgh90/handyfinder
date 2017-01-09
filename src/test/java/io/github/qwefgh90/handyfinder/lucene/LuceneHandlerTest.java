@@ -131,14 +131,6 @@ public class LuceneHandlerTest {
 			Files.delete(temp2txt);
 		mimeOption.initGlobTrue();
 		LuceneHandler.closeResources();
-		try {
-			handler.indexDirectory(
-					AppStartupConfig.pathForAppdata.resolve("notexists"), true);
-		} catch (RuntimeException e) { // after close, throw RuntimeException
-			assertTrue(true);
-			return;
-		}
-		assertTrue(false);
 	}
 
 	@Test
