@@ -117,6 +117,14 @@ public class BasicOption {
 		return model.getLimitCountOfResult();
 	}
 
+	public int getMaximumCapacityPercent() {
+		return model.getMaximumCapacityPercent();
+	}
+
+	public void setMaximumCapacityPercent(int maximumCapacityPercent) {
+		model.setMaximumCapacityPercent(maximumCapacityPercent);
+	}
+
 	/*public static class BasicOptionModel {
 
 	}*/
