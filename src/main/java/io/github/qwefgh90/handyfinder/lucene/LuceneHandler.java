@@ -99,13 +99,13 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 
 	private final static Logger LOG = LoggerFactory
 			.getLogger(LuceneHandler.class);
-	private final static long REMAINING_DISK_SIZE_MB = 5000; // 5GB
 
 	// failed paths set
 	private final Set<Path> failedPathSet = new HashSet<>();
 	
-	// immutabel infomation
-	final private Path writerPath;
+	// immutable infomation
+	final private Path writerPath;	
+	final File writerFile;
 	final private org.apache.lucene.store.Directory dir;
 	final private Analyzer analyzer;
 	final private int minGramSize = 2;
@@ -207,6 +207,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 			perFieldAnalyzer.put("pathStringForQuery", getKeywordAnalyzer());
 			analyzer = new PerFieldAnalyzerWrapper(getNgramAnalyzer(), perFieldAnalyzer);
 			writerPath = path;
+			writerFile = path.toFile();
 			dir = FSDirectory.open(path);
 			indexConfig = new IndexWriterConfig(analyzer);
 			writer = new IndexWriter(dir, indexConfig);
@@ -625,8 +626,15 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	}
 	
 	void indexFailedDocuments(){
+		LOG.info("index failed documents");
 		ArrayList<Path> tempList = new ArrayList<>(failedPathSet);
 		failedPathSet.clear();			//clear		
+		if (isStopping()) {
+			return;
+		}
+		if (!isDiskAvailable()){
+			return;
+		}
 		parallelIndex.accept(tempList);
 	}
 
@@ -696,6 +704,9 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 								if (isStopping()) {
 									return FileVisitResult.TERMINATE;
 								}
+								if (!isDiskAvailable()) {
+									return FileVisitResult.TERMINATE;
+								}
 							}
 							return FileVisitResult.CONTINUE;
 						}
@@ -734,6 +745,9 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 								if (isStopping()) {
 									return FileVisitResult.TERMINATE;
 								}
+								if (!isDiskAvailable()) {
+									return FileVisitResult.TERMINATE;
+								}
 							}
 							return FileVisitResult.CONTINUE;
 						}
@@ -741,6 +755,13 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 				} catch (IOException e) {
 					LOG.error(ExceptionUtils.getStackTrace(e));
 				}
+			}
+			
+			if (isStopping()) {
+				return;
+			}
+			if (!isDiskAvailable()) {
+				return;
 			}
 			parallelIndex.accept(pathList);
 		}
@@ -758,13 +779,19 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 					if (isStopping()) {
 						return;
 					}
+					if (!isDiskAvailable()) {
+						return;
+					}
 					try {
-						index(file);
-						currentProgress++; // STATE UPDATE
-						invokerForCommand.updateProgress(currentProgress, file, totalProcess); // STATE
+						if(!index(file)){
+							LOG.warn("some changes in operation : " + file.toString());
+						}else{
+							currentProgress++; // STATE UPDATE
+							invokerForCommand.updateProgress(currentProgress, file, totalProcess); // STATE
+						}
 					} catch (Exception e) {
 						failedPathSet.add(file);
-						LOG.warn("Failed and retry later : " + file.toString());
+						LOG.warn("later, we will index again : " + file.toString());
 						LOG.warn(ExceptionUtils.getStackTrace(e));
 					}
 				}
@@ -957,16 +984,16 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		return Integer.valueOf(countOfProcessed);
 	}
 	
-	boolean isDiskAvailable(){
-		 long mb;
-		try {
-			mb = (FileSystemUtils.freeSpaceKb() / 1000);
-		 if(mb > REMAINING_DISK_SIZE_MB)
-			 return true;
-		 else
-			 return false;
-		} catch (IOException e) {
-			LOG.warn(ExceptionUtils.getStackTrace(e));
+	boolean isDiskAvailable(){	
+		final long totalSpace = writerFile.getTotalSpace();
+		final long usableSpace = writerFile.getUsableSpace(); 
+		final long usingSpace = totalSpace - usableSpace;
+		final double usagePercent = ((double)usingSpace  / (double)totalSpace) * 100;
+		if(usagePercent < basicOption.getMaximumCapacityPercent()){
+			LOG.trace("usable disk size : " + usagePercent + "%");
+			return true;
+		}else{
+			LOG.info("usable disk is over limit : " + usagePercent + "%");
 			return false;
 		}
 	}
@@ -990,7 +1017,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @param path
 	 * @throws IOException
 	 */
-	void index(final Path path) throws IOException {
+	boolean index(final Path path) throws IOException {
 		final MediaType mimeType = JSearch.getContentType(path.toFile(), path
 				.getFileName().toString());
 		
@@ -1056,11 +1083,15 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 				+ "\n* Ram buffer for index : " + indexConfig.getRAMBufferSizeMB() + "," + indexConfig.getMaxBufferedDeleteTerms() + "," + indexConfig.getMaxBufferedDocs()
 				+ "\n* Disk : " + FileSystemUtils.freeSpaceKb() / 1000));
 		
+		if(isStopping())
+			return false;
+		
 		checkAndRecoverIndexWriter();
 		// WARNING) This is high memory cost operation
 		writer.updateDocument(new Term("pathString", path.toAbsolutePath().toString()), doc);
 		writer.commit(); // commit() is important for real-time search
 		LOG.info("Indexed : " + path);
+		return true;
 	}
 
 	/**

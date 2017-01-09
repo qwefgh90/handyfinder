@@ -1,5 +1,6 @@
 package io.github.qwefgh90.handyfinder.memory.monitor;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -37,5 +38,22 @@ public class HeapMemoryLimit {
 		System.out.println("processors : " + proc + " ");
 		System.out.println("current heap : " + String.format("%,d", total) + " bytes");
 		System.out.println("heap : " + String.format("%,d", total - free) + " bytes");
+	}
+	
+	@Test
+	public void logDiskSize(){
+		printDisk();
+		
+	}
+	
+	public void printDisk(){
+		File f = new File(".");
+		System.out.println(String.format("total : %,d", f.getTotalSpace()));
+		System.out.println(String.format("free : %,d", f.getFreeSpace()));
+		System.out.println(String.format("usable : %,d", f.getUsableSpace()));
+		System.out.println(String.format("percent : %f", ((double)f.getUsableSpace() / (double)f.getTotalSpace()) * 100));
+		
+		
+		
 	}
 }

@@ -79,7 +79,7 @@ public class IndexActor extends UntypedActor {
 	public void postStop() throws Exception {
 		luceneHandler.stopIndex();
 		executorService.shutdown();
-		executorService.awaitTermination(20000, TimeUnit.MILLISECONDS);
+		executorService.awaitTermination(20, TimeUnit.SECONDS);
 		LuceneHandler.closeResources();
 		super.postStop();
 	}

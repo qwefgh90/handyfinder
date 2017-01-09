@@ -27,6 +27,7 @@ public class BasicOptionModel {
 			this.limitCountOfResult = _limitCountOfResult;
 			this.maximumDocumentMBSize = _maximumDocumentMBSize;
 			this.keywordMode = _keywordMode;
+			this.maximumCapacityPercent = _maximumCapacityPercent;
 			this.targetMode = EnumSet.of(TARGET_MODE.PATH, TARGET_MODE.CONTENT);
 		}
 
@@ -36,6 +37,7 @@ public class BasicOptionModel {
 		private final int _limitCountOfResult = 100;
 		private final int _maximumDocumentMBSize = 20;
 		private final KEYWORD_MODE _keywordMode = KEYWORD_MODE.OR;
+		private final int _maximumCapacityPercent = 80;
 
 		public enum TARGET_MODE{
 			PATH, CONTENT
@@ -57,6 +59,15 @@ public class BasicOptionModel {
 		private int limitCountOfResult;
 		private int maximumDocumentMBSize;
 		private KEYWORD_MODE keywordMode;
+		private int maximumCapacityPercent;
+
+		public int getMaximumCapacityPercent() {
+			return maximumCapacityPercent;
+		}
+
+		public void setMaximumCapacityPercent(int maximumCapacityPercent) {
+			this.maximumCapacityPercent = maximumCapacityPercent;
+		}
 
 		public KEYWORD_MODE getKeywordMode() {
 			return keywordMode;
@@ -150,6 +161,7 @@ public class BasicOptionModel {
 				this.maximumDocumentMBSize = loadData.maximumDocumentMBSize;
 				this.keywordMode = loadData.keywordMode;
 				this.targetMode = loadData.targetMode;
+				this.maximumCapacityPercent = loadData.maximumCapacityPercent;
 			}
 		}
 }

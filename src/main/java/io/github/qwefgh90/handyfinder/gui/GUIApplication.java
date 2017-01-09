@@ -49,29 +49,21 @@ import org.w3c.dom.Element;
 public class GUIApplication extends Application {
 	private final static Logger LOG = LoggerFactory
 			.getLogger(GUIApplication.class);
-	
+
 	private final static GUIApplication app = new GUIApplication();
-	
-	public void start(String[] args){
-		launch(args);
-	}
-	public static GUIApplication getSingleton() {
-		return app;
-	}
-	
+
 	private final double WINDOW_LOADING_WIDTH = 300;
 	private final double WINDOW_LOADING_HEIGHT = 330;
-	
+
 	private WebView currentView = null;
 	private Tomcat tomcat;
 	private Stage primaryStage;
-	
+
 	private boolean stopped = false;
 	public boolean isStop(){ return stopped; }
 
-	private ExecutorService webAppThread = Executors.newSingleThreadExecutor();
-	public ExecutorService getWebAppThread() { return webAppThread;}
-
+	private ExecutorService initializingService = Executors.newSingleThreadExecutor();
+	public ExecutorService getWebAppThread() { return initializingService;}
 
 	public void healthCheck() throws TomcatInitFailException {
 		String strUrl = "http://" + AppStartupConfig.address + ":"
@@ -95,41 +87,43 @@ public class GUIApplication extends Application {
 		}
 	}
 
+	public void start(String[] args){
+		launch(args);
+	}
+	public static GUIApplication getSingleton() {
+		return app;
+	}
+
 	@Override
 	public void start(Stage primaryStage) {
 		//Register a callback when closing
 		primaryStage.setOnCloseRequest(event -> {
+			showUI(this::initializeWebviewWhenLoading);
+			Platform.runLater(() -> setLoadingParagraphBeforeLoading("Handyfinder Stopping..."));
 			stopped = true;
 			LOG.info("javafx onCloseRequest()");
-			Preferences userPrefs = Preferences
+			final Preferences userPrefs = Preferences
 					.userNodeForPackage(AppStartupConfig.class);
 			userPrefs.putDouble("stage.x", primaryStage.getX());
 			userPrefs.putDouble("stage.y", primaryStage.getY());
 			userPrefs.putDouble("stage.width", primaryStage.getWidth());
 			userPrefs.putDouble("stage.height", primaryStage.getHeight());
-			Platform.runLater(() -> setLoadingParagraphBeforeLoading("Handyfinder Stopping..."));
 
-			//wait for web application startup
-			if (!webAppThread.isTerminated()){
-				ExecutorService es = Executors.newSingleThreadExecutor();
-				es.submit(() -> {
-					LOG.info("javafx wait for tomcat startup thread");
-					try {
-						boolean result = webAppThread.awaitTermination(20, TimeUnit.SECONDS);
-						if(result == false){
-							LOG.warn("Web application startup spends more 20 seconds. force terminate all threads.");
-							webAppThread.shutdownNow();
-						}
-					} catch (Exception e) {
-						LOG.error(ExceptionUtils.getStackTrace(e));
-					} finally {
-						Platform.exit(); //direct exit
-						LOG.info("javafx Platform.exit()");
-					}
-				});
-				es.shutdown();
-				event.consume();
-			}
+			final ExecutorService es = Executors.newSingleThreadExecutor();
+			es.submit(() -> {
+				LOG.info("tomcat is stopping");
+				try {
+					tomcat.stop();
+				} catch (Exception e) {
+					LOG.error(ExceptionUtils.getStackTrace(e));
+				} finally {
+					Platform.exit(); //direct exit
+					LOG.info("javafx Platform.exit() called");
+				}
+			});
+
+			es.shutdown();
+			event.consume();
 		});
 
 		final Task<Boolean> loadingTask = new Task<Boolean>() {
@@ -169,35 +163,22 @@ public class GUIApplication extends Application {
 		this.primaryStage = primaryStage;
 		showUI(this::initializeWebviewWhenLoading);
 		LOG.info("Handyfinder is Loading");
-		webAppThread.submit(loadingTask);
-		webAppThread.shutdown();
+		initializingService.submit(loadingTask);
+		initializingService.shutdown();
 	}
-	
+
 
 	@Override
 	public void init() throws Exception {
 		super.init();
 	}
-	
+
 	@Override
 	public void stop() throws Exception {
-		final Callable<Boolean> doServerStop = () -> {
-			try {
-				LOG.info("try stop tomcat");
-				tomcat.stop();
-				LOG.info("stopped tomcat");
-			} catch (Exception e) {
-				LOG.error(ExceptionUtils.getStackTrace(e));
-				return false;
-			}
-			return true;
-		};
-		
-		doServerStop.call();
 		super.stop();
-		LOG.info("javafx stop()");
+		LOG.info("javafx is stopped");
 	}
-	
+
 	/**
 	 * This api is that open dialog and select directory and consume it.
 	 * if operation is failed, directory paramenter is "",  
@@ -254,9 +235,9 @@ public class GUIApplication extends Application {
 		webView.getEngine().load(
 				AppStartupConfig.class.getResource(
 						AppStartupConfig.RESOURCE_LOADING_PAGE)
-						.toExternalForm());
+				.toExternalForm());
 		final Scene scene = new Scene(webView);
-		
+
 		primaryStage.setScene(scene);
 		primaryStage.setTitle(TITLE.BEFORE_LOADING.getTitle());
 		primaryStage.setWidth(WINDOW_LOADING_WIDTH);
@@ -279,15 +260,15 @@ public class GUIApplication extends Application {
 		// webView.getEngine().load(getClass().getResource(page).toExternalForm());
 		webView.getEngine().load(AppStartupConfig.homeUrl);
 		webView.getEngine().documentProperty()
-				.addListener(new ChangeListener<Document>() {
-					@Override
-					public void changed(
-							ObservableValue<? extends Document> prop,
-							Document oldDoc, Document newDoc) {
-						connectBackendObject(webView.getEngine(), "guiService",
-								new GUIService(), true);
-					}
-				});
+		.addListener(new ChangeListener<Document>() {
+			@Override
+			public void changed(
+					ObservableValue<? extends Document> prop,
+					Document oldDoc, Document newDoc) {
+				connectBackendObject(webView.getEngine(), "guiService",
+						new GUIService(), true);
+			}
+		});
 
 		primaryStage.setScene(new Scene(webView));
 		primaryStage.setTitle(TITLE.AFTER_LOADING.getTitle());
@@ -301,12 +282,12 @@ public class GUIApplication extends Application {
 		final double WINDOW_DEFAULT_Y;
 		final double WINDOW_DEFAULT_WIDTH;
 		final double WINDOW_DEFAULT_HEIGHT;
-		
+
 		WINDOW_DEFAULT_X =  primaryScreenBounds.getWidth() / 10;
 		WINDOW_DEFAULT_WIDTH = primaryScreenBounds.getWidth()/2 < 520 ? primaryScreenBounds.getWidth() : 520;
 		WINDOW_DEFAULT_Y = primaryScreenBounds.getHeight() / 4;
 		WINDOW_DEFAULT_HEIGHT = WINDOW_DEFAULT_WIDTH;
-		 
+
 		double x = userPrefs.getDouble("stage.x", WINDOW_DEFAULT_X);
 		double y = userPrefs.getDouble("stage.y", WINDOW_DEFAULT_Y);
 		double w = userPrefs.getDouble("stage.width", WINDOW_DEFAULT_WIDTH);
@@ -315,7 +296,7 @@ public class GUIApplication extends Application {
 			w = WINDOW_DEFAULT_WIDTH;
 		if(h <= WINDOW_LOADING_HEIGHT)
 			h = WINDOW_DEFAULT_HEIGHT;
-		
+
 		primaryStage.setX(x);
 		primaryStage.setY(y);
 		primaryStage.setWidth(w);
@@ -324,7 +305,7 @@ public class GUIApplication extends Application {
 		LOG.info("Handyfinder is ready : " + AppStartupConfig.homeUrl);
 		return webView;
 	}
-	
+
 	/**
 	 * Fast Jar Scanner scans one kind of jar like handyfinder.jar
 	 * 
