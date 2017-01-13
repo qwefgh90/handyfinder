@@ -143,7 +143,7 @@ public class AppStartupConfig{
 		try {
 			if (isProduct) { // jar start
 				AppStartupConfig.copyFileInJar(deployedPath.toString(), pathForLog4j.getFileName().toString(),
-						parentOfClassPath.toFile(), (file) -> {return !file.exists();});
+						parentOfClassPath.toFile(), (File file, JarEntry entry) -> {return (!file.exists() || file.lastModified() < entry.getLastModifiedTime().toMillis());});
 				
 				System.out.println("Initializing log4j with: " + pathForLog4j);
 				DOMConfigurator.configureAndWatch(pathForLog4j.toAbsolutePath().toString());
@@ -297,7 +297,7 @@ public class AppStartupConfig{
 					jarPath = jarPath.substring(1);
 				resourceName = matcher.group(2);
 				AppStartupConfig.copyFileInJar(jarPath, resourceName,
-						tikaXmlFilePath.getParent().toFile(), (file) -> !file.exists());
+						tikaXmlFilePath.getParent().toFile(), (file, entry) -> !file.exists());
 			}
 		}
 	}
@@ -443,10 +443,10 @@ public class AppStartupConfig{
 	}
 	
 	public static void copyFileInJar(String jarPath, String resourcePathInJar,
-			File destinationRootDir, FileFilter destFileFilter)
+			File destinationRootDir, BiFunction<File, JarEntry, Boolean> destFileFilter)
 			throws URISyntaxException, IOException {
 		if(destFileFilter == null)
-			destFileFilter = (file) -> true;
+			destFileFilter = (file, entry) -> true;
 		if (resourcePathInJar.startsWith("/")) { // jar url start with /
 													// replace to jar
 													// entry getName() style which
@@ -471,7 +471,7 @@ public class AppStartupConfig{
 					entryName = entry.getName();
 				File destFile = new File(destinationRootDir.getAbsolutePath(),entryName);
 				
-				if(!destFileFilter.accept(destFile)){
+				if(!destFileFilter.apply(destFile, entry)){
 					LOG.debug("skip copy : " + entry.getName());
 				}else{
 					LOG.debug("copy start : " + entry.getName());

@@ -67,7 +67,7 @@ public class MimeOptionTest {
 				jarPathString = jarPathString.substring(1);
 			resourceName = matcher.group(2);
 			File xmlDestFile = new File(getClass().getResource("/").toURI());
-			AppStartupConfig.copyFileInJar(jarPathString, resourceName, xmlDestFile, (file) -> !file.exists());
+			AppStartupConfig.copyFileInJar(jarPathString, resourceName, xmlDestFile, (file, entry) -> !file.exists());
 			LOG.info(getClass().getResource("/tika-mimetypes.xml").toString());
 			LOG.info(jarPathString);
 			LOG.info(resourceName);
