@@ -32,14 +32,9 @@
 			<artifactId>tomcat-embed-core</artifactId>
 			<version>${org.apache.tomcat}</version>
 		</dependency>
-		<dependency>
+	   <dependency>
 			<groupId>org.apache.tomcat.embed</groupId>
 			<artifactId>tomcat-embed-logging-juli</artifactId>
-			<version>${org.apache.tomcat}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.tomcat.embed</groupId>
-			<artifactId>tomcat-embed-logging-log4j</artifactId>
 			<version>${org.apache.tomcat}</version>
 		</dependency>
 		<dependency>
