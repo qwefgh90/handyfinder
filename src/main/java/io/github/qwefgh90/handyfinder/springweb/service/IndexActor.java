@@ -91,6 +91,4 @@ public class IndexActor extends UntypedActor {
 			executorService.submit(indexRunnable);
 		}
 	}
-	
-
 }

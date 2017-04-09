@@ -88,7 +88,7 @@ public class RootService {
 	}
 
 	/**
-	 * remove or add a directory
+	 * Remove or add a list of directories
 	 * @param list
 	 * @throws SQLException
 	 */
@@ -201,7 +201,6 @@ public class RootService {
 		dto.setMaximumDocumentMBSize(globalAppData.getMaximumDocumentMBSize());
 		dto.setKeywordMode(globalAppData.getKeywordMode().name());
 		dto.setFirstStart(globalAppData.getDirectoryList().size() == 0 ? true : false);
-		//dto.setPathMode(globalAppData.getTargetMode());
 		dto.setPathTarget(globalAppData.getTargetMode().contains(TARGET_MODE.PATH));
 		dto.setContentTarget(globalAppData.getTargetMode().contains(TARGET_MODE.CONTENT));
 		return dto;
@@ -232,7 +231,7 @@ public class RootService {
 			indexActor.tell(new Restart(), null);
 	}
 
-	public void closeAppLucene() throws IOException {
+	public void closeLucene() throws IOException {
 		handler.close();
 	}
 
@@ -274,17 +273,6 @@ public class RootService {
 					dto.setModifiedTime(Files.getLastModifiedTime(path)
 							.toMillis());
 					dto.setFileSize(Files.size(path));
-					/*
-					 * try { getHightlightContent =
-					 * handler.highlight(docs.scoreDocs[i].doc, keyword);
-					 * functionList.add(getHightlightContent); } catch
-					 * (ParseException e) { LOG.warn(e.toString()); continue; }
-					 * catch (InvalidTokenOffsetsException e) {
-					 * LOG.warn(e.toString()); continue; } catch
-					 * (com.qwefgh90.io.jsearch.JSearch.ParseException e) {
-					 * LOG.warn(e.toString()); continue; } catch (IOException e)
-					 * { LOG.warn(e.toString()); continue; }
-					 */
 				} else {
 					dto.setExist(false);
 					dto.setModifiedTime(document.getField("lastModifiedTime")
@@ -300,23 +288,9 @@ public class RootService {
 				dto.setParentPathString(Paths.get(document.get("pathString"))
 						.getParent().toAbsolutePath().toString());
 				dto.setMimeType(document.get("mimeType"));
-				// docMap.put(dto.getPathString(), dto);
 				list.add(dto);
 			}
 
-			/*
-			 * try { List<Future<Optional<Map.Entry<String, String>>>>
-			 * futureList = executor.invokeAll(functionList);
-			 * futureList.parallelStream().forEach(future -> { try {
-			 * Optional<Map.Entry<String, String>> result = future.get();
-			 * if(!result.isPresent()){ return; } String pathString =
-			 * result.get().getKey(); String contents = result.get().getValue();
-			 * docMap.get(pathString).setContents(contents); } catch (Exception
-			 * e) { LOG.warn(e.toString()); }
-			 * 
-			 * }); } catch (InterruptedException e) { LOG.warn(e.toString()); }
-			 * executor.shutdown();
-			 */
 			return Optional.of(list);
 		} catch (QueryNodeException e) {
 			LOG.info(ExceptionUtils.getStackTrace(e));

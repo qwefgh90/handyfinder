@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.Map; 
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -111,8 +112,8 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	final private long multiplyForNGram;
 	final FunctionalLatch latch = new FunctionalLatch();
 	
-	private volatile int currentProgress = 0; // indexed documents count
-	private volatile int totalProcess = 0; // total documents count to be indexed
+	private AtomicInteger currentProgress = new AtomicInteger(0); // indexed documents count
+	private AtomicInteger totalProcess = new AtomicInteger(0); // total documents count to be indexed
 	
 	// mutable config, writer, reader, searcher
 	private IndexWriterConfig indexConfig;
@@ -124,6 +125,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	public enum INDEX_WRITE_STATE {
 		PROGRESS, STOPPING, READY
 	}
+	
 	private CommandInvoker invokerForCommand; // for command to client
 	private BasicOption basicOption;
 	private MimeOption mimeOption;
@@ -141,8 +143,8 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		// progress
 		switch(state){			
 		case READY:{
-			currentProgress = 0;
-			totalProcess = 0;
+			currentProgress.set(0);
+			totalProcess.set(0);
 			this.writeStateInternal = state;
 			LOG.debug("LuceneHandler is READY");
 			break;
@@ -290,14 +292,14 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		if(updateWriteState(INDEX_WRITE_STATE.PROGRESS)){
 			try {
 				compactAndCleanIndex();
-				totalProcess = sizeOfindexDirectories(list);
-				invokerForCommand.startProgress(totalProcess);
+				totalProcess.set(sizeOfindexDirectories(list));
+				invokerForCommand.startProgress(totalProcess.get());
 				indexDocuments(list);
 				indexFailedDocuments();
 			} finally {
 				compactAndCleanIndex();
 				updateWriteState(INDEX_WRITE_STATE.READY);
-				invokerForCommand.terminateProgress(totalProcess);
+				invokerForCommand.terminateProgress(totalProcess.get());
 			}
 		}
 	}
@@ -389,8 +391,6 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	 */
 	public List<ScoreDoc> search(String fullString, int lowerBound) throws QueryNodeException,
 	IOException {
-		// if (INDEX_WRITE_STATE.PROGRESS == writeState)
-		// throw new IndexException("now indexing");
 		checkDirectoryReader();
 		final TopDocs docs = searcher.search(getHandyFinderQuery(fullString),
 				basicOption.getLimitCountOfResult());
@@ -697,7 +697,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 									}
 								} else {
 									LOG.trace("skip " + file.toString());
-									currentProgress++; // STATE UPDATE
+									currentProgress.incrementAndGet(); // STATE UPDATE
 								}
 								if (isStopping()) {
 									return FileVisitResult.TERMINATE;
@@ -738,7 +738,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 									}
 								} else {
 									LOG.trace("skip " + file.toString());
-									currentProgress++; // STATE UPDATE
+									currentProgress.incrementAndGet(); // STATE UPDATE
 								}
 								if (isStopping()) {
 									return FileVisitResult.TERMINATE;
@@ -784,8 +784,8 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 						if(!index(file)){
 							LOG.warn("some changes in operation : " + file.toString());
 						}else{
-							currentProgress++; // STATE UPDATE
-							invokerForCommand.updateProgress(currentProgress, file, totalProcess); // STATE
+							currentProgress.incrementAndGet();
+							invokerForCommand.updateProgress(currentProgress.get(), file, totalProcess.get()); // STATE
 						}
 					} catch (Exception e) {
 						failedPathSet.add(file);
@@ -835,7 +835,6 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 				Bits liveDocs = MultiFields.getLiveDocs(reader);
 				if (liveDocs == null || liveDocs.get(i)) {
 					Document doc = reader.document(i);
-					// String pathString = doc.get("pathString");
 					list.add(doc);
 				}
 			} catch (IOException e) {

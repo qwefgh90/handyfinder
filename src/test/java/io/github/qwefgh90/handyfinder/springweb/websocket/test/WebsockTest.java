@@ -97,7 +97,7 @@ public class WebsockTest {
 
 	@After
 	public void clean() throws Exception {
-		rootService.closeAppLucene();
+		rootService.closeLucene();
 		metaRepo.deleteDirectories();
 		AppStartupConfig.terminateProgram();
 		// DON'T TERMINATE. "MVN TEST" IS FAILED IN UBUNTU. AFTER TOMCAT CLOSE,

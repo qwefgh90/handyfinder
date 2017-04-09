@@ -1,6 +1,11 @@
 package io.github.qwefgh90.handyfinder.lucene;
 
+import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.KEYWORD_MODE;
+import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -11,12 +16,12 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.KEYWORD_MODE;
-import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
-import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Service class of BasicOptionModel
+ * Function class for option
  * @author qwefgh90
  *
  */
@@ -24,18 +29,50 @@ public class BasicOption {
 	private final static Logger LOG = LoggerFactory
 			.getLogger(BasicOption.class);
 
+	private static BasicOption singleton = null;
 	private BasicOptionModel model;
+	private Path appDataJsonPath;
+	private static ObjectMapper om = new ObjectMapper();
 
 	private BasicOption(Path appDataJsonPath) {
 		try {
-			model = new BasicOptionModel(appDataJsonPath);
+			this.appDataJsonPath = appDataJsonPath;
+			this.model = loadAppDataFromDisk(appDataJsonPath);
 		} catch (IOException e) {
 			LOG.error(ExceptionUtils.getStackTrace(e));
 			throw new RuntimeException(e.toString());
 		}
 	}
 
-	private static BasicOption singleton = null;
+	/**
+	 * 
+	 * @return if file is not exist, return default object
+	 * @throws JsonParseException
+	 * @throws JsonMappingException
+	 * @throws IOException
+	 */
+	static BasicOptionModel loadAppDataFromDisk(Path appDataJsonPath) throws JsonParseException,
+	JsonMappingException, IOException {
+		if (!Files.exists(appDataJsonPath))
+			return new BasicOptionModel();
+		else 
+			return om.readValue(appDataJsonPath.toFile(), BasicOptionModel.class);
+	}
+
+	/**
+	 * Write all option fields to json file
+	 */
+	public void writeAppDataToDisk() {
+		Path path = appDataJsonPath;
+		if(path == null)
+			return;
+		try {
+			om.writeValue(path.toFile(), this);
+		} catch (IOException e) {
+			LOG.error(ExceptionUtils.getStackTrace(e));
+			new RuntimeException(e.toString());
+		}
+	}
 
 	public static BasicOption getInstance(Path appDataJsonPath) {
 		if (singleton == null)
@@ -84,7 +121,6 @@ public class BasicOption {
 		model.getDirectoryList().clear();
 	}
 
-
 	public EnumSet<TARGET_MODE> getTargetMode() {
 		return model.getTargetMode();
 	}
@@ -92,13 +128,12 @@ public class BasicOption {
 	public void setTargetMode(EnumSet<TARGET_MODE> targetMode) {
 		model.setTargetMode(targetMode);
 	}
-	
-	public void writeAppDataToDisk() {
-		model.writeAppDataToDisk();
-	}
+
 
 	public void deleteAppDataFromDisk() throws IOException {
-		model.deleteAppDataFromDisk();
+		Path path = appDataJsonPath;
+		if(path != null && Files.exists(path))
+			Files.delete(path);
 	}
 
 	public void setMaximumDocumentMBSize(int size) {
@@ -124,8 +159,8 @@ public class BasicOption {
 	public void setMaximumCapacityPercent(int maximumCapacityPercent) {
 		model.setMaximumCapacityPercent(maximumCapacityPercent);
 	}
-
-	/*public static class BasicOptionModel {
-
-	}*/
+	
+	public Path getAppDataJsonPath() {
+		return appDataJsonPath;
+	}
 }
