@@ -50,7 +50,6 @@ import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
 import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
 import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
-import io.github.qwefgh90.handyfinder.springweb.service.IndexActor.Restart;
 import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
 import io.github.qwefgh90.jsearch.JSearch;
 
@@ -74,8 +73,8 @@ public class RootService {
 	@Autowired
 	BasicOption globalAppData;
 	
-	@Autowired
-	ActorRef indexActor;
+	//@Autowired
+	//ActorRef indexActor;
 
 	/**
 	 * Get directories to be indexed.
@@ -94,7 +93,8 @@ public class RootService {
 	 */
 	public void updateDirectories(List<Directory> list) throws SQLException {
 		if(getDirectories().size() != list.size())
-			indexActor.tell(new Restart(), null);
+			handler.restartIndex();
+			//indexActor.tell(new Restart(), null);
 		indexProperty.save(list);
 	}
 
@@ -228,7 +228,8 @@ public class RootService {
 		globalAppData.writeAppDataToDisk();
 		
 		if(isSizeChange)
-			indexActor.tell(new Restart(), null);
+			handler.restartIndex();
+			//indexActor.tell(new Restart(), null);
 	}
 
 	public void closeLucene() throws IOException {

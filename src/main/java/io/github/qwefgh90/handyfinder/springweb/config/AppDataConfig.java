@@ -1,6 +1,6 @@
 package io.github.qwefgh90.handyfinder.springweb.config;
 
-import static io.github.qwefgh90.handyfinder.springweb.config.akka.SpringExtension.SpringExtProvider;
+//import static io.github.qwefgh90.handyfinder.springweb.config.akka.SpringExtension.SpringExtProvider;
 
 import java.io.IOException;
 import java.util.concurrent.Future;
@@ -51,6 +51,7 @@ public class AppDataConfig {
 	/**
 	 * Actor system singleton for this application.
 	 */
+	/*
 	@Bean
 	public ActorSystem actorSystem() {
 		ActorSystem system = ActorSystem.create("AkkaJavaSpring");
@@ -71,7 +72,7 @@ public class AppDataConfig {
 	@PreDestroy
 	public void destroy(){
 		scala.concurrent.Future<Terminated> future = actorSystem.terminate();
-		
 	}
+	*/
 }
 

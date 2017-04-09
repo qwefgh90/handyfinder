@@ -27,7 +27,7 @@ import scala.concurrent.duration.Duration;
 @Named("IndexActor")
 @Scope("prototype")
 public class IndexActor extends UntypedActor {
-
+	/*
 	private final static Logger LOG = LoggerFactory
 			.getLogger(IndexActor.class);
 
@@ -91,4 +91,5 @@ public class IndexActor extends UntypedActor {
 			executorService.submit(indexRunnable);
 		}
 	}
+	*/
 }

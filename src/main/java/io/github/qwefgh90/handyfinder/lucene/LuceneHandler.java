@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map; 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -25,6 +25,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -33,6 +35,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.activity.InvalidActivityException;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.lucene.analysis.Analyzer;
@@ -80,6 +84,7 @@ import org.apache.tika.mime.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.KEYWORD_MODE;
 import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
@@ -111,6 +116,8 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	final private int maxGramSize = 8;
 	final private long multiplyForNGram;
 	final FunctionalLatch latch = new FunctionalLatch();
+	final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
+	final ExecutorService executor = Executors.newCachedThreadPool();
 	
 	private AtomicInteger currentProgress = new AtomicInteger(0); // indexed documents count
 	private AtomicInteger totalProcess = new AtomicInteger(0); // total documents count to be indexed
@@ -230,6 +237,46 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		}
 	}
 
+	final Runnable indexRunnable = () -> {
+		try {
+			List<Directory> list = basicOption.getDirectoryList();
+			if (LuceneHandler.this.isReady()){
+				LuceneHandler.this.startIndex(list);
+				LuceneHandler.this.updateIndexedDocuments(list);
+			}
+		} catch (IOException e) {
+			LOG.warn(ExceptionUtils.getStackTrace(e));
+		}
+	};
+	
+	@PostConstruct
+	public void initialize(){
+		LOG.debug("initialize() is called");
+		scheduledExecutor.schedule(() -> {
+			if(Files.exists(AppStartupConfig.resetFilePath)){
+				try {
+					this.deleteAllIndexesFromFileSystem();
+					Files.delete(AppStartupConfig.resetFilePath);
+				} catch (IOException e) {
+					LOG.warn(ExceptionUtils.getStackTrace(e));
+				}
+			}
+			restartIndex();
+		}
+		, 3, TimeUnit.SECONDS); 
+	}
+	
+	@PreDestroy
+	public void destroy() throws InterruptedException, IOException{
+		LOG.debug("destroy() is called");
+		stopIndex();
+		scheduledExecutor.shutdown();
+		scheduledExecutor.awaitTermination(20, TimeUnit.SECONDS);
+		executor.shutdown();
+		executor.awaitTermination(20, TimeUnit.SECONDS);
+		LuceneHandler.closeResources();
+	}
+
 	/**
 	 * If some changes are in indexes, update it.
 	 * @throws IOException
@@ -302,6 +349,25 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 				invokerForCommand.terminateProgress(totalProcess.get());
 			}
 		}
+	}
+	
+	public Future<Boolean> restartIndex(){
+		Future<Boolean> f = executor.submit(() -> {
+			this.stopIndex();
+			//
+			try {
+				List<Directory> list = basicOption.getDirectoryList();
+				if (isReady()){
+					startIndex(list);
+					updateIndexedDocuments(list);
+				}
+			} catch (IOException e) {
+				LOG.warn(ExceptionUtils.getStackTrace(e));
+				return false;
+			}
+			return true;
+		});
+		return f;
 	}
 
 	/**
