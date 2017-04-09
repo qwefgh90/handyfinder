@@ -22,7 +22,7 @@ public class BasicOptionModel {
 		private final int _limitCountOfResult = 100;
 		private final int _maximumDocumentMBSize = 20;
 		private final KEYWORD_MODE _keywordMode = KEYWORD_MODE.OR;
-		private final int _maximumCapacityPercent = 80;
+		private final int _maximumCapacityPercent = 100;
 
 		/**
 		 * json fields
