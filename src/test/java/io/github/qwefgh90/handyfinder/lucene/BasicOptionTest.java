@@ -1,10 +1,6 @@
 package io.github.qwefgh90.handyfinder.lucene;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
-import java.util.Iterator;
 
 import org.hamcrest.Matchers;
 import org.junit.After;
@@ -19,7 +15,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import io.github.qwefgh90.handyfinder.lucene.BasicOption;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+
 import io.github.qwefgh90.handyfinder.lucene.BasicOption;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
@@ -52,7 +50,17 @@ public class BasicOptionTest {
 	@After
 	public void clean() throws IOException {
 		basicOption.deleteAppDataFromDisk();
-		basicOption.deleteDirectories();
+	}
+	
+	@Test
+	public void readWriteTest() throws JsonParseException, JsonMappingException, IOException{
+		basicOption.addDirectory(testDir);
+		basicOption.setLimitCountOfResult(2000);
+		basicOption.writeAppDataToDisk();
+		Assert.assertThat(BasicOption.loadAppDataFromDisk(basicOption.getAppDataJsonPath()).getDirectoryList().size(),
+				Matchers.is(1));
+		Assert.assertThat(BasicOption.loadAppDataFromDisk(basicOption.getAppDataJsonPath()).getLimitCountOfResult(),
+				Matchers.is(2000));
 	}
 
 	@Test
