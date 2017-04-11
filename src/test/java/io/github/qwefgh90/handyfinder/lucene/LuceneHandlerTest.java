@@ -34,7 +34,6 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
 import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.KEYWORD_MODE;
 import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandler.INDEX_WRITE_STATE;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
 import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
@@ -145,7 +144,7 @@ public class LuceneHandlerTest {
 	public void searchTest() throws IOException,
 			org.apache.lucene.queryparser.classic.ParseException,
 			InvalidTokenOffsetsException, QueryNodeException {
-		handler.indexDirectory(
+		handler.indexDirectoryAsync(
 				testFilesPath, true);
 		
 		List<ScoreDoc> docs = handler.search("javageek", 0);
@@ -156,7 +155,7 @@ public class LuceneHandlerTest {
 	public void searchTestWithMime() throws IOException,
 			org.apache.lucene.queryparser.classic.ParseException,
 			InvalidTokenOffsetsException, QueryNodeException {
-		handler.indexDirectory(
+		handler.indexDirectoryAsync(
 				testFilesPath, true);
 
 		mimeOption.setGlob("*.txt", false);
@@ -169,7 +168,7 @@ public class LuceneHandlerTest {
 	public void searchTest2() throws IOException,
 			org.apache.lucene.queryparser.classic.ParseException,
 			InvalidTokenOffsetsException, QueryNodeException {
-		handler.indexDirectory(
+		handler.indexDirectoryAsync(
 				testFilesPath, true);
 
 		List<ScoreDoc> docs = handler.search("PageBase", 0);
@@ -178,7 +177,7 @@ public class LuceneHandlerTest {
 	
 	@Test
 	public void deleteAndUpdateIndexTest() throws IOException {
-		handler.indexDirectory(
+		handler.indexDirectoryAsync(
 				testFilesPath
 				, true);
 		StringBuilder sb = new StringBuilder();
@@ -189,7 +188,7 @@ public class LuceneHandlerTest {
 		Files.delete(temp2txt);
 		temptxt.toFile().delete();
 		
-		handler.updateWriteState(INDEX_WRITE_STATE.READY);
+		handler.state.ready();
 		handler.updateIndexedDocuments(indexDirList);
 		int countAfter = handler.getDocumentCount();
 		
@@ -212,7 +211,7 @@ public class LuceneHandlerTest {
 			throws org.apache.lucene.queryparser.classic.ParseException,
 			QueryNodeException, InvalidTokenOffsetsException,
 			IOException {
-		handler.indexDirectory(
+		handler.indexDirectoryAsync(
 				testFilesPath, true);
 
 		List<ScoreDoc> docs = handler.search("http",0);

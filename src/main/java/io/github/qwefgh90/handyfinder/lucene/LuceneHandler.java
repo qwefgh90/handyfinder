@@ -121,6 +121,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	final private int maxGramSize = 8;
 	final private long multiplyForNGram;
 	final FunctionalLatch latch = new FunctionalLatch();
+	final LuceneHandlerState state = LuceneHandlerState.self;
 	final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
 	final ExecutorService mainExecutor = Executors.newCachedThreadPool();
 	final ExecutorService indexExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
@@ -135,55 +136,10 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	private DirectoryReader reader;
 	private IndexSearcher searcher;
 	
-	// indexing state (startIndex(), stopIndex() use state)
-	public enum INDEX_WRITE_STATE {
-		PROGRESS, STOPPING, READY
-	}
-	
 	private CommandInvoker invokerForCommand; // for command to client
 	private BasicOption basicOption;
 	private MimeOption mimeOption;
-
-	private INDEX_WRITE_STATE writeStateInternal = INDEX_WRITE_STATE.READY; // no directly access
-
-	/**
-	 * Update handler's state synchronously
-	 * 
-	 * @param state
-	 */
-	synchronized boolean updateWriteState(INDEX_WRITE_STATE state) {
-		// progress
-		switch(state){			
-		case READY:{
-			currentProgress.set(0);
-			totalProcess.set(0);
-			this.writeStateInternal = state;
-			LOG.debug("LuceneHandler is READY");
-			break;
-		}
-
-		case PROGRESS:{
-			if(writeStateInternal != INDEX_WRITE_STATE.STOPPING){
-				this.writeStateInternal = state;
-				LOG.debug("LuceneHandler is PROGRESS");
-			}
-			else
-				return false;
-			break;
-
-		}
-		case STOPPING:{
-			if(writeStateInternal != INDEX_WRITE_STATE.READY){
-				this.writeStateInternal = state;
-				LOG.debug("LuceneHandler is STOPPING");
-			}
-			else
-				return false;
-			break;
-		}
-		}
-		return true;
-	}
+	
 	private static final ConcurrentHashMap<String, LuceneHandler> map = new ConcurrentHashMap<>();
 
 	/**
@@ -245,8 +201,8 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	private final Runnable indexRunnable = () -> {
 		try {
 			List<Directory> list = basicOption.getDirectoryList();
-			if (LuceneHandler.this.isReady()){
-				LuceneHandler.this.startIndex(list);
+			if (LuceneHandler.this.state.isReady()){
+				LuceneHandler.this.startIndexAsync(list);
 				LuceneHandler.this.updateIndexedDocuments(list);
 			}
 		} catch (IOException e) {
@@ -333,31 +289,31 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	}
 
 	/**
-	 * handyfinder synchronized index API
+	 * Start to index all files in a list of directories
 	 * 
 	 * @param list
 	 * @throws IOException
 	 * @throws IllegalStateException
 	 *             already start index
 	 */
-	public CompletableFuture<Integer> startIndex(final List<Directory> list) throws IOException {
-		if (!isReady())
-			return CompletableFuture.supplyAsync(() -> {throw new IllegalStateException("already indexing");});
-		if(updateWriteState(INDEX_WRITE_STATE.PROGRESS)){
-			invokerForCommand.startProgress(totalProcess.get());
+	public CompletableFuture<Integer> startIndexAsync(final List<Directory> list) throws IOException {
+		if (!state.isReady())
+			throw new IllegalStateException("already indexing");;
+		if(state.progress()){
 			compactAndCleanIndex();
 			totalProcess.set(sizeOfindexDirectories(list));
-			final List<CompletableFuture<IndexResult>> listOfFutureToBeIndexed = indexDirectoryList(list);
+			invokerForCommand.startProgress(totalProcess.get());
+			final List<CompletableFuture<IndexResult>> listOfFutureToBeIndexed = indexDirectoriesAsync(list);	//First try
 			final CompletableFuture<Integer> futureOfAllTry = CompletableFuture.allOf(listOfFutureToBeIndexed.toArray(new CompletableFuture[listOfFutureToBeIndexed.size()]))
 			.thenComposeAsync((result) -> {
-				return CompletableFuture.supplyAsync(() ->{
+				return CompletableFuture.supplyAsync(() ->{	//Second try
 					final List<IndexResult> listOfFirstTry = listOfFutureToBeIndexed.stream()
 							.map((CompletableFuture<IndexResult> future) -> {try {
 								return future.get();
 							} catch (InterruptedException e) {
 								throw new IllegalStateException(e);
 							} catch (ExecutionException e) {
-								throw new IllegalStateException("a stream is failed. " + ExceptionUtils.getStackTrace(e));
+								throw new IllegalStateException("A stream is failed. " + ExceptionUtils.getStackTrace(e));
 							}}).collect(Collectors.toList());
 					
 					LOG.info("First try to index is completed. " + listOfFirstTry.stream().filter((IndexResult _result) -> {
@@ -365,7 +321,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 					final Stream<Path> failedDocumentsStream = listOfFirstTry.stream()
 							.filter((IndexResult _result) -> { return _result.code == IndexResult.IndexResultCode.EXCEPTION;})
 							.map((IndexResult mapParam) -> { return mapParam.path.get(); });
-					final List<CompletableFuture<IndexResult>> futureForSecondTry = indexFailedDocuments(failedDocumentsStream);
+					final List<CompletableFuture<IndexResult>> futureForSecondTry = indexFailedDocumentsAsync(failedDocumentsStream);
 					try {
 						CompletableFuture.allOf(futureForSecondTry.toArray(new CompletableFuture[futureForSecondTry.size()])).get();
 						LOG.info("Second try to index is completed");
@@ -377,7 +333,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 					} catch (IOException e) {
 						LOG.warn(ExceptionUtils.getStackTrace(e));
 					}
-					updateWriteState(INDEX_WRITE_STATE.READY);
+					state.ready();
 					invokerForCommand.terminateProgress(totalProcess.get());
 					return 0;
 				});
@@ -394,8 +350,8 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 			//
 			try {
 				List<Directory> list = basicOption.getDirectoryList();
-				if (isReady()){
-					startIndex(list);
+				if (state.isReady()){
+					startIndexAsync(list);
 					updateIndexedDocuments(list);
 				}
 			} catch (IOException e) {
@@ -414,12 +370,12 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	 *            a list of index directory on top
 	 */
 	public void updateIndexedDocuments(List<Directory> rootIndexDirectory) {
-		if (!isReady())
+		if (!state.isReady())
 			throw new IllegalStateException("already indexing");
 		int nonPresentCount = 0;
 		int nonContainedCount = 0;
 		int updateCount = 0;
-		if(updateWriteState(INDEX_WRITE_STATE.PROGRESS)){
+		if(state.progress()){
 			try {
 				invokerForCommand.startUpdateSummary();
 				Map.Entry<List<Document>, Integer> tempReturnValue;
@@ -439,7 +395,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 			} catch (IOException e) {
 				LOG.warn(ExceptionUtils.getStackTrace(e));
 			} finally {
-				updateWriteState(INDEX_WRITE_STATE.READY);
+				state.ready();
 				invokerForCommand.terminateUpdateSummary(nonPresentCount,
 						nonContainedCount, updateCount);
 			}
@@ -450,31 +406,8 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	 * stop API
 	 */
 	public void stopIndex() {
-		updateWriteState(LuceneHandler.INDEX_WRITE_STATE.STOPPING);
+		state.stopping();
 		latch.signalAll();
-	}
-
-
-	/**
-	 * It's private API
-	 * @return
-	 */
-	public synchronized boolean isStopping(){
-		if(writeStateInternal == INDEX_WRITE_STATE.STOPPING)
-			return true;
-		return false;
-	}
-
-	/**
-	 * 
-	 * It's private API
-	 * @return
-	 */
-	public synchronized boolean isReady(){
-		if(writeStateInternal == INDEX_WRITE_STATE.PROGRESS 
-				||writeStateInternal == INDEX_WRITE_STATE.STOPPING)
-			return false;
-		return true;
 	}
 
 	/**
@@ -725,12 +658,12 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		reader = null;
 	}
 	
-	List<CompletableFuture<IndexResult>> indexFailedDocuments(Stream<Path> failedPathList){
-		if (isStopping()) {
-			return Collections.EMPTY_LIST;
+	List<CompletableFuture<IndexResult>> indexFailedDocumentsAsync(Stream<Path> failedPathList){
+		if (state.isStopping()) {
+			return Collections.emptyList();
 		}
 		if (!isDiskAvailable()){
-			return Collections.EMPTY_LIST;
+			return Collections.emptyList();
 		}
 		List<CompletableFuture<IndexResult>> someFutureList = failedPathList
 				.map(_path -> CompletableFuture.supplyAsync(() -> indexFile(_path), indexExecutor))
@@ -738,11 +671,11 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		return someFutureList;
 	}
 
-	ArrayList<CompletableFuture<IndexResult>> indexDirectoryList(final List<Directory> list) {
+	ArrayList<CompletableFuture<IndexResult>> indexDirectoriesAsync(final List<Directory> list) {
 		final ArrayList<CompletableFuture<IndexResult>> returnedList = new ArrayList<CompletableFuture<IndexResult>>(1000);
 		final List<Directory> copiedList = new ArrayList<Directory>(list);
 		for (Directory dir : copiedList) {
-			if (isStopping()) {
+			if (state.isStopping()) {
 				break;
 			}
 			if (!isDiskAvailable()){
@@ -750,9 +683,9 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 			}
 			Path path = Paths.get(dir.getPathString());
 			if (dir.isRecursively()) {
-				indexDirectory(path, true).ifPresent(futureList -> returnedList.addAll(futureList));
+				indexDirectoryAsync(path, true).ifPresent(futureList -> returnedList.addAll(futureList));
 			} else {
-				indexDirectory(path, false).ifPresent(futureList -> returnedList.addAll(futureList));
+				indexDirectoryAsync(path, false).ifPresent(futureList -> returnedList.addAll(futureList));
 			}
 		}
 		return returnedList;
@@ -765,7 +698,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @param recursively
 	 * @throws IOException
 	 */
-	Optional<ArrayList<CompletableFuture<IndexResult>>> indexDirectory(final Path path, final boolean recursively) {
+	Optional<ArrayList<CompletableFuture<IndexResult>>> indexDirectoryAsync(final Path path, final boolean recursively) {
 		if (Files.isDirectory(path)) {
 			final ArrayList<CompletableFuture<IndexResult>> futureList = new ArrayList<CompletableFuture<IndexResult>>(100);
 			final List<Path> pathList = new ArrayList<>(1000);
@@ -787,7 +720,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 									LOG.trace("skip " + file.toString());
 									currentProgress.incrementAndGet(); // STATE UPDATE
 								}
-								if (isStopping()) {
+								if (state.isStopping()) {
 									return FileVisitResult.TERMINATE;
 								}
 								if (!isDiskAvailable()) {
@@ -817,7 +750,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 									LOG.trace("skip " + file.toString());
 									currentProgress.incrementAndGet(); // STATE UPDATE
 								}
-								if (isStopping()) {
+								if (state.isStopping()) {
 									return FileVisitResult.TERMINATE;
 								}
 								if (!isDiskAvailable()) {
@@ -832,7 +765,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 				}
 			}
 			
-			if (isStopping()) {
+			if (state.isStopping()) {
 				return Optional.of(futureList);
 			}
 			if (!isDiskAvailable()) {
@@ -847,8 +780,8 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		return Optional.empty();
 	}
 	
-	private final IndexResult indexFile(Path file) {
-		if (isStopping()) {
+	final IndexResult indexFile(Path file) {
+		if (state.isStopping()) {
 			return IndexResult.STOPPED;
 		}
 		if (!isDiskAvailable()) {
@@ -944,7 +877,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 				+ "\n* Ram buffer for index : " + indexConfig.getRAMBufferSizeMB() + "," + indexConfig.getMaxBufferedDeleteTerms() + "," + indexConfig.getMaxBufferedDocs()
 				));
 		
-		if(isStopping())
+		if(state.isStopping())
 			return false;
 		
 		checkAndRecoverIndexWriter();

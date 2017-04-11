@@ -98,7 +98,7 @@ public class ControllerTest {
 			basicOption.addDirectory(dir);
 		});
 		
-		handler.indexDirectory(
+		handler.indexDirectoryAsync(
 				AppStartupConfig.deployedPath.resolve("index-test-files"), true);
 		mvc = MockMvcBuilders.webAppContextSetup(wac).build();
 	}
