@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,14 +27,20 @@ public class LuceneHandlerState {
 	}
 	
 	static class TransitionObserver{
-		TransitionObserver(Optional<INDEX_WRITE_STATE> before, Optional<INDEX_WRITE_STATE> after, Runnable action){
+		/**
+		 * 
+		 * @param before
+		 * @param after
+		 * @param consumer if condition is true, execute it with self reference. 
+		 */
+		TransitionObserver(Optional<INDEX_WRITE_STATE> before, Optional<INDEX_WRITE_STATE> after, Consumer<TransitionObserver> consumer){
 			this.before = before;
 			this.after = after;
-			this.action = action;
+			this.consumer = consumer;
 		}
 		protected final Optional<INDEX_WRITE_STATE> before;
 		protected final Optional<INDEX_WRITE_STATE> after;
-		protected final Runnable action;
+		protected final Consumer<TransitionObserver> consumer;
 	}
 	private final List<TransitionObserver> listOfObservers = Collections.synchronizedList(new ArrayList<TransitionObserver>());
 	private INDEX_WRITE_STATE writeStateInternal = INDEX_WRITE_STATE.READY; // no directly access
@@ -61,8 +69,6 @@ public class LuceneHandlerState {
 		final INDEX_WRITE_STATE before = this.writeStateInternal;
 		switch(state){			
 		case READY:{
-		//	currentProgress.set(0);
-		//	totalProcess.set(0);
 			this.writeStateInternal = state;
 			LOG.debug("LuceneHandler is READY");
 			success = true;
@@ -89,16 +95,17 @@ public class LuceneHandlerState {
 		}
 		final INDEX_WRITE_STATE after = this.writeStateInternal;
 
-		listOfObservers.forEach((TransitionObserver observer) -> {
+		//Defensive copying
+		listOfObservers.stream().collect(Collectors.toList()).forEach((TransitionObserver observer) -> {
 			if((observer.before.orElse(INDEX_WRITE_STATE.CAN_NOT_MATCH) == before
 					&& observer.after.orElse(INDEX_WRITE_STATE.CAN_NOT_MATCH) == after))
-				observer.action.run();	//check both before and after
+				observer.consumer.accept(observer);	//check both before and after
 			else if(observer.before.orElse(INDEX_WRITE_STATE.CAN_NOT_MATCH) == before
 					&& !observer.after.isPresent())
-				observer.action.run();	//check only before
+				observer.consumer.accept(observer);	//check only before
 			else if(observer.after.orElse(INDEX_WRITE_STATE.CAN_NOT_MATCH) == after
 					&& !observer.before.isPresent())
-				observer.action.run();	//check only after
+				observer.consumer.accept(observer);	//check only after
 		});
 
 		return success;

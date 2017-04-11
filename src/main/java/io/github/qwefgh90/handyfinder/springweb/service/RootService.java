@@ -1,5 +1,19 @@
 package io.github.qwefgh90.handyfinder.springweb.service;
 
+import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption;
+import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
+import io.github.qwefgh90.handyfinder.lucene.MimeOption;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.model.Command;
+import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
+import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
+import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
+import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
+import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+import io.github.qwefgh90.jsearch.JSearch;
+
 import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -20,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -38,20 +53,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import akka.actor.ActorRef;
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
-import io.github.qwefgh90.handyfinder.lucene.BasicOption;
-import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
-import io.github.qwefgh90.handyfinder.lucene.MimeOption;
-import io.github.qwefgh90.handyfinder.lucene.model.Directory;
-import io.github.qwefgh90.handyfinder.springweb.model.Command;
-import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
-import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
-import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
-import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
-import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
-import io.github.qwefgh90.jsearch.JSearch;
 
 @Service
 public class RootService {
@@ -92,9 +93,13 @@ public class RootService {
 	 * @throws SQLException
 	 */
 	public void updateDirectories(List<Directory> list) throws SQLException {
-		if(getDirectories().size() != list.size())
-			handler.restartIndex();
-			//indexActor.tell(new Restart(), null);
+		if(getDirectories().size() != list.size()){
+			CompletableFuture<Boolean> f = handler.restartIndexAsync();
+			f.exceptionally((exception) -> {
+				LOG.error("To update indexes failed " + ExceptionUtils.getStackTrace(exception));
+				return true;
+			});
+		}
 		indexProperty.save(list);
 	}
 
@@ -227,8 +232,13 @@ public class RootService {
 		globalAppData.setTargetMode(targetMode);
 		globalAppData.writeAppDataToDisk();
 		
-		if(isSizeChange)
-			handler.restartIndex();
+		if(isSizeChange){
+			CompletableFuture<Boolean> f = handler.restartIndexAsync();
+			f.exceptionally((exception) -> {
+				LOG.error("To update indexes failed " + ExceptionUtils.getStackTrace(exception));
+				return true;
+			});
+		}
 			//indexActor.tell(new Restart(), null);
 	}
 

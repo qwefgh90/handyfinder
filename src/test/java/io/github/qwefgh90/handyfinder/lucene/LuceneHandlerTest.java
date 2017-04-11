@@ -92,7 +92,7 @@ public class LuceneHandlerTest {
 		handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex,
 				invoker, basicOption, mimeOption);
 		handler.deleteAllIndexesFromFileSystem();
-		handler.stopIndex();
+		handler.stopIndexAsync();
 		
 
 		testFilesPath = AppStartupConfig.deployedPath.resolve("index-test-files");
