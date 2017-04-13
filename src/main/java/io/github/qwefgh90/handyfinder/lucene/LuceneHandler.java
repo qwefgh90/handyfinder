@@ -107,9 +107,6 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 
 	private final static Logger LOG = LoggerFactory
 			.getLogger(LuceneHandler.class);
-
-	// failed paths set
-	//private final Set<Path> failedPathSet = new HashSet<>();
 	
 	// immutable infomation
 	final private Path writerPath;	
@@ -283,65 +280,77 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 
 	/**
 	 * Start to index all files in a list of directories
-	 * 
-	 * @param list
-	 * @throws IOException
-	 * @throws IllegalStateException
-	 *             already start index
-	 */
-	/**
-	 * Start to index all files in a list of directories
 	 * @param list a list of directories
 	 * @return a future of process of index
 	 * @throws IOException
 	 * @throws IllegalStateException if state cannot be changed to progress normally throw it. 
 	 */
 	public CompletableFuture<Integer> startIndexAsync(final List<Directory> list) throws IOException {
-		if (!state.isReady())
-			throw new IllegalStateException("already indexing");
-		if(state.progress()){
-			compactAndCleanIndex();
-			totalProcess.set(sizeOfindexDirectories(list));
-			invokerForCommand.startProgress(totalProcess.get());
-			final List<CompletableFuture<IndexResult>> listOfFutureToBeIndexed = indexDirectoriesAsync(list);	//First try
-			final CompletableFuture<Integer> futureOfAllTry = CompletableFuture.allOf(listOfFutureToBeIndexed.toArray(new CompletableFuture[listOfFutureToBeIndexed.size()]))
-			.thenComposeAsync((result) -> {
-				return CompletableFuture.supplyAsync(() ->{	//Second try
-					final List<IndexResult> listOfFirstTry = listOfFutureToBeIndexed.stream()
-							.map((CompletableFuture<IndexResult> future) -> {try {
-								return future.get();
-							} catch (InterruptedException e) {
-								throw new IllegalStateException(e);
-							} catch (ExecutionException e) {
-								throw new IllegalStateException("A stream is failed. " + ExceptionUtils.getStackTrace(e));
-							}}).collect(Collectors.toList());
-					
-					LOG.info("First try to index is completed. " + listOfFirstTry.stream().filter((IndexResult _result) -> {
-								return _result.code == IndexResult.IndexResultCode.SUCCESS;}).count() + " / " + listOfFirstTry.size());
-					final Stream<Path> failedDocumentsStream = listOfFirstTry.stream()
-							.filter((IndexResult _result) -> { return _result.code == IndexResult.IndexResultCode.EXCEPTION;})
-							.map((IndexResult mapParam) -> { return mapParam.path.get(); });
-					final List<CompletableFuture<IndexResult>> futureForSecondTry = indexFailedDocumentsAsync(failedDocumentsStream);
-					try {
-						CompletableFuture.allOf(futureForSecondTry.toArray(new CompletableFuture[futureForSecondTry.size()])).get();
-						LOG.info("Second try to index is completed");
-					} catch (InterruptedException | ExecutionException e) {
-						LOG.warn(ExceptionUtils.getStackTrace(e));
-					} 
-					try {
-						compactAndCleanIndex();
-					} catch (IOException e) {
-						LOG.warn(ExceptionUtils.getStackTrace(e));
-					}
-					state.ready();
-					invokerForCommand.terminateProgress(totalProcess.get());
-					return 0;
+		compactAndCleanIndex();
+		totalProcess.set(sizeOfindexDirectories(list));
+		invokerForCommand.startProgress(totalProcess.get());
+		
+		LOG.info("First try");
+		final List<CompletableFuture<IndexResult>> listOfFutureToBeIndexed = indexDirectoriesAsync(list);	//First try
+		final CompletableFuture<Integer> futureOfAllTry = CompletableFuture.allOf(listOfFutureToBeIndexed.toArray(new CompletableFuture[listOfFutureToBeIndexed.size()]))
+				.thenComposeAsync((result) -> {
+					return CompletableFuture.supplyAsync(() ->{	//Second try
+						//Get a result from futures
+						final List<IndexResult> listOfFirstTry = listOfFutureToBeIndexed.stream()
+								.map((CompletableFuture<IndexResult> future) -> {try {
+									return future.get();
+								} catch (InterruptedException e) {
+									throw new IllegalStateException(e);
+								} catch (ExecutionException e) {
+									throw new IllegalStateException("A stream is failed. " + ExceptionUtils.getStackTrace(e));
+								}}).collect(Collectors.toList());
+						final long firstSuccessCount = listOfFirstTry.stream().filter((IndexResult _result) -> {
+							return _result.code == IndexResult.IndexResultCode.SUCCESS;}).count();
+						
+						//Print a log
+						LOG.info("First try to index is completed. " + firstSuccessCount + " / " + listOfFirstTry.size());
+
+						//Get failed documents
+						final Stream<Path> failedDocumentsStream = listOfFirstTry.stream()
+								.filter((IndexResult _result) -> { return _result.code == IndexResult.IndexResultCode.EXCEPTION;})
+								.map((IndexResult mapParam) -> { return mapParam.path.get(); });
+
+						LOG.info("Second try");
+						//Try it
+						final List<CompletableFuture<IndexResult>> futureForSecondTry = indexFailedDocumentsAsync(failedDocumentsStream);
+						try {
+							//Await computing
+							CompletableFuture.allOf(futureForSecondTry.toArray(new CompletableFuture[futureForSecondTry.size()])).get();
+
+							//Get a result from futures
+							final List<IndexResult> listOfSecondTry = futureForSecondTry.stream()
+									.map((CompletableFuture<IndexResult> future) -> {try {
+										return future.get();
+									} catch (InterruptedException e) {
+										throw new IllegalStateException(e);
+									} catch (ExecutionException e) {
+										throw new IllegalStateException("A stream is failed. " + ExceptionUtils.getStackTrace(e));
+									}}).collect(Collectors.toList());
+
+							final long secondSuccessCount = listOfSecondTry.stream().filter((IndexResult _result) -> {
+								return _result.code == IndexResult.IndexResultCode.SUCCESS;}).count();
+
+							//Print a log
+							LOG.info("Second try to index is completed. "  + secondSuccessCount + " / " + listOfSecondTry.size());
+							compactAndCleanIndex();
+							invokerForCommand.terminateProgress(totalProcess.get());
+							return (int)(firstSuccessCount + secondSuccessCount);						
+						} catch (InterruptedException | ExecutionException e) {
+							LOG.warn(ExceptionUtils.getStackTrace(e));
+							return (int)(firstSuccessCount);
+						} catch (IOException e) {
+							LOG.warn(ExceptionUtils.getStackTrace(e));
+							return (int)(firstSuccessCount);
+						}
+
+					});
 				});
-			});
-			return futureOfAllTry;
-		}else{
-			throw new IllegalStateException("Can't change state of lucene hander.");
-		}
+		return futureOfAllTry;
 	}
 	
 	/**
@@ -353,9 +362,15 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 			try {
 				stopIndexAsync().get(20, TimeUnit.SECONDS);
 				List<Directory> list = basicOption.getDirectoryList();
-				if (state.isReady()){
-					startIndexAsync(list).get();
-					updateIndexedDocuments(list);
+				if (!state.isReady())
+					throw new IllegalStateException("Can't change a state to progress");
+				if(state.progress()){
+					try{
+						startIndexAsync(list).get();
+						updateIndexedDocuments(list);
+					}finally{
+						state.ready();
+					}
 				}
 			} catch (IOException e) {
 				LOG.warn(ExceptionUtils.getStackTrace(e));
@@ -376,12 +391,9 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @return if a exception occurs return false, otherwise return true 
 	 */
 	public boolean updateIndexedDocuments(List<Directory> rootIndexDirectory) {
-		if (!state.isReady())
-			throw new IllegalStateException("already indexing");
 		int nonPresentCount = 0;
 		int nonContainedCount = 0;
 		int updateCount = 0;
-		if(state.progress()){
 			try {
 				invokerForCommand.startUpdateSummary();
 				Map.Entry<List<Document>, Integer> tempReturnValue;
@@ -402,11 +414,9 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 				LOG.warn(ExceptionUtils.getStackTrace(e));
 				return false;
 			} finally {
-				state.ready();
 				invokerForCommand.terminateUpdateSummary(nonPresentCount,
 						nonContainedCount, updateCount);
 			}
-		}
 		return true;
 	}
 
