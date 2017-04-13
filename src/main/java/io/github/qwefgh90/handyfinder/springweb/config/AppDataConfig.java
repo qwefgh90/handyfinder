@@ -22,7 +22,7 @@ import io.github.qwefgh90.handyfinder.lucene.BasicOption;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
 import io.github.qwefgh90.handyfinder.lucene.MimeOption;
 import io.github.qwefgh90.handyfinder.lucene.MimeOption.MimeXmlObjectFactory;
-import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+import io.github.qwefgh90.handyfinder.springweb.websocket.MessageController;
 
 @Configuration
 public class AppDataConfig {
@@ -31,7 +31,7 @@ public class AppDataConfig {
 	private ApplicationContext applicationContext;
 
 	@Bean
-	public LuceneHandler luceneHandler(CommandInvoker invoker, BasicOption basicOption
+	public LuceneHandler luceneHandler(MessageController invoker, BasicOption basicOption
 			,MimeOption mimeOption) {
 		return LuceneHandler
 				.getInstance(AppStartupConfig.pathForIndex, invoker, basicOption, mimeOption);

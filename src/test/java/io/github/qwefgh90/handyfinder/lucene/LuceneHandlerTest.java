@@ -39,7 +39,7 @@ import io.github.qwefgh90.handyfinder.springweb.config.AppDataConfig;
 import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
 import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
-import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+import io.github.qwefgh90.handyfinder.springweb.websocket.MessageController;
 
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -52,7 +52,7 @@ public class LuceneHandlerTest {
 	private final static Logger LOG = LoggerFactory
 			.getLogger(LuceneHandlerTest.class);
 	@Autowired
-	CommandInvoker invoker;
+	MessageController invoker;
 
 	@Autowired
 	MetaRespository metaRepository;

@@ -18,7 +18,7 @@ import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;
 import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
 import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
 import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
-import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+import io.github.qwefgh90.handyfinder.springweb.websocket.MessageController;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -63,7 +63,7 @@ public class ControllerTest {
 	WebApplicationContext wac;
 
 	@Autowired
-	CommandInvoker invoker;
+	MessageController invoker;
 
 	@Autowired
 	LuceneHandler handler;
