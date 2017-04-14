@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
@@ -143,9 +144,8 @@ public class LuceneHandlerTest {
 	@Test
 	public void searchTest() throws IOException,
 			org.apache.lucene.queryparser.classic.ParseException,
-			InvalidTokenOffsetsException, QueryNodeException {
-		handler.indexDirectoryAsync(
-				testFilesPath, true);
+			InvalidTokenOffsetsException, QueryNodeException, InterruptedException, ExecutionException {
+		handler.restartIndexAsync(basicOption.getDirectoryList()).get();
 		
 		List<ScoreDoc> docs = handler.search("javageek", 0);
 		Assert.assertThat(docs.size(), Matchers.is(5));
@@ -154,9 +154,8 @@ public class LuceneHandlerTest {
 	@Test
 	public void searchTestWithMime() throws IOException,
 			org.apache.lucene.queryparser.classic.ParseException,
-			InvalidTokenOffsetsException, QueryNodeException {
-		handler.indexDirectoryAsync(
-				testFilesPath, true);
+			InvalidTokenOffsetsException, QueryNodeException, InterruptedException, ExecutionException {
+		handler.restartIndexAsync(basicOption.getDirectoryList()).get();
 
 		mimeOption.setGlob("*.txt", false);
 		
@@ -167,19 +166,16 @@ public class LuceneHandlerTest {
 	@Test
 	public void searchTest2() throws IOException,
 			org.apache.lucene.queryparser.classic.ParseException,
-			InvalidTokenOffsetsException, QueryNodeException {
-		handler.indexDirectoryAsync(
-				testFilesPath, true);
+			InvalidTokenOffsetsException, QueryNodeException, InterruptedException, ExecutionException {
+		handler.restartIndexAsync(basicOption.getDirectoryList()).get();
 
 		List<ScoreDoc> docs = handler.search("PageBase", 0);
 		Assert.assertThat(docs.size(), Matchers.is(1));
 	}
 	
 	@Test
-	public void deleteAndUpdateIndexTest() throws IOException {
-		handler.indexDirectoryAsync(
-				testFilesPath
-				, true);
+	public void deleteAndUpdateIndexTest() throws IOException, InterruptedException, ExecutionException {
+		handler.restartIndexAsync(basicOption.getDirectoryList()).get();
 		StringBuilder sb = new StringBuilder();
 		List<Document> listBefore = handler.getDocumentList();
 		listBefore.forEach(doc -> sb.append(doc.get("title") + ", "));
@@ -210,9 +206,8 @@ public class LuceneHandlerTest {
 	public void fileURITest()
 			throws org.apache.lucene.queryparser.classic.ParseException,
 			QueryNodeException, InvalidTokenOffsetsException,
-			IOException {
-		handler.indexDirectoryAsync(
-				testFilesPath, true);
+			IOException, InterruptedException, ExecutionException {
+		handler.restartIndexAsync(basicOption.getDirectoryList()).get();
 
 		List<ScoreDoc> docs = handler.search("http",0);
 		Assert.assertThat(docs.size(), Matchers.is(1));

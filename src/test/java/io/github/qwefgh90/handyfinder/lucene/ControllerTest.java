@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import org.hamcrest.Matchers;
 import org.json.simple.JSONArray;
@@ -80,7 +81,7 @@ public class ControllerTest {
 	final List<Directory> indexDirList = new ArrayList<>();
 	
 	@Before
-	public void setup() throws IOException {
+	public void setup() throws IOException, InterruptedException, ExecutionException {
 		basicOption.setLimitCountOfResult(100);
 		basicOption.setMaximumDocumentMBSize(100);
 		mimeOption.initGlobTrue();
@@ -98,8 +99,9 @@ public class ControllerTest {
 			basicOption.addDirectory(dir);
 		});
 		
-		handler.indexDirectoryAsync(
-				AppStartupConfig.deployedPath.resolve("index-test-files"), true);
+		handler.restartIndexAsync(basicOption.getDirectoryList()).get();
+		//handler.indexDirectoryAsync(
+		//		AppStartupConfig.deployedPath.resolve("index-test-files"), true).get();
 		mvc = MockMvcBuilders.webAppContextSetup(wac).build();
 	}
 

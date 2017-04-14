@@ -92,11 +92,7 @@ public class RootService {
 	public void updateDirectories(List<Directory> list) throws SQLException {
 		if(getDirectories().size() != list.size()){
 			indexProperty.save(list);
-<<<<<<< HEAD
 			CompletableFuture<Boolean> f = handler.restartIndexAsync(list);
-=======
-			CompletableFuture<Boolean> f = handler.restartIndexAsync();
->>>>>>> origin/develop
 			f.exceptionally((exception) -> {
 				LOG.error("To update indexes failed " + ExceptionUtils.getStackTrace(exception));
 				return true;
