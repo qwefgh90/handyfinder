@@ -50,8 +50,8 @@ import io.github.qwefgh90.handyfinder.lucene.MimeOption;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
 import io.github.qwefgh90.handyfinder.springweb.service.RootService;
-import io.github.qwefgh90.handyfinder.springweb.websocket.ProgressCommand;
-import io.github.qwefgh90.handyfinder.springweb.websocket.ProgressCommand.STATE;
+import io.github.qwefgh90.handyfinder.springweb.websocket.ProgressMessage;
+import io.github.qwefgh90.handyfinder.springweb.websocket.ProgressMessage.STATE;
 
 public class WebsockTest {
 	private final static Logger LOG = LoggerFactory
@@ -172,12 +172,12 @@ public class WebsockTest {
 			session.subscribe("/index/progress", new StompFrameHandler() {
 				@Override
 				public Type getPayloadType(StompHeaders headers) {
-					return ProgressCommand.class;
+					return ProgressMessage.class;
 				}
 
 				@Override
 				public void handleFrame(StompHeaders headers, Object payload) {
-					ProgressCommand json = (ProgressCommand) payload;
+					ProgressMessage json = (ProgressMessage) payload;
 					LOG.info("Got " + ToStringBuilder.reflectionToString(json));
 					if (json.getState() == STATE.PROGRESS.TERMINATE) {
 

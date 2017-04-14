@@ -8,7 +8,7 @@ import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerState.TransitionObserv
 import io.github.qwefgh90.handyfinder.lucene.Result.IndexResult;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.memory.monitor.FunctionalLatch;
-import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+import io.github.qwefgh90.handyfinder.springweb.websocket.MessageController;
 import io.github.qwefgh90.jsearch.JSearch;
 
 import java.io.File;
@@ -132,7 +132,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	private DirectoryReader reader;
 	private IndexSearcher searcher;
 	
-	private CommandInvoker invokerForCommand; // for command to client
+	private MessageController invokerForCommand; // for command to client
 	private BasicOption basicOption;
 	private MimeOption mimeOption;
 	
@@ -146,7 +146,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	 * @return object identified by path
 	 */
 	public static LuceneHandler getInstance(final Path writerPath,
-			final CommandInvoker invoker, 
+			final MessageController invoker, 
 			final BasicOption basicOption,
 			final MimeOption mimeOption) {
 		if (Files.isDirectory(writerPath.getParent())

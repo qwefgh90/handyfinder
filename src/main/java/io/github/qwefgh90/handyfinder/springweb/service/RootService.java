@@ -11,7 +11,7 @@ import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
 import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
 import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
-import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+import io.github.qwefgh90.handyfinder.springweb.websocket.MessageController;
 import io.github.qwefgh90.jsearch.JSearch;
 
 import java.awt.Desktop;
@@ -60,7 +60,7 @@ public class RootService {
 	private final static Logger LOG = LoggerFactory
 			.getLogger(RootService.class);
 	@Autowired
-	CommandInvoker invokerForCommand;
+	MessageController invokerForCommand;
 
 	@Autowired
 	MetaRespository indexProperty;
@@ -92,7 +92,11 @@ public class RootService {
 	public void updateDirectories(List<Directory> list) throws SQLException {
 		if(getDirectories().size() != list.size()){
 			indexProperty.save(list);
+<<<<<<< HEAD
 			CompletableFuture<Boolean> f = handler.restartIndexAsync(list);
+=======
+			CompletableFuture<Boolean> f = handler.restartIndexAsync();
+>>>>>>> origin/develop
 			f.exceptionally((exception) -> {
 				LOG.error("To update indexes failed " + ExceptionUtils.getStackTrace(exception));
 				return true;
