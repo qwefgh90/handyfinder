@@ -212,7 +212,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 					LOG.warn(ExceptionUtils.getStackTrace(e));
 				}
 			}
-			restartIndexAsync();
+			restartIndexAsync(basicOption.getDirectoryList());
 		}
 		, 3, TimeUnit.SECONDS); 
 	}
@@ -357,11 +357,10 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	 * Stop and update the index
 	 * @return if a process succeed return true, otherwise return false
 	 */
-	public CompletableFuture<Boolean> restartIndexAsync(){
+	public CompletableFuture<Boolean> restartIndexAsync(List<Directory> list){
 		CompletableFuture<Boolean> f = CompletableFuture.supplyAsync(() -> {
 			try {
 				stopIndexAsync().get(20, TimeUnit.SECONDS);
-				List<Directory> list = basicOption.getDirectoryList();
 				if (!state.isReady())
 					throw new IllegalStateException("Can't change a state to progress");
 				if(state.progress()){
@@ -404,7 +403,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 				nonPresentCount = tempReturnValue.getValue();
 				// clean non contained file
 				tempReturnValue = cleanNonContainedInternalIndex(tempReturnValue.getKey(),
-						rootIndexDirectory);
+						new ArrayList<>(rootIndexDirectory));
 				nonContainedCount = tempReturnValue.getValue();
 				// update index
 				updateCount = updateContentInternalIndex(tempReturnValue.getKey());
@@ -1171,7 +1170,8 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	int sizeOfindexDirectories(List<Directory> list) throws IOException {
 		LOG.debug("Calculating size of files to be indexed");
 		Size size = new Size();
-		for (Directory dir : list) {
+		List<Directory> depensiveCopy = new ArrayList<>(list);
+		for (Directory dir : depensiveCopy) {
 			Path tmp = Paths.get(dir.getPathString());
 			if (dir.isRecursively())
 				size.add(sizeOfindexDirectory(tmp, true));

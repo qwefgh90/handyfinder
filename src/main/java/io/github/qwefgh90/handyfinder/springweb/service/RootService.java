@@ -74,9 +74,6 @@ public class RootService {
 	@Autowired
 	BasicOption globalAppData;
 	
-	//@Autowired
-	//ActorRef indexActor;
-
 	/**
 	 * Get directories to be indexed.
 	 * 
@@ -84,7 +81,7 @@ public class RootService {
 	 * @throws SQLException
 	 */
 	public List<Directory> getDirectories() throws SQLException {
-		return indexProperty.selectDirectory();
+		return globalAppData.getDirectoryList();
 	}
 
 	/**
@@ -94,13 +91,13 @@ public class RootService {
 	 */
 	public void updateDirectories(List<Directory> list) throws SQLException {
 		if(getDirectories().size() != list.size()){
-			CompletableFuture<Boolean> f = handler.restartIndexAsync();
+			indexProperty.save(list);
+			CompletableFuture<Boolean> f = handler.restartIndexAsync(list);
 			f.exceptionally((exception) -> {
 				LOG.error("To update indexes failed " + ExceptionUtils.getStackTrace(exception));
 				return true;
 			});
 		}
-		indexProperty.save(list);
 	}
 
 	/**
@@ -233,7 +230,7 @@ public class RootService {
 		globalAppData.writeAppDataToDisk();
 		
 		if(isSizeChange){
-			CompletableFuture<Boolean> f = handler.restartIndexAsync();
+			CompletableFuture<Boolean> f = handler.restartIndexAsync(globalAppData.getDirectoryList());
 			f.exceptionally((exception) -> {
 				LOG.error("To update indexes failed " + ExceptionUtils.getStackTrace(exception));
 				return true;
