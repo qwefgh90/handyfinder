@@ -32,7 +32,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.gui.AppStartup;
 import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.KEYWORD_MODE;
 import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
@@ -67,7 +67,7 @@ public class LuceneHandlerTest {
 	LuceneHandler handler2;
 	static {
 		try {
-			AppStartupConfig.parseArguments(new String[] { "--no-gui" });
+			AppStartup.parseArguments(new String[] { "--no-gui" });
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -90,11 +90,11 @@ public class LuceneHandlerTest {
 		basicOption.setMaximumDocumentMBSize(100);
 		basicOption.setTargetMode(EnumSet.of(TARGET_MODE.PATH, TARGET_MODE.CONTENT));
 		basicOption.setKeywordMode(KEYWORD_MODE.OR.toString());
-		handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex,
+		handler = LuceneHandler.getInstance(AppStartup.pathForIndex,
 				invoker, basicOption, mimeOption);
 		handler.deleteAllIndexesFromFileSystem();
 
-		testFilesPath = AppStartupConfig.deployedPath.resolve("index-test-files");
+		testFilesPath = AppStartup.deployedPath.resolve("index-test-files");
 		
 		Directory testFileiDir = new Directory();
 		testFileiDir.setRecursively(true);
@@ -142,7 +142,7 @@ public class LuceneHandlerTest {
 
 	@Test
 	public void factoryMethodTest() {
-		handler2 = LuceneHandler.getInstance(AppStartupConfig.pathForIndex,
+		handler2 = LuceneHandler.getInstance(AppStartup.pathForIndex,
 				invoker, basicOption, mimeOption);
 		assertTrue(handler == handler2);
 	}

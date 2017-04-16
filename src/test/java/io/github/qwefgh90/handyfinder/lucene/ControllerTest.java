@@ -8,7 +8,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.gui.AppStartup;
+import io.github.qwefgh90.handyfinder.gui.AppStartupUtil;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.lucene.BasicOption;
@@ -25,6 +26,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
 import org.hamcrest.Matchers;
 import org.json.simple.JSONArray;
@@ -50,6 +52,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -87,7 +90,7 @@ public class ControllerTest {
 		mimeOption.initGlobTrue();
 		handler.deleteAllIndexesFromFileSystem();
 		
-		final Path indexPath = AppStartupConfig.deployedPath.resolve("index-test-files");
+		final Path indexPath = AppStartup.deployedPath.resolve("index-test-files");
 		
 		Directory testFileiDir = new Directory();
 		testFileiDir.setRecursively(true);
@@ -144,6 +147,28 @@ public class ControllerTest {
 		Assert.assertThat(list.size(), Matchers.is(5));
 	}
 
+	final String getDiffKey(){
+		String diffKey = AppStartupUtil.getFourDigitsNumber();
+		if(diffKey.equals(AppStartup.secretKey)){
+			return this.getDiffKey();
+		}else{
+			return diffKey;
+		}
+	};
+
+	@Test
+	public void authTest() throws JsonProcessingException, Exception{
+		JSONObject object = new JSONObject();
+		object.put("key", AppStartup.secretKey);
+		// update type -> true
+		mvc.perform(post("/auth").contentType(MediaType.APPLICATION_JSON_UTF8).content(om.writeValueAsString(object)))
+				.andExpect(status().isOk());
+		object.put("key", getDiffKey());
+		mvc.perform(post("/auth").contentType(MediaType.APPLICATION_JSON_UTF8).content(om.writeValueAsString(object)))
+				.andExpect(status().isUnauthorized());
+	}
+	
+	
 	@Test
 	public void searchAllDocumentTest() throws Exception {
 		MvcResult mvcResult = mvc.perform(

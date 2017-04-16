@@ -1,6 +1,6 @@
 package io.github.qwefgh90.handyfinder.lucene;
 
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.gui.AppStartup;
 import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.KEYWORD_MODE;
 import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandlerState.INDEX_WRITE_STATE;
@@ -203,10 +203,10 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	@PostConstruct
 	public void initialize(){
 		LOG.debug("initialize() is called");
-		if(Files.exists(AppStartupConfig.resetFilePath)){
+		if(Files.exists(AppStartup.resetFilePath)){
 			try {
 				this.deleteAllIndexesFromFileSystem();
-				Files.delete(AppStartupConfig.resetFilePath);
+				Files.delete(AppStartup.resetFilePath);
 			} catch (IOException e) {
 				LOG.warn(ExceptionUtils.getStackTrace(e));
 			}

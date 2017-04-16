@@ -17,7 +17,7 @@ import org.xml.sax.SAXException;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Terminated;
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.gui.AppStartup;
 import io.github.qwefgh90.handyfinder.lucene.BasicOption;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
 import io.github.qwefgh90.handyfinder.lucene.MimeOption;
@@ -34,18 +34,18 @@ public class AppDataConfig {
 	public LuceneHandler luceneHandler(MessageController invoker, BasicOption basicOption
 			,MimeOption mimeOption) {
 		return LuceneHandler
-				.getInstance(AppStartupConfig.pathForIndex, invoker, basicOption, mimeOption);
+				.getInstance(AppStartup.pathForIndex, invoker, basicOption, mimeOption);
 	}
 
 	@Bean
 	public BasicOption basicOption(){
-		return BasicOption.getInstance(AppStartupConfig.appDataJsonPath);
+		return BasicOption.getInstance(AppStartup.appDataJsonPath);
 	}
 
 	@Bean
 	public MimeOption mimeOption() throws ParserConfigurationException, SAXException, IOException {
-		return MimeXmlObjectFactory.getInstanceFromXml(AppStartupConfig.tikaXmlFilePath.toAbsolutePath().toString()
-				,AppStartupConfig.propertiesPath, AppStartupConfig.customTikaGlobPropertiesPath);
+		return MimeXmlObjectFactory.getInstanceFromXml(AppStartup.tikaXmlFilePath.toAbsolutePath().toString()
+				,AppStartup.propertiesPath, AppStartup.customTikaGlobPropertiesPath);
 	}
 	
 	/**

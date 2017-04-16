@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.gui.AppStartup;
 import io.github.qwefgh90.handyfinder.gui.Java2JavascriptUtils;
 
 public class ContainerInitializer extends
@@ -34,7 +34,7 @@ public class ContainerInitializer extends
 	protected WebApplicationContext createRootApplicationContext() {
 		// TODO Auto-generated method stub
 		WebApplicationContext context = super.createRootApplicationContext();
-		AppStartupConfig.setRootAppContext(context);
+		AppStartup.setRootAppContext(context);
 		return context;
 	}
 
@@ -42,7 +42,7 @@ public class ContainerInitializer extends
 	protected WebApplicationContext createServletApplicationContext() {
 		// TODO Auto-generated method stub
 		WebApplicationContext context = super.createServletApplicationContext();
-		AppStartupConfig.setServletAppContext(context);
+		AppStartup.setServletAppContext(context);
 		return context;
 	}
 

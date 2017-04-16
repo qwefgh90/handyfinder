@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.gui.AppStartup;
 import io.github.qwefgh90.handyfinder.gui.GUIApplication;
 import io.github.qwefgh90.handyfinder.springweb.websocket.GUIMessage.COMMAND;
 import io.github.qwefgh90.handyfinder.springweb.websocket.UpdateSummaryMessage.STATE;

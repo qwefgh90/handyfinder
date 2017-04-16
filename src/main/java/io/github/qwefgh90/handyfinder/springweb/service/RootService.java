@@ -1,6 +1,6 @@
 package io.github.qwefgh90.handyfinder.springweb.service;
 
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.gui.AppStartup;
 import io.github.qwefgh90.handyfinder.lucene.BasicOption;
 import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
@@ -105,7 +105,7 @@ public class RootService {
 	 * @return
 	 */
 	public Map<String, String> getVersion(){
-		version.put("version", AppStartupConfig.versionOpt.orElse(""));
+		version.put("version", AppStartup.versionOpt.orElse(""));
 		return version;
 	}
 	private final Map<String, String> version = new HashMap<>(); 
@@ -362,7 +362,7 @@ public class RootService {
 				: null;
 		if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
 			try {
-				desktop.browse(URI.create(url.orElse(AppStartupConfig.homeUrl)));
+				desktop.browse(URI.create(url.orElse(AppStartup.homeUrl)));
 			} catch (Exception e) {
 				LOG.warn(e.toString());
 			}

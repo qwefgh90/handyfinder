@@ -65,7 +65,7 @@ public class GUIApplication extends Application {
 	}
 	
 	private final double WINDOW_LOADING_WIDTH = 300;
-	private final double WINDOW_LOADING_HEIGHT = 330;
+	private final double WINDOW_LOADING_HEIGHT = 350;
 
 	private WebView currentView = null;
 	private Tomcat tomcat;
@@ -75,8 +75,8 @@ public class GUIApplication extends Application {
 	public boolean isStop(){ return stopped; }
 
 	public void healthCheck() throws TomcatInitFailException {
-		String strUrl = "http://" + AppStartupConfig.address + ":"
-				+ AppStartupConfig.port + "/health";
+		String strUrl = "http://" + AppStartup.address + ":"
+				+ AppStartup.port + "/health";
 
 		URL url;
 		try {
@@ -114,18 +114,17 @@ public class GUIApplication extends Application {
 		stopped = true;
 		LOG.info("javafx onCloseRequest()");
 		final Preferences userPrefs = Preferences
-				.userNodeForPackage(AppStartupConfig.class);
+				.userNodeForPackage(AppStartup.class);
 		userPrefs.putDouble("stage.x", primaryStage.getX());
 		userPrefs.putDouble("stage.y", primaryStage.getY());
 		userPrefs.putDouble("stage.width", primaryStage.getWidth());
 		userPrefs.putDouble("stage.height", primaryStage.getHeight());
 
 		CompletableFuture.runAsync(() -> {
-			if(tomcat == null)
-				return;
 			LOG.info("tomcat is stopping");
 			try {
-				tomcat.stop();
+				if(tomcat != null)
+					tomcat.stop();
 			} catch (Exception e) {
 				LOG.error(ExceptionUtils.getStackTrace(e));
 			} finally {
@@ -141,22 +140,22 @@ public class GUIApplication extends Application {
 		try {
 			Platform.runLater(() -> setLoadingParagraphBeforeLoading("process checking..."));
 
-			if(!AppStartupConfig.alreadyProcessExists){
+			if(!AppStartup.alreadyProcessExists){
 				Platform.runLater(() -> setLoadingParagraphBeforeLoading("server initialzing..."));
 
 				tomcat = new Tomcat();
 				tomcat.getConnector().setAttribute("address",
-						AppStartupConfig.address);
+						AppStartup.address);
 				tomcat.getConnector().setAttribute("port",
-						AppStartupConfig.port);
+						AppStartup.port);
 
 				Context context = tomcat.addWebapp("",
-						AppStartupConfig.pathForAppdata.toAbsolutePath()
+						AppStartup.pathForAppdata.toAbsolutePath()
 						.toString());
 				// https://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/catalina/startup/Tomcat.html#addWebapp(org.apache.catalina.Host,%20java.lang.String,%20java.lang.String)
 
 				context.setJarScanner(new FastJarScanner());
-				context.addWelcomeFile(AppStartupConfig.REDIRECT_PAGE);
+				context.addWelcomeFile(AppStartup.REDIRECT_PAGE);
 				tomcat.init();
 				Platform.runLater(() -> setLoadingParagraphBeforeLoading("server startup..."));
 				tomcat.start();
@@ -168,7 +167,7 @@ public class GUIApplication extends Application {
 				Platform.runLater(() -> showUI(GUIApplication.this::initializeWebviewWhenComplete));
 			}else{
 				Platform.runLater(() -> setLoadingParagraphBeforeLoading(
-						"handyfinder is already running...\n" + AppStartupConfig.alreadyHomeUrl.get()));
+						"handyfinder is already running...\n" + AppStartup.alreadyHomeUrl.get()));
 			}
 		} catch (Exception e) {
 			LOG.error(e.toString());
@@ -217,7 +216,7 @@ public class GUIApplication extends Application {
 			return;
 		}
 		currentView = run.get();
-		if (!AppStartupConfig.getServerOnlyMode())
+		if (!AppStartup.getServerOnlyMode())
 			primaryStage.show();
 	}
 
@@ -243,8 +242,8 @@ public class GUIApplication extends Application {
 		// create the JavaFX webview
 		final WebView webView = new WebView();
 		webView.getEngine().load(
-				AppStartupConfig.class.getResource(
-						AppStartupConfig.RESOURCE_LOADING_PAGE)
+				AppStartup.class.getResource(
+						AppStartup.RESOURCE_LOADING_PAGE)
 				.toExternalForm());
 		final Scene scene = new Scene(webView);
 
@@ -268,15 +267,16 @@ public class GUIApplication extends Application {
 
 		// load index.html
 		// webView.getEngine().load(getClass().getResource(page).toExternalForm());
-		webView.getEngine().load(AppStartupConfig.homeUrl);
+		webView.getEngine().load(AppStartup.homeUrl);
 		webView.getEngine().documentProperty()
 		.addListener(new ChangeListener<Document>() {
 			@Override
 			public void changed(
 					ObservableValue<? extends Document> prop,
 					Document oldDoc, Document newDoc) {
-				connectBackendObject(webView.getEngine(), "guiService",
-						new GUIService(), true);
+				connectBackendObject(webView.getEngine(), "secretKey", AppStartup.secretKey, true);
+			//	connectBackendObject(webView.getEngine(), "guiService",
+			//			new GUIService(), true);
 			}
 		});
 
@@ -284,7 +284,7 @@ public class GUIApplication extends Application {
 		primaryStage.setTitle(TITLE.AFTER_LOADING.getTitle());
 
 		Preferences userPrefs = Preferences
-				.userNodeForPackage(AppStartupConfig.class);
+				.userNodeForPackage(AppStartup.class);
 
 		Rectangle2D primaryScreenBounds = Screen.getPrimary().getVisualBounds();
 
@@ -312,7 +312,7 @@ public class GUIApplication extends Application {
 		primaryStage.setWidth(w);
 		primaryStage.setHeight(h);
 
-		LOG.info("Handyfinder is ready : " + AppStartupConfig.homeUrl);
+		LOG.info("Handyfinder is ready : " + AppStartup.homeUrl);
 		return webView;
 	}
 

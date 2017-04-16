@@ -51,7 +51,7 @@ import org.springframework.web.socket.sockjs.client.Transport;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 import javafx.application.Platform;
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.gui.AppStartup;
 import io.github.qwefgh90.handyfinder.gui.GUIApplication;
 import io.github.qwefgh90.handyfinder.lucene.MimeOption;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
@@ -73,7 +73,7 @@ public class WebsockTest {
 	public static void before() throws InterruptedException, ExecutionException, TimeoutException {
 		new Thread(()->{
 			try {
-				AppStartupConfig.main(new String[] { "--no-gui" });
+				AppStartup.main(new String[] { "--no-gui" });
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
@@ -87,9 +87,9 @@ public class WebsockTest {
 	public void setup() throws LifecycleException, ServletException,
 			IOException, URISyntaxException, SQLException, ParseException,
 			InterruptedException, ExecutionException, TimeoutException {
-		rootService = AppStartupConfig.getBean(RootService.class);
-		metaRepo = AppStartupConfig.getBean(MetaRespository.class);
-		xmlObject = AppStartupConfig.getBean(MimeOption.class);
+		rootService = AppStartup.getBean(RootService.class);
+		metaRepo = AppStartup.getBean(MetaRespository.class);
+		xmlObject = AppStartup.getBean(MimeOption.class);
 		xmlObject.initGlobTrue();
 		Directory dir = new Directory();
 		dir.setRecursively(true);
@@ -105,7 +105,7 @@ public class WebsockTest {
 	public void clean() throws Exception {
 		rootService.closeLucene();
 		metaRepo.deleteDirectories();
-		AppStartupConfig.terminateProgram();
+		AppStartup.terminateProgram();
 		// DON'T TERMINATE. "MVN TEST" IS FAILED IN UBUNTU. AFTER TOMCAT CLOSE,
 		// WHEN EXECUTE RESOURCE CODE,
 		// THROW
@@ -138,9 +138,9 @@ public class WebsockTest {
 		stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 		stompClient.setTaskScheduler(taskScheduler);
 		stompClient.setDefaultHeartbeat(new long[] { 0, 0 });
-		stompClient.connect("ws://" + AppStartupConfig.address + ":"
-				+ AppStartupConfig.port + "/endpoint", headers, handler,
-				AppStartupConfig.port);
+		stompClient.connect("ws://" + AppStartup.address + ":"
+				+ AppStartup.port + "/endpoint", headers, handler,
+				AppStartup.port);
 
 		if (failure.get() != null) {
 			throw new AssertionError("", failure.get());
