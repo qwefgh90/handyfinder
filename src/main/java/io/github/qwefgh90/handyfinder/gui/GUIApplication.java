@@ -55,8 +55,13 @@ public class GUIApplication extends Application {
 			.getLogger(GUIApplication.class);
 
 	private final static CompletableFuture<GUIApplication> self = new CompletableFuture<>();
+	
 	public static CompletableFuture<GUIApplication> getSingleton() {
 		return self;
+	}
+	
+	public static void start(String[] args){
+		GUIApplication.launch(args);
 	}
 	
 	private final double WINDOW_LOADING_WIDTH = 300;
@@ -89,10 +94,6 @@ public class GUIApplication extends Application {
 		} catch (IOException e) {
 			LOG.error(e.toString());
 		}
-	}
-
-	public static void start(String[] args){
-		GUIApplication.launch(args);
 	}
 
 	@Override
@@ -204,7 +205,7 @@ public class GUIApplication extends Application {
 					result = selectedDirectory.getAbsolutePath();
 				}
 			} catch (Exception e) {
-				System.out.println(e.toString());
+				LOG.error(e.toString());
 			}
 			directoryConsumer.accept(result);
 		});

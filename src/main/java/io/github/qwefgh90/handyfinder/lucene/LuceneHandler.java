@@ -203,16 +203,17 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	@PostConstruct
 	public void initialize(){
 		LOG.debug("initialize() is called");
-		scheduledExecutor.schedule(() -> {
-			if(Files.exists(AppStartupConfig.resetFilePath)){
-				try {
-					this.deleteAllIndexesFromFileSystem();
-					Files.delete(AppStartupConfig.resetFilePath);
-				} catch (IOException e) {
-					LOG.warn(ExceptionUtils.getStackTrace(e));
-				}
+		if(Files.exists(AppStartupConfig.resetFilePath)){
+			try {
+				this.deleteAllIndexesFromFileSystem();
+				Files.delete(AppStartupConfig.resetFilePath);
+			} catch (IOException e) {
+				LOG.warn(ExceptionUtils.getStackTrace(e));
 			}
-			restartIndexAsync(basicOption.getDirectoryList());
+		}
+		scheduledExecutor.schedule(() -> {
+			if(state.isReady())
+				restartIndexAsync(basicOption.getDirectoryList()).join();
 		}
 		, 3, TimeUnit.SECONDS); 
 	}
@@ -360,7 +361,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	public CompletableFuture<Boolean> restartIndexAsync(List<Directory> list){
 		CompletableFuture<Boolean> f = CompletableFuture.supplyAsync(() -> {
 			try {
-				stopIndexAsync().get(20, TimeUnit.SECONDS);
+				stopIndexAsync().get(30, TimeUnit.SECONDS);
 				if (!state.isReady())
 					throw new IllegalStateException("Can't change a state to progress");
 				if(state.progress()){
@@ -431,6 +432,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 				, (self) -> {
 					result.complete(true);
 					state.removeObserver(self);
+					LOG.error("IS STOPPED");
 				});
 		if(state.stopping()){
 			state.addObserverOfTransition(observer);

@@ -93,8 +93,6 @@ public class LuceneHandlerTest {
 		handler = LuceneHandler.getInstance(AppStartupConfig.pathForIndex,
 				invoker, basicOption, mimeOption);
 		handler.deleteAllIndexesFromFileSystem();
-		handler.stopIndexAsync();
-		
 
 		testFilesPath = AppStartupConfig.deployedPath.resolve("index-test-files");
 		
@@ -132,6 +130,15 @@ public class LuceneHandlerTest {
 		mimeOption.initGlobTrue();
 		LuceneHandler.closeResources();
 	}
+	
+	@Test
+	public void searchTest() throws IOException,
+			org.apache.lucene.queryparser.classic.ParseException,
+			InvalidTokenOffsetsException, QueryNodeException, InterruptedException, ExecutionException {
+		handler.restartIndexAsync(basicOption.getDirectoryList()).get();
+		List<ScoreDoc> docs = handler.search("javageek", 0);
+		Assert.assertThat(docs.size(), Matchers.is(5));
+	}
 
 	@Test
 	public void factoryMethodTest() {
@@ -141,15 +148,6 @@ public class LuceneHandlerTest {
 	}
 
 	
-	@Test
-	public void searchTest() throws IOException,
-			org.apache.lucene.queryparser.classic.ParseException,
-			InvalidTokenOffsetsException, QueryNodeException, InterruptedException, ExecutionException {
-		handler.restartIndexAsync(basicOption.getDirectoryList()).get();
-		
-		List<ScoreDoc> docs = handler.search("javageek", 0);
-		Assert.assertThat(docs.size(), Matchers.is(5));
-	}
 	
 	@Test
 	public void searchTestWithMime() throws IOException,

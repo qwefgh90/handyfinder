@@ -68,7 +68,7 @@ public class WebsockTest {
 	MetaRespository metaRepo;
 	MimeOption xmlObject;
 	List<Directory> list = new ArrayList<>();
-	static Thread th;
+	
 	@BeforeClass
 	public static void before() throws InterruptedException, ExecutionException, TimeoutException {
 		new Thread(()->{
