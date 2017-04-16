@@ -3,7 +3,9 @@ package io.github.qwefgh90.handyfinder.springweb.websocket;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.ExecutionException;
 
+import org.codehaus.plexus.util.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,10 +60,14 @@ public class MessageController {
 	}
 
 	public void openAndSendSelectedDirectory() {
-		GUIApplication.getSingleton().openAndSelectDirectory((dir) -> {
-			GUIMessage comm = GUIMessage.createObjectForDirectory(receiver, dir);
-			comm.send();
-		});
+		try {
+			GUIApplication.getSingleton().get().openAndSelectDirectory((dir) -> {
+				GUIMessage comm = GUIMessage.createObjectForDirectory(receiver, dir);
+				comm.send();
+			});
+		} catch (InterruptedException | ExecutionException e) {
+			LOG.error(ExceptionUtils.getStackTrace(e));
+		}
 	}
 
 	public void sendDocumentContent(String pathString, String content){

@@ -5,6 +5,7 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
@@ -32,4 +33,25 @@ public class FutureTest {
 		Thread.sleep(10000);
 	}
 
+	@Test 
+	public void futureComplete() throws InterruptedException{
+		final CompletableFuture<Boolean> f = new CompletableFuture<Boolean>();
+		
+		new Thread(() -> {
+
+			System.out.println("before");
+			try {
+				f.get(20, TimeUnit.SECONDS);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			System.out.println("after");
+		}).start();
+		Thread.sleep(5000);
+		f.complete(true);
+		System.out.println("call complete()");
+		Thread.sleep(5000);
+		
+	}
 }

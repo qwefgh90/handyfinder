@@ -32,7 +32,7 @@
 			<artifactId>tomcat-embed-core</artifactId>
 			<version>${org.apache.tomcat}</version>
 		</dependency>
-	   <dependency>
+		<dependency>
 			<groupId>org.apache.tomcat.embed</groupId>
 			<artifactId>tomcat-embed-logging-juli</artifactId>
 			<version>${org.apache.tomcat}</version>
@@ -156,6 +156,12 @@
 			<artifactId>json-path</artifactId>
 			<version>2.2.0</version>
 			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jprocesses</groupId>
+			<artifactId>jProcesses</artifactId>
+			<version>1.6.3</version>
 		</dependency>
 	</dependencies>
 

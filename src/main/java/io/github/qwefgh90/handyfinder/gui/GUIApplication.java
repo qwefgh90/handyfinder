@@ -9,6 +9,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +35,8 @@ import javafx.geometry.Rectangle2D;
 
 import javax.servlet.ServletContext;
 
+import net.sf.ehcache.constructs.nonstop.store.ExecutorServiceStore;
+
 import org.apache.catalina.Context;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.JarScanFilter;
@@ -47,11 +51,14 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 public class GUIApplication extends Application {
-	private final static Logger LOG = LoggerFactory
+	private final Logger LOG = LoggerFactory
 			.getLogger(GUIApplication.class);
 
-	private final static GUIApplication app = new GUIApplication();
-
+	private final static CompletableFuture<GUIApplication> self = new CompletableFuture<>();
+	public static CompletableFuture<GUIApplication> getSingleton() {
+		return self;
+	}
+	
 	private final double WINDOW_LOADING_WIDTH = 300;
 	private final double WINDOW_LOADING_HEIGHT = 330;
 
@@ -61,9 +68,6 @@ public class GUIApplication extends Application {
 
 	private boolean stopped = false;
 	public boolean isStop(){ return stopped; }
-
-	private ExecutorService initializingService = Executors.newSingleThreadExecutor();
-	public ExecutorService getWebAppThread() { return initializingService;}
 
 	public void healthCheck() throws TomcatInitFailException {
 		String strUrl = "http://" + AppStartupConfig.address + ":"
@@ -87,84 +91,89 @@ public class GUIApplication extends Application {
 		}
 	}
 
-	public void start(String[] args){
-		launch(args);
-	}
-	public static GUIApplication getSingleton() {
-		return app;
+	public static void start(String[] args){
+		GUIApplication.launch(args);
 	}
 
 	@Override
 	public void start(Stage primaryStage) {
-		//Register a callback when closing
-		primaryStage.setOnCloseRequest(event -> {
-			showUI(this::initializeWebviewWhenLoading);
-			Platform.runLater(() -> setLoadingParagraphBeforeLoading("Handyfinder Stopping..."));
-			stopped = true;
-			LOG.info("javafx onCloseRequest()");
-			final Preferences userPrefs = Preferences
-					.userNodeForPackage(AppStartupConfig.class);
-			userPrefs.putDouble("stage.x", primaryStage.getX());
-			userPrefs.putDouble("stage.y", primaryStage.getY());
-			userPrefs.putDouble("stage.width", primaryStage.getWidth());
-			userPrefs.putDouble("stage.height", primaryStage.getHeight());
-
-			final ExecutorService es = Executors.newSingleThreadExecutor();
-			es.submit(() -> {
-				LOG.info("tomcat is stopping");
-				try {
-					tomcat.stop();
-				} catch (Exception e) {
-					LOG.error(ExceptionUtils.getStackTrace(e));
-				} finally {
-					Platform.exit(); //direct exit
-					LOG.info("javafx Platform.exit() called");
-				}
-			});
-
-			es.shutdown();
-			event.consume();
-		});
-
-		final Task<Boolean> loadingTask = new Task<Boolean>() {
-			@Override
-			protected Boolean call() throws Exception {
-				try {
-					Platform.runLater(() -> setLoadingParagraphBeforeLoading("server initialzing..."));
-
-					Tomcat tomcat = new Tomcat();
-					GUIApplication.this.tomcat = tomcat;
-					tomcat.getConnector().setAttribute("address",
-							AppStartupConfig.address);
-					tomcat.getConnector().setAttribute("port",
-							AppStartupConfig.port);
-
-					Context context = tomcat.addWebapp("",
-							AppStartupConfig.pathForAppdata.toAbsolutePath()
-							.toString());
-					// https://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/catalina/startup/Tomcat.html#addWebapp(org.apache.catalina.Host,%20java.lang.String,%20java.lang.String)
-
-					context.setJarScanner(new FastJarScanner());
-					context.addWelcomeFile(AppStartupConfig.REDIRECT_PAGE);
-					tomcat.init();
-					Platform.runLater(() -> setLoadingParagraphBeforeLoading("server startup..."));
-					tomcat.start();
-					Platform.runLater(() -> setLoadingParagraphBeforeLoading("server health checking..."));
-					healthCheck();
-					Platform.runLater(() -> showUI(GUIApplication.this::initializeWebviewWhenComplete));
-				} catch (Exception e) {
-					LOG.error(e.toString());
-					return false;
-				}
-				return true;
-			}
-		};
-
 		this.primaryStage = primaryStage;
-		showUI(this::initializeWebviewWhenLoading);
 		LOG.info("Handyfinder is Loading");
-		initializingService.submit(loadingTask);
-		initializingService.shutdown();
+		
+		//Register a callback when closing
+		primaryStage.setOnCloseRequest(this::onCloseTask);
+		
+		showUI(this::initializeWebviewWhenLoading);
+		CompletableFuture.runAsync(this::loadingTask);
+	}
+	
+	public <T extends javafx.event.Event> void onCloseTask(T event){
+		showUI(this::initializeWebviewWhenLoading);
+		Platform.runLater(() -> setLoadingParagraphBeforeLoading("Handyfinder Stopping..."));
+		stopped = true;
+		LOG.info("javafx onCloseRequest()");
+		final Preferences userPrefs = Preferences
+				.userNodeForPackage(AppStartupConfig.class);
+		userPrefs.putDouble("stage.x", primaryStage.getX());
+		userPrefs.putDouble("stage.y", primaryStage.getY());
+		userPrefs.putDouble("stage.width", primaryStage.getWidth());
+		userPrefs.putDouble("stage.height", primaryStage.getHeight());
+
+		CompletableFuture.runAsync(() -> {
+			if(tomcat == null)
+				return;
+			LOG.info("tomcat is stopping");
+			try {
+				tomcat.stop();
+			} catch (Exception e) {
+				LOG.error(ExceptionUtils.getStackTrace(e));
+			} finally {
+				Platform.exit(); //direct exit
+				LOG.info("javafx Platform.exit() called");
+			}
+		});
+		
+		event.consume();
+	}
+	
+	public Boolean loadingTask(){
+		try {
+			Platform.runLater(() -> setLoadingParagraphBeforeLoading("process checking..."));
+
+			if(!AppStartupConfig.alreadyProcessExists){
+				Platform.runLater(() -> setLoadingParagraphBeforeLoading("server initialzing..."));
+
+				tomcat = new Tomcat();
+				tomcat.getConnector().setAttribute("address",
+						AppStartupConfig.address);
+				tomcat.getConnector().setAttribute("port",
+						AppStartupConfig.port);
+
+				Context context = tomcat.addWebapp("",
+						AppStartupConfig.pathForAppdata.toAbsolutePath()
+						.toString());
+				// https://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/catalina/startup/Tomcat.html#addWebapp(org.apache.catalina.Host,%20java.lang.String,%20java.lang.String)
+
+				context.setJarScanner(new FastJarScanner());
+				context.addWelcomeFile(AppStartupConfig.REDIRECT_PAGE);
+				tomcat.init();
+				Platform.runLater(() -> setLoadingParagraphBeforeLoading("server startup..."));
+				tomcat.start();
+				
+				self.complete(this);
+				
+				Platform.runLater(() -> setLoadingParagraphBeforeLoading("server health checking..."));
+				healthCheck();
+				Platform.runLater(() -> showUI(GUIApplication.this::initializeWebviewWhenComplete));
+			}else{
+				Platform.runLater(() -> setLoadingParagraphBeforeLoading(
+						"handyfinder is already running...\n" + AppStartupConfig.alreadyHomeUrl.get()));
+			}
+		} catch (Exception e) {
+			LOG.error(e.toString());
+			return false;
+		}
+		return true;
 	}
 
 

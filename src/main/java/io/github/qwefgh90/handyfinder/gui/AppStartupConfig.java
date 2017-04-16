@@ -2,12 +2,12 @@ package io.github.qwefgh90.handyfinder.gui;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.lang.management.ManagementFactory;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -19,11 +19,14 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javafx.application.Platform;
 
 import javax.servlet.ServletException;
 
@@ -39,12 +42,12 @@ import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.apache.tika.mime.MimeTypes;
+import org.jutils.jprocesses.JProcesses;
+import org.jutils.jprocesses.model.ProcessInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.context.WebApplicationContext;
-
-import javafx.application.Platform;
 
 /**
  * local file contents search engine with javafx webview and spring restful api
@@ -56,7 +59,6 @@ public class AppStartupConfig{
 	// initial variable
 	public static boolean TEST_MODE = false;
 
-	// exchagable to TEST_APP_DATA_DIR_NAME
 	public final static String APP_DATA_DIR_NAME = "appdata";
 	public final static String DB_NAME = "handyfinderdb";
 	public final static String INDEX_DIR_NAME = "index";
@@ -75,10 +77,14 @@ public class AppStartupConfig{
 	public final static Path customTikaGlobPropertiesPath;
 	public final static Path propertiesPath;
 	public final static Path appDataJsonPath;
+	public final static Path processLockPath;
 	public final static String address;
 	public final static int port;
 	public final static String homeUrl;
 	public final static Optional<String> versionOpt;
+	public final static boolean alreadyProcessExists;
+	public final static Optional<String> alreadyHomeUrl;
+	public final static Optional<Integer> alreadyPid;
 
 	public final static String RESOURCE_LOADING_PAGE = "/" + APP_DATA_DIR_NAME
 			+ "/" + WEB_APP_DIRECTORY_NAME + "/loading.html";
@@ -119,6 +125,7 @@ public class AppStartupConfig{
 		tikaXmlFilePath = pathForAppdata.resolve("tika-mimetypes.xml");
 		propertiesPath = pathForAppdata.resolve("glob-used.properties");
 		appDataJsonPath = pathForAppdata.resolve("appdata.json");
+		processLockPath = pathForAppdata.resolve("pid.lock");
 		customTikaGlobPropertiesPath = pathForAppdata
 				.resolve("custom-tika-mimetypes.properties");
 
@@ -126,22 +133,35 @@ public class AppStartupConfig{
 		port = findFreePort();
 		homeUrl = "http://" + address + ":" + port;
 
-		// create appdata dir
+		//Is a process already running?
+		if(ProcessLockUtil.getProcessInfo(ProcessLockUtil.getPidFromLock(processLockPath).orElse(-1))
+				.isPresent()){
+			alreadyProcessExists = true;
+			alreadyHomeUrl = ProcessLockUtil.getHomeUrlFromLock(processLockPath);
+			alreadyPid = ProcessLockUtil.getPidFromLock(processLockPath);
+		}else{
+			alreadyProcessExists = false;
+			alreadyHomeUrl = Optional.empty();
+			alreadyPid = Optional.empty();
+			ProcessLockUtil.deleteAndWriteLockFile(processLockPath, ProcessLockUtil.getCurrentPid(), homeUrl);
+		}
+		
+		// create AppData directory
 		if (!Files.isWritable(parentOfClassPath)) {
 			throw new RuntimeException("can't write resource classpath");
-		} else if (Files.exists(pathForAppdata)) {
-			// Pass
 		} else {
-			try {
-				Files.createDirectory(pathForAppdata);
-			} catch (IOException e) {
-				throw new RuntimeException(ExceptionUtils.getStackTrace(e));
+			if(!Files.exists(pathForAppdata)){
+				try {
+					Files.createDirectory(pathForAppdata);
+				} catch (IOException e) {
+					throw new RuntimeException(ExceptionUtils.getStackTrace(e));
+				}
 			}
 		}
 
 		// deploy basic files
 		try {
-			if (isProduct) { // jar start
+			if (isProduct) { // startup in jar
 				AppStartupConfig.copyFileInJar(deployedPath.toString(), pathForLog4j.getFileName().toString(),
 						parentOfClassPath.toFile(), (File file, JarEntry entry) -> {return (!file.exists() || file.lastModified() < entry.getLastModifiedTime().toMillis());});
 				
@@ -165,8 +185,8 @@ public class AppStartupConfig{
 					//read old file
 					try(final BufferedReader reader = Files.newBufferedReader(versionFilePath)){
 						final String oldVersion = reader.readLine();
-						final int selector = versionOpt.get().compareToIgnoreCase((oldVersion == null ? "0.001" : oldVersion.trim()));
-						if(selector > 0){
+						final boolean newVersionFound = versionOpt.get().compareToIgnoreCase((oldVersion == null ? "0.001" : oldVersion.trim())) > 0 ? true : false;
+						if(newVersionFound == true){
 							if(!Files.exists(resetFilePath))
 								Files.createFile(resetFilePath);
 						}
@@ -182,7 +202,6 @@ public class AppStartupConfig{
 				try(PrintWriter writer = new PrintWriter(versionFilePath.toFile())){
 					writer.print(versionOpt.get());
 				}
-				
 			} else { // no jar start
 				DOMConfigurator.configureAndWatch(pathForLog4j.toAbsolutePath().toString());
 				versionOpt = Optional.empty();
@@ -209,9 +228,9 @@ public class AppStartupConfig{
 		logBuilder.setLength(0);
 	}
 
-	public static GUIApplication getGuiApp(){return GUIApplication.getSingleton();}
 	private static boolean parameterInit = false;
 	private static boolean SERVER_ONLY = false;
+	
 	/**
 	 * lazy init.. warning
 	 * @return
@@ -258,7 +277,7 @@ public class AppStartupConfig{
 	
 	public static void main(String[] args) throws LifecycleException,
 			ServletException, IOException, URISyntaxException, ParseException,
-			InterruptedException {
+			InterruptedException, ExecutionException {
 		if (!parseArguments(args))
 			return; // failed
 		else
@@ -266,7 +285,7 @@ public class AppStartupConfig{
 
 		//disable same origin policy 
 		System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
-		getGuiApp().start(args); // sync function // can't bean in spring container.
+		GUIApplication.start(args); // sync function // can't bean in spring container.
 	}
 
 	/**
@@ -275,7 +294,7 @@ public class AppStartupConfig{
 	 */
 	public static void terminateProgram() {
 		try {
-			if (!getGuiApp().isStop()) {
+			if (!GUIApplication.getSingleton().get().isStop()) {
 				Platform.exit();
 			}
 		} catch (Exception e) {

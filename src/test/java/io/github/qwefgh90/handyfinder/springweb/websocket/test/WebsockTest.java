@@ -10,10 +10,16 @@ import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.management.RuntimeErrorException;
 import javax.servlet.ServletException;
 
 import org.apache.catalina.LifecycleException;
@@ -46,6 +52,7 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 import javafx.application.Platform;
 import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.gui.GUIApplication;
 import io.github.qwefgh90.handyfinder.lucene.MimeOption;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
@@ -63,24 +70,23 @@ public class WebsockTest {
 	List<Directory> list = new ArrayList<>();
 	static Thread th;
 	@BeforeClass
-	public static void before() {
-		th = new Thread(() -> {
+	public static void before() throws InterruptedException, ExecutionException, TimeoutException {
+		new Thread(()->{
 			try {
 				AppStartupConfig.main(new String[] { "--no-gui" });
 			} catch (Exception e) {
-
+				throw new RuntimeException(e);
 			}
-		});
-		th.start();
+		}).start();
+		
+		GUIApplication.getSingleton().join();
+		LOG.info("WebApp is initialized.");
 	}
 
 	@Before
 	public void setup() throws LifecycleException, ServletException,
 			IOException, URISyntaxException, SQLException, ParseException,
-			InterruptedException {
-		Thread.sleep(5000);
-		AppStartupConfig.getGuiApp().getWebAppThread().awaitTermination(20,
-				TimeUnit.SECONDS);
+			InterruptedException, ExecutionException, TimeoutException {
 		rootService = AppStartupConfig.getBean(RootService.class);
 		metaRepo = AppStartupConfig.getBean(MetaRespository.class);
 		xmlObject = AppStartupConfig.getBean(MimeOption.class);
