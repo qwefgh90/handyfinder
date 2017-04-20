@@ -1,19 +1,5 @@
 package io.github.qwefgh90.handyfinder.springweb.service;
 
-import io.github.qwefgh90.handyfinder.gui.AppStartup;
-import io.github.qwefgh90.handyfinder.lucene.BasicOption;
-import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
-import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
-import io.github.qwefgh90.handyfinder.lucene.MimeOption;
-import io.github.qwefgh90.handyfinder.lucene.model.Directory;
-import io.github.qwefgh90.handyfinder.springweb.model.Command;
-import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
-import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
-import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
-import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
-import io.github.qwefgh90.handyfinder.springweb.websocket.MessageController;
-import io.github.qwefgh90.jsearch.JSearch;
-
 import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -52,6 +38,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import io.github.qwefgh90.handyfinder.gui.AppStartup;
+import io.github.qwefgh90.handyfinder.lucene.BasicOption;
+import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
+import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
+import io.github.qwefgh90.handyfinder.lucene.MimeOption;
+import io.github.qwefgh90.handyfinder.lucene.model.Directory;
+import io.github.qwefgh90.handyfinder.springweb.model.Command;
+import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
+import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
+import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
+import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
+import io.github.qwefgh90.handyfinder.springweb.websocket.MessageController;
+import io.github.qwefgh90.jsearch.JSearch;
 
 
 @Service
@@ -214,7 +214,8 @@ public class RootService {
 	 * @param option will be applied
 	 */
 	public void setOption(OptionDto dto) {
-		final boolean isSizeChange = dto.getMaximumDocumentMBSize() != globalAppData.getMaximumDocumentMBSize();
+		final boolean needUpdate = (dto.getMaximumDocumentMBSize() > globalAppData.getMaximumDocumentMBSize())
+				|| (dto.getDiskUseLimit() > globalAppData.getDiskUseLimit());
 		
 		if (dto.getLimitCountOfResult() > 0)
 			globalAppData.setLimitCountOfResult(dto.getLimitCountOfResult());
@@ -227,11 +228,11 @@ public class RootService {
 			targetMode.add(TARGET_MODE.PATH);
 		if(dto.isContentTarget())
 			targetMode.add(TARGET_MODE.CONTENT);
-		globalAppData.setDiskUseLimit(dto.getDiskUseLimit());;
+		globalAppData.setDiskUseLimit(dto.getDiskUseLimit());
 		globalAppData.setTargetMode(targetMode);
 		globalAppData.writeAppDataToDisk();
 		
-		if(isSizeChange){
+		if(needUpdate){
 			CompletableFuture<Boolean> f = handler.restartIndexAsync(globalAppData.getDirectoryList());
 			f.exceptionally((exception) -> {
 				LOG.error("To update indexes failed " + ExceptionUtils.getStackTrace(exception));
