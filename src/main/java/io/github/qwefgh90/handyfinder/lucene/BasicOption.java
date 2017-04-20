@@ -152,12 +152,12 @@ public class BasicOption {
 		return model.getLimitCountOfResult();
 	}
 
-	public int getMaximumCapacityPercent() {
-		return model.getMaximumCapacityPercent();
+	public int getDiskUseLimit() {
+		return model.getDiskUseLimit();
 	}
 
-	public void setMaximumCapacityPercent(int maximumCapacityPercent) {
-		model.setMaximumCapacityPercent(maximumCapacityPercent);
+	public void setDiskUseLimit(int diskUseLimit) {
+		model.setDiskUseLimit(diskUseLimit);
 	}
 	
 	public Path getAppDataJsonPath() {

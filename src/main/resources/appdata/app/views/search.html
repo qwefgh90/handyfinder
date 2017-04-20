@@ -61,10 +61,16 @@
 									ng-model="optionModel.option.limitCountOfResult" />
 							</div>
 							<div class="col-md-4 col-xs-6">
-								<label>Maximum Document Size(MB)</label> <input type="number"
+								<label>Maximum file size(MB)</label> <input type="number"
 									class="form-control" style="width: 100px"
 									ng-change="updateOption()"
 									ng-model="optionModel.option.maximumDocumentMBSize" />
+							</div>
+							<div class="col-md-4 col-xs-6">
+								<label>Disk use limit(%)</label> <input type="number"
+									class="form-control" style="width: 100px"
+									ng-change="updateOption()"
+									ng-model="optionModel.option.diskUseLimit" />
 							</div>
 						</div>
 						<!-- filtering & directory -->

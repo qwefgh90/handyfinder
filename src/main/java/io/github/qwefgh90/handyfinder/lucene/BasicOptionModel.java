@@ -14,7 +14,7 @@ public class BasicOptionModel {
 			this.limitCountOfResult = _limitCountOfResult;
 			this.maximumDocumentMBSize = _maximumDocumentMBSize;
 			this.keywordMode = _keywordMode;
-			this.maximumCapacityPercent = _maximumCapacityPercent;
+			this.diskUseLimit = _diskUseLimit;
 			this.targetMode = EnumSet.of(TARGET_MODE.PATH, TARGET_MODE.CONTENT);
 		}
 
@@ -22,7 +22,7 @@ public class BasicOptionModel {
 		private final int _limitCountOfResult = 100;
 		private final int _maximumDocumentMBSize = 20;
 		private final KEYWORD_MODE _keywordMode = KEYWORD_MODE.OR;
-		private final int _maximumCapacityPercent = 100;
+		private final int _diskUseLimit = 100;
 
 		/**
 		 * json fields
@@ -41,14 +41,15 @@ public class BasicOptionModel {
 		private int limitCountOfResult;
 		private int maximumDocumentMBSize;
 		private KEYWORD_MODE keywordMode;
-		private int maximumCapacityPercent;
+		private int diskUseLimit;
+		
 
-		public int getMaximumCapacityPercent() {
-			return maximumCapacityPercent;
+		public int getDiskUseLimit() {
+			return diskUseLimit;
 		}
 
-		public void setMaximumCapacityPercent(int maximumCapacityPercent) {
-			this.maximumCapacityPercent = maximumCapacityPercent;
+		public void setDiskUseLimit(int diskUseLimit) {
+			this.diskUseLimit = diskUseLimit;
 		}
 
 		public KEYWORD_MODE getKeywordMode() {

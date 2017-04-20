@@ -1141,7 +1141,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		final long usableSpace = writerFile.getUsableSpace(); 
 		final long usingSpace = totalSpace - usableSpace;
 		final double usagePercent = ((double)usingSpace  / (double)totalSpace) * 100;
-		if(usagePercent < basicOption.getMaximumCapacityPercent()){
+		if(usagePercent <= basicOption.getDiskUseLimit()){
 			LOG.trace("usable disk size : " + usagePercent + "%");
 			return true;
 		}else{

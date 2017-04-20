@@ -205,6 +205,7 @@ public class RootService {
 		dto.setFirstStart(globalAppData.getDirectoryList().size() == 0 ? true : false);
 		dto.setPathTarget(globalAppData.getTargetMode().contains(TARGET_MODE.PATH));
 		dto.setContentTarget(globalAppData.getTargetMode().contains(TARGET_MODE.CONTENT));
+		dto.setDiskUseLimit(globalAppData.getDiskUseLimit());
 		return dto;
 	}
 
@@ -226,6 +227,7 @@ public class RootService {
 			targetMode.add(TARGET_MODE.PATH);
 		if(dto.isContentTarget())
 			targetMode.add(TARGET_MODE.CONTENT);
+		globalAppData.setDiskUseLimit(dto.getDiskUseLimit());;
 		globalAppData.setTargetMode(targetMode);
 		globalAppData.writeAppDataToDisk();
 		
