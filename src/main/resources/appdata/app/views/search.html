@@ -28,7 +28,7 @@
 						<!-- search option -->
 						<div class="row pad-in-inner-div">
 							<div class="col-md-4 col-xs-6">
-								<label>Search Mode (applies to contents) </label><br>
+								<label>Search mode (applies to contents) </label><br>
 								<div class="btn-group">
 									<label class="btn btn-success"
 										ng-model="optionModel.option.keywordMode"
@@ -55,7 +55,7 @@
 								</div>
 							</div>
 							<div class="col-md-4 col-xs-6">
-								<label>Search Limit</label> <input type="number"
+								<label>Search limit</label> <input type="number"
 									class="form-control" style="width: 100px"
 									ng-change="updateOption()"
 									ng-model="optionModel.option.limitCountOfResult" />
@@ -138,7 +138,15 @@
 										Running
 									</button>
 								</div> -->
-								<div><a href ng-click="loadIndexedFileList()">You can find {{indexModel.indexDocumentCount}} files {{indexModel.state == 'PROGRESS' ? '(' + ((((indexModel.processIndex * 1.0) / indexModel.totalProcessCount) * 100) | number : 2 ) + '%)' : ''}}	</a></div>
+								<div>
+									<span ng-show="indexModel.state == 'PREPARE'">Counting numbers...</span>
+									<a ng-hide="indexModel.state == 'PREPARE'" href
+										ng-click="loadIndexedFileList()">You can find
+										{{indexModel.indexDocumentCount}} files {{indexModel.state ==
+										'PROGRESS' ? '(' + ((((indexModel.processIndex * 1.0) /
+										indexModel.totalProcessCount) * 100) | number : 2 ) + '%)' :
+										''}} </a>
+								</div>
 							</div>
 						</div>
 						<!-- indexed files list -->

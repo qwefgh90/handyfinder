@@ -288,6 +288,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	 */
 	public CompletableFuture<Integer> startIndexAsync(final List<Directory> list) throws IOException {
 		compactAndCleanIndex();
+		invokerForCommand.prepareProgress();
 		totalProcess.set(sizeOfindexDirectories(list));
 		invokerForCommand.startProgress(totalProcess.get());
 		

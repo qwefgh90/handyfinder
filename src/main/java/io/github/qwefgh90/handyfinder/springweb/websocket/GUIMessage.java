@@ -16,10 +16,10 @@ public class GUIMessage implements IMessage {
 
 	private GUIMessage() {}
 	
-	public static GUIMessage createObjectForDirectory(IMessageSender receiver, String pathString){
+	public static GUIMessage createObjectForDirectory(IMessageSender sender, String pathString){
 		GUIMessage gui = new GUIMessage();
 		gui.setCom(COMMAND.OPEN_DIRECTORY);
-		gui.setReceiver(receiver);
+		gui.setReceiver(sender);
 		gui.setPathString(pathString);
 		return gui;
 	}

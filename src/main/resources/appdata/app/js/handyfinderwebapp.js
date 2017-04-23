@@ -23,7 +23,7 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 	});
 	app.controller('MainApplicationController', ['$window', '$location', '$http', '$scope','NativeService', '$log', '$timeout', 'OptionModel', 'IndexModel', 
 	                                             function($window, $location, $http, $scope, NativeService, $log, $timeout, OptionModel, IndexModel) {
-		$window.alert('secret key : ' + secretKey);
+		//$window.alert('secret key : ' + secretKey);
 		$scope.indexModel = IndexModel.model;
 		$scope.path = '';
 		$scope.go = function(path) {
@@ -560,7 +560,7 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 				if (progressObject.state == 'TERMINATE'){
 					$scope.indexModel.index_progress_status.progressBarVisible = false;
 					$scope.indexModel.index_progress_status.addAlertQ(4);
-				}else
+				} else
 					$scope.indexModel.index_progress_status.progressBarVisible = true;
 				$scope.indexModel.processIndex = progressObject.processIndex;
 				$scope.indexModel.processPath = progressObject.processPath;

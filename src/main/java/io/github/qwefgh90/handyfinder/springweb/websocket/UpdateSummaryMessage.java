@@ -18,15 +18,15 @@ public class UpdateSummaryMessage implements IMessage {
 	private int countOfExcluded;
 	private int countOfModified;
 	private STATE state;
-	private IMessageSender receiver;
+	private IMessageSender sender;
 
 	private UpdateSummaryMessage() {
 		// TODO Auto-generated constructor stub
 	}
 	
-	public static UpdateSummaryMessage createCommand(IMessageSender receiver, STATE state, int countOfDeleted, int countOfExcluded, int countOfModified){
+	public static UpdateSummaryMessage createCommand(IMessageSender sender, STATE state, int countOfDeleted, int countOfExcluded, int countOfModified){
 		UpdateSummaryMessage command = new UpdateSummaryMessage();
-		command.receiver = receiver;
+		command.sender = sender;
 		command.countOfDeleted = countOfDeleted;
 		command.countOfExcluded = countOfExcluded;
 		command.countOfModified = countOfModified;
@@ -36,7 +36,7 @@ public class UpdateSummaryMessage implements IMessage {
 	
 	@Override
 	public void send() {
-		receiver.sendToUpdateSummary(this);
+		sender.sendToUpdateSummary(this);
 	}
 	
 	public STATE getState() {

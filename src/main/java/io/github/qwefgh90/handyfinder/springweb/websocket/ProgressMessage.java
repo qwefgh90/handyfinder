@@ -18,21 +18,21 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class ProgressMessage implements IMessage {
 	private final static Logger LOG = LoggerFactory.getLogger(ProgressMessage.class);
 	public enum STATE {
-		START, PROGRESS, TERMINATE
+		START, PROGRESS, TERMINATE, PREPARE
 	}
 
 	private STATE state;	//START , PROGRESS , TERMINATE
 	private int processIndex; // integer starting from ZERO
 	private Path processPath; // path string
 	private int totalProcessCount; // integer
-	private IMessageSender receiver;
+	private IMessageSender sender;
 
 	private ProgressMessage() {
 	}
 	
-	public static ProgressMessage createMessage(IMessageSender receiver, ProgressMessage.STATE state, int successCount, Path path, int totalCount) {
+	public static ProgressMessage createMessage(IMessageSender sender, ProgressMessage.STATE state, int successCount, Path path, int totalCount) {
 		ProgressMessage command = new ProgressMessage();
-		command.receiver = receiver;
+		command.sender = sender;
 		command.processIndex = successCount;
 		command.totalProcessCount = totalCount;
 		command.state = state;
@@ -42,14 +42,17 @@ public class ProgressMessage implements IMessage {
 	@Override
 	public void send() {
 		switch (this.state) {
+		case PREPARE:
+			sender.sendToProgressChannel(this);
+			break;
 		case START:
-			receiver.sendToProgressChannel(this);
+			sender.sendToProgressChannel(this);
 			break;
 		case PROGRESS:
-			receiver.sendToProgressChannel(this);
+			sender.sendToProgressChannel(this);
 			break;
 		case TERMINATE:
-			receiver.sendToProgressChannel(this);
+			sender.sendToProgressChannel(this);
 			break;
 		default:
 			break;
@@ -89,11 +92,11 @@ public class ProgressMessage implements IMessage {
 	}
 
 	public IMessageSender getReceiver() {
-		return receiver;
+		return sender;
 	}
 
 	public void setReceiver(IMessageSender receiver) {
-		this.receiver = receiver;
+		this.sender = receiver;
 	}
 
 }

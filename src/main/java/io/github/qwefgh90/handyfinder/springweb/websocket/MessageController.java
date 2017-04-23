@@ -31,6 +31,15 @@ public class MessageController {
 
 	ProgressMessage progress;
 
+	public void prepareProgress(){
+		progress = ProgressMessage.createMessage(receiver
+				, ProgressMessage.STATE.PREPARE
+				, 0
+				, Paths.get("Prepare")
+				, 0);
+		progress.send();
+	}
+	
 	public void startProgress(int totalProcessCount) {
 		progress = ProgressMessage.createMessage(receiver
 				, ProgressMessage.STATE.START
