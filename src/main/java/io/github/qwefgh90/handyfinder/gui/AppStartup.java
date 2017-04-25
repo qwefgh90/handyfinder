@@ -124,19 +124,6 @@ public class AppStartup{
 		port = findFreePort();
 		homeUrl = "http://" + address + ":" + port;
 		secretKey = getFourDigitsNumber();
-
-		//Is a process already running?
-		if(ProcessLockUtil.getProcessInfo(ProcessLockUtil.getPidFromLock(processLockPath).orElse(-1))
-				.isPresent()){
-			alreadyProcessExists = true;
-			alreadyHomeUrl = ProcessLockUtil.getHomeUrlFromLock(processLockPath);
-			alreadyPid = ProcessLockUtil.getPidFromLock(processLockPath);
-		}else{
-			alreadyProcessExists = false;
-			alreadyHomeUrl = Optional.empty();
-			alreadyPid = Optional.empty();
-			ProcessLockUtil.deleteAndWriteLockFile(processLockPath, ProcessLockUtil.getCurrentPid(), homeUrl);
-		}
 		
 		// create AppData directory
 		if (!Files.isWritable(parentOfClassPath)) {
@@ -149,6 +136,19 @@ public class AppStartup{
 					throw new RuntimeException(ExceptionUtils.getStackTrace(e));
 				}
 			}
+		}
+
+		//Is a process already running?
+		if(ProcessLockUtil.getProcessInfo(ProcessLockUtil.getPidFromLock(processLockPath).orElse(-1))
+				.isPresent()){
+			alreadyProcessExists = true;
+			alreadyHomeUrl = ProcessLockUtil.getHomeUrlFromLock(processLockPath);
+			alreadyPid = ProcessLockUtil.getPidFromLock(processLockPath);
+		}else{
+			alreadyProcessExists = false;
+			alreadyHomeUrl = Optional.empty();
+			alreadyPid = Optional.empty();
+			ProcessLockUtil.deleteAndWriteLockFile(processLockPath, ProcessLockUtil.getCurrentPid(), homeUrl);
 		}
 
 		// deploy basic files
