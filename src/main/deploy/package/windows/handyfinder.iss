@@ -2,7 +2,7 @@
 ;I.e. current directory will contain folder handyfinder with application files
 [Setup]
 SignTool=signtool
-AppId={{0.104}}
+AppId=Handyfinder
 AppName=handyfinder
 AppVersion=0.104
 AppVerName=handyfinder 0.104

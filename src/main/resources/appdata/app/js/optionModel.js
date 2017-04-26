@@ -30,6 +30,7 @@ define(['angular', 'searchModel'], function(angular){
 							self.model.option.firstStart = msg.firstStart
 							self.model.option.pathTarget = msg.pathTarget;
 							self.model.option.contentTarget = msg.contentTarget;
+							self.model.option.diskUseLimit = msg.diskUseLimit;
 							$log.debug('option loaded ' + self.model);
 							deferred.resolve(response.data);
 						} else {
@@ -283,6 +284,7 @@ define(['angular', 'searchModel'], function(angular){
 			this.firstStart = false;
 			this.pathTarget = true;
 			this.contentTarget = true;
+			this.diskUseLimit = 0;
 		}
 
 		// Return constructor - this is what defines the actual

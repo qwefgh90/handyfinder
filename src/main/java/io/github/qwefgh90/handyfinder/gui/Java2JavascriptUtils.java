@@ -124,10 +124,8 @@ public class Java2JavascriptUtils {
 		if (webEngineBridges == null){
 			webEngineBridges = new HashMap<>();
 			backendObjects.put(webEngine, webEngineBridges);
-			
 		}
 		webEngineBridges.put(varname, backend);
-		
 	}
 
 	private static void connectToWebEngine(WebEngine engine, String varname) {

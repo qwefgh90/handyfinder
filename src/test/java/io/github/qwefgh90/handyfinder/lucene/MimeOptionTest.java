@@ -2,7 +2,8 @@ package io.github.qwefgh90.handyfinder.lucene;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import static io.github.qwefgh90.handyfinder.gui.AppStartupUtil.*;
+import io.github.qwefgh90.handyfinder.gui.AppStartup;
 import io.github.qwefgh90.handyfinder.lucene.MimeOption;
 import io.github.qwefgh90.handyfinder.lucene.MimeOption.MimeXmlObjectFactory;
 
@@ -41,7 +42,7 @@ public class MimeOptionTest {
 
 	static {
 		try {
-			AppStartupConfig.parseArguments(new String[] {});
+			AppStartup.parseArguments(new String[] {});
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -67,14 +68,14 @@ public class MimeOptionTest {
 				jarPathString = jarPathString.substring(1);
 			resourceName = matcher.group(2);
 			File xmlDestFile = new File(getClass().getResource("/").toURI());
-			AppStartupConfig.copyFileInJar(jarPathString, resourceName, xmlDestFile, (file, entry) -> !file.exists());
+			copyFileInJar(jarPathString, resourceName, xmlDestFile, (file, entry) -> !file.exists());
 			LOG.info(getClass().getResource("/tika-mimetypes.xml").toString());
 			LOG.info(jarPathString);
 			LOG.info(resourceName);
 		}
 		afterXmlUrl = MimeTypes.class.getResource("/tika-mimetypes.xml");
 		obj = MimeXmlObjectFactory.getInstanceFromXml(Paths.get(afterXmlUrl.toURI()).toAbsolutePath().toString()
-				,AppStartupConfig.propertiesPath, AppStartupConfig.customTikaGlobPropertiesPath);
+				,AppStartup.propertiesPath, AppStartup.customTikaGlobPropertiesPath);
 	}
 
 	MimeOption obj;
@@ -87,7 +88,7 @@ public class MimeOptionTest {
 
 		MimeOption obj2 = MimeXmlObjectFactory
 				.getInstanceFromXml(Paths.get(afterXmlUrl.toURI()).toAbsolutePath().toString()
-						,AppStartupConfig.propertiesPath, AppStartupConfig.customTikaGlobPropertiesPath);
+						,AppStartup.propertiesPath, AppStartup.customTikaGlobPropertiesPath);
 		assertTrue(obj == obj2);
 		
 		Assert.assertThat(obj.getGlobSet("application/vnd.ms-excel").size(), Matchers.is(8));

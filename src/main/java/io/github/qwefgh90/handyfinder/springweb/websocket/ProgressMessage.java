@@ -14,42 +14,45 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * @author choechangwon
  *
  */
-@JsonIgnoreProperties({ "receiver", "command" })
-public class ProgressCommand implements ICommand {
-	private final static Logger LOG = LoggerFactory.getLogger(ProgressCommand.class);
+@JsonIgnoreProperties({ "receiver" })
+public class ProgressMessage implements IMessage {
+	private final static Logger LOG = LoggerFactory.getLogger(ProgressMessage.class);
 	public enum STATE {
-		START, PROGRESS, TERMINATE
+		START, PROGRESS, TERMINATE, PREPARE
 	}
 
 	private STATE state;	//START , PROGRESS , TERMINATE
 	private int processIndex; // integer starting from ZERO
 	private Path processPath; // path string
 	private int totalProcessCount; // integer
-	private ICommandReceiver receiver;
+	private IMessageSender sender;
 
-	private ProgressCommand() {
+	private ProgressMessage() {
 	}
-
-	private static ProgressCommand command;
-
-	public static ProgressCommand getInstance(ICommandReceiver receiver) {
-		if (command == null)
-			command = new ProgressCommand();
-		command.receiver = receiver;
+	
+	public static ProgressMessage createMessage(IMessageSender sender, ProgressMessage.STATE state, int successCount, Path path, int totalCount) {
+		ProgressMessage command = new ProgressMessage();
+		command.sender = sender;
+		command.processIndex = successCount;
+		command.totalProcessCount = totalCount;
+		command.state = state;
 		return command;
 	}
 
 	@Override
-	public void execute() {
+	public void send() {
 		switch (this.state) {
+		case PREPARE:
+			sender.sendToProgressChannel(this);
+			break;
 		case START:
-			receiver.startProgressChannel(this);
+			sender.sendToProgressChannel(this);
 			break;
 		case PROGRESS:
-			receiver.sendToProgressChannel(this);
+			sender.sendToProgressChannel(this);
 			break;
 		case TERMINATE:
-			receiver.terminateProgressChannel(this);
+			sender.sendToProgressChannel(this);
 			break;
 		default:
 			break;
@@ -88,12 +91,12 @@ public class ProgressCommand implements ICommand {
 		this.totalProcessCount = totalProcessCount;
 	}
 
-	public ICommandReceiver getReceiver() {
-		return receiver;
+	public IMessageSender getReceiver() {
+		return sender;
 	}
 
-	public void setReceiver(ICommandReceiver receiver) {
-		this.receiver = receiver;
+	public void setReceiver(IMessageSender receiver) {
+		this.sender = receiver;
 	}
 
 }

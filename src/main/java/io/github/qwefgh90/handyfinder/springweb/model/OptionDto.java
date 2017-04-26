@@ -7,8 +7,15 @@ public class OptionDto {
 	private boolean firstStart;
 	private boolean pathTarget;
 	private boolean contentTarget;
+	private int diskUseLimit;
 	
 	
+	public int getDiskUseLimit() {
+		return diskUseLimit;
+	}
+	public void setDiskUseLimit(int diskUseLimit) {
+		this.diskUseLimit = diskUseLimit;
+	}
 	public boolean isPathTarget() {
 		return pathTarget;
 	}

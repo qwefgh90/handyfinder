@@ -11,6 +11,9 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		.when('/search', {
 			templateUrl : 'views/search.html',
 			controller : 'searchController'
+		}).when('/auth', {
+			templateUrl : 'views/auth.html',
+			controller : 'authController'
 		})
 		//라우트 설정객체에 controller 속성을 통하여 해당 화면에 연결되는 컨트롤러 이름을 설정할 수 있다.
 		.otherwise({
@@ -18,9 +21,9 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 		});
 		//otherwise 메소드를 통하여 브라우저의 URL이 $routeProivder에서 정의되지 않은 URL일 경우에 해당하는 설정을 할 수 있다. 여기선 ‘/home’으로 이동시키고 있다.
 	});
-	app.controller('MainApplicationController', ['$location', '$http', '$scope','NativeService', '$log' , '$timeout', 'OptionModel', 'IndexModel', 
-	                                             function($location, $http, $scope, NativeService, $log, $timeout, OptionModel, IndexModel) {
-		
+	app.controller('MainApplicationController', ['$window', '$location', '$http', '$scope','NativeService', '$log', '$timeout', 'OptionModel', 'IndexModel', 
+	                                             function($window, $location, $http, $scope, NativeService, $log, $timeout, OptionModel, IndexModel) {
+		//$window.alert('secret key : ' + secretKey);
 		$scope.indexModel = IndexModel.model;
 		$scope.path = '';
 		$scope.go = function(path) {
@@ -118,6 +121,10 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 
 	app.constant('SHOWN_RESULT_COUNT', 20);
 	app.constant('LIMIT_INDEXED_FILE_LIST', 20);
+	app.controller('authController', ['$q', '$log', '$window', '$scope', '$timeout','$sce', 'NativeService', 'SearchModel','OptionModel', 'SupportTypeModel', 'SupportTypeUI', 'ProgressService', 'IndexModel', 'Path', 'LIMIT_INDEXED_FILE_LIST','SHOWN_RESULT_COUNT',
+	                                    function($q, $log, $window, $scope, $timeout, $sce, NativeService, SearchModel, OptionModel, SupportTypeModel, SupportTypeUI, ProgressService, IndexModel, Path, LIMIT_INDEXED_FILE_LIST, SHOWN_RESULT_COUNT) {
+		
+	}]);
 	app.controller('searchController', ['$q', '$log', '$window', '$scope', '$timeout','$sce', 'NativeService', 'SearchModel','OptionModel', 'SupportTypeModel', 'SupportTypeUI', 'ProgressService', 'IndexModel', 'Path', 'LIMIT_INDEXED_FILE_LIST','SHOWN_RESULT_COUNT',
 	                                    function($q, $log, $window, $scope, $timeout, $sce, NativeService, SearchModel, OptionModel, SupportTypeModel, SupportTypeUI, ProgressService, IndexModel, Path, LIMIT_INDEXED_FILE_LIST, SHOWN_RESULT_COUNT) {
 		$scope.searchModel = SearchModel.model;
@@ -553,7 +560,7 @@ define(['angular', 'angularRoute', 'angularSanitize', 'angularAnimate', 'angular
 				if (progressObject.state == 'TERMINATE'){
 					$scope.indexModel.index_progress_status.progressBarVisible = false;
 					$scope.indexModel.index_progress_status.addAlertQ(4);
-				}else
+				} else
 					$scope.indexModel.index_progress_status.progressBarVisible = true;
 				$scope.indexModel.processIndex = progressObject.processIndex;
 				$scope.indexModel.processPath = progressObject.processPath;

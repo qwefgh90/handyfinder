@@ -7,8 +7,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * @author cheochangwon
  *
  */
-@JsonIgnoreProperties({ "receiver", "singleton" })
-public class UpdateSummaryCommand implements ICommand {
+@JsonIgnoreProperties({ "receiver" })
+public class UpdateSummaryMessage implements IMessage {
 
 	public enum STATE {
 		START, TERMINATE
@@ -18,24 +18,25 @@ public class UpdateSummaryCommand implements ICommand {
 	private int countOfExcluded;
 	private int countOfModified;
 	private STATE state;
-	private ICommandReceiver receiver;
+	private IMessageSender sender;
 
-	private static UpdateSummaryCommand singleton;
-	
-	private UpdateSummaryCommand() {
+	private UpdateSummaryMessage() {
 		// TODO Auto-generated constructor stub
 	}
 	
-	public static UpdateSummaryCommand getInstance(ICommandReceiver receiver){
-		if(singleton == null)
-			singleton = new UpdateSummaryCommand();
-		singleton.receiver = receiver;
-		return singleton;
+	public static UpdateSummaryMessage createCommand(IMessageSender sender, STATE state, int countOfDeleted, int countOfExcluded, int countOfModified){
+		UpdateSummaryMessage command = new UpdateSummaryMessage();
+		command.sender = sender;
+		command.countOfDeleted = countOfDeleted;
+		command.countOfExcluded = countOfExcluded;
+		command.countOfModified = countOfModified;
+		command.state = state;
+		return command;
 	}
 	
 	@Override
-	public void execute() {
-		receiver.sendToUpdateSummary(this);
+	public void send() {
+		sender.sendToUpdateSummary(this);
 	}
 	
 	public STATE getState() {

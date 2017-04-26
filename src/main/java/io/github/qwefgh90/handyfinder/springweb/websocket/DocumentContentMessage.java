@@ -3,10 +3,10 @@ package io.github.qwefgh90.handyfinder.springweb.websocket;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties({ "receiver" })
-public class DocumentContentCommand implements ICommand{
+public class DocumentContentMessage implements IMessage{
 	private String pathString;
 	private String highlightTag;
-	private ICommandReceiver receiver;
+	private IMessageSender receiver;
 	public String getPathString() {
 		return pathString;
 	}
@@ -19,13 +19,13 @@ public class DocumentContentCommand implements ICommand{
 	public void setHighlightTag(String highlightTag) {
 		this.highlightTag = highlightTag;
 	}
-	public DocumentContentCommand(ICommandReceiver receiver, String pathString, String highlightTag) {
+	public DocumentContentMessage(IMessageSender receiver, String pathString, String highlightTag) {
 		this.pathString = pathString;
 		this.highlightTag = highlightTag;
 		this.receiver = receiver;
 	}
 	@Override
-	public void execute() {
+	public void send() {
 		// TODO Auto-generated method stub
 		receiver.sendToDocumentContent(this);
 	}

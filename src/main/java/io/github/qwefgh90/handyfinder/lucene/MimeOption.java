@@ -18,6 +18,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -143,7 +144,6 @@ public final class MimeOption {
 	public Set<String> getGlobSet(String mime) {
 		return Collections.unmodifiableSet(mimeToGlobListMap.get(mime));
 	}
-
 	Iterator<String> getGlobIterator(String mime) {
 		Set<String> str = mimeToGlobListMap.get(mime);
 		if (str == null)

@@ -1,7 +1,7 @@
 package io.github.qwefgh90.handyfinder.springweb.service.test;
 
 import static org.junit.Assert.assertTrue;
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.gui.AppStartup;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.config.RootContext;
 import io.github.qwefgh90.handyfinder.springweb.config.ServletContextTest;

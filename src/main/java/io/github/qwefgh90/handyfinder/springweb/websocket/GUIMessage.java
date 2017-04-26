@@ -1,33 +1,31 @@
 package io.github.qwefgh90.handyfinder.springweb.websocket;
 
-import java.nio.file.Path;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GUICommand implements ICommand {
-	private final static Logger LOG = LoggerFactory.getLogger(GUICommand.class);
+public class GUIMessage implements IMessage {
+	private final static Logger LOG = LoggerFactory.getLogger(GUIMessage.class);
 
 	public enum COMMAND {
 		OPEN_DIRECTORY
 	}
 
 	private COMMAND com;
-	private ICommandReceiver receiver;
+	private IMessageSender receiver;
 	private String pathString;
 
-	private GUICommand() {}
+	private GUIMessage() {}
 	
-	public static GUICommand createObjectForDirectory(ICommandReceiver receiver, String pathString){
-		GUICommand gui = new GUICommand();
+	public static GUIMessage createObjectForDirectory(IMessageSender sender, String pathString){
+		GUIMessage gui = new GUIMessage();
 		gui.setCom(COMMAND.OPEN_DIRECTORY);
-		gui.setReceiver(receiver);
+		gui.setReceiver(sender);
 		gui.setPathString(pathString);
 		return gui;
 	}
 
 	@Override
-	public void execute() {
+	public void send() {
 		switch (this.com) {
 		case OPEN_DIRECTORY: {
 			receiver.sendSelectedDirectoryChannel(this.getPathString());
@@ -44,11 +42,11 @@ public class GUICommand implements ICommand {
 		this.com = com;
 	}
 
-	public ICommandReceiver getReceiver() {
+	public IMessageSender getReceiver() {
 		return receiver;
 	}
 
-	public void setReceiver(ICommandReceiver receiver) {
+	public void setReceiver(IMessageSender receiver) {
 		this.receiver = receiver;
 	}
 

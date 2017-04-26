@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -38,8 +39,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import akka.actor.ActorRef;
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.gui.AppStartup;
 import io.github.qwefgh90.handyfinder.lucene.BasicOption;
 import io.github.qwefgh90.handyfinder.lucene.BasicOptionModel.TARGET_MODE;
 import io.github.qwefgh90.handyfinder.lucene.LuceneHandler;
@@ -50,9 +50,9 @@ import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
 import io.github.qwefgh90.handyfinder.springweb.model.OptionDto;
 import io.github.qwefgh90.handyfinder.springweb.model.SupportTypeDto;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
-import io.github.qwefgh90.handyfinder.springweb.service.IndexActor.Restart;
-import io.github.qwefgh90.handyfinder.springweb.websocket.CommandInvoker;
+import io.github.qwefgh90.handyfinder.springweb.websocket.MessageController;
 import io.github.qwefgh90.jsearch.JSearch;
+
 
 @Service
 public class RootService {
@@ -60,7 +60,7 @@ public class RootService {
 	private final static Logger LOG = LoggerFactory
 			.getLogger(RootService.class);
 	@Autowired
-	CommandInvoker invokerForCommand;
+	MessageController invokerForCommand;
 
 	@Autowired
 	MetaRespository indexProperty;
@@ -74,9 +74,6 @@ public class RootService {
 	@Autowired
 	BasicOption globalAppData;
 	
-	@Autowired
-	ActorRef indexActor;
-
 	/**
 	 * Get directories to be indexed.
 	 * 
@@ -84,18 +81,23 @@ public class RootService {
 	 * @throws SQLException
 	 */
 	public List<Directory> getDirectories() throws SQLException {
-		return indexProperty.selectDirectory();
+		return globalAppData.getDirectoryList();
 	}
 
 	/**
-	 * remove or add a directory
+	 * Remove or add a list of directories
 	 * @param list
 	 * @throws SQLException
 	 */
 	public void updateDirectories(List<Directory> list) throws SQLException {
-		if(getDirectories().size() != list.size())
-			indexActor.tell(new Restart(), null);
-		indexProperty.save(list);
+		if(getDirectories().size() != list.size()){
+			indexProperty.save(list);
+			CompletableFuture<Boolean> f = handler.restartIndexAsync(list);
+			f.exceptionally((exception) -> {
+				LOG.error("To update indexes failed " + ExceptionUtils.getStackTrace(exception));
+				return true;
+			});
+		}
 	}
 
 	/**
@@ -103,7 +105,7 @@ public class RootService {
 	 * @return
 	 */
 	public Map<String, String> getVersion(){
-		version.put("version", AppStartupConfig.versionOpt.orElse(""));
+		version.put("version", AppStartup.versionOpt.orElse(""));
 		return version;
 	}
 	private final Map<String, String> version = new HashMap<>(); 
@@ -201,9 +203,9 @@ public class RootService {
 		dto.setMaximumDocumentMBSize(globalAppData.getMaximumDocumentMBSize());
 		dto.setKeywordMode(globalAppData.getKeywordMode().name());
 		dto.setFirstStart(globalAppData.getDirectoryList().size() == 0 ? true : false);
-		//dto.setPathMode(globalAppData.getTargetMode());
 		dto.setPathTarget(globalAppData.getTargetMode().contains(TARGET_MODE.PATH));
 		dto.setContentTarget(globalAppData.getTargetMode().contains(TARGET_MODE.CONTENT));
+		dto.setDiskUseLimit(globalAppData.getDiskUseLimit());
 		return dto;
 	}
 
@@ -212,7 +214,8 @@ public class RootService {
 	 * @param option will be applied
 	 */
 	public void setOption(OptionDto dto) {
-		final boolean isSizeChange = dto.getMaximumDocumentMBSize() != globalAppData.getMaximumDocumentMBSize();
+		final boolean needUpdate = (dto.getMaximumDocumentMBSize() > globalAppData.getMaximumDocumentMBSize())
+				|| (dto.getDiskUseLimit() > globalAppData.getDiskUseLimit());
 		
 		if (dto.getLimitCountOfResult() > 0)
 			globalAppData.setLimitCountOfResult(dto.getLimitCountOfResult());
@@ -225,14 +228,21 @@ public class RootService {
 			targetMode.add(TARGET_MODE.PATH);
 		if(dto.isContentTarget())
 			targetMode.add(TARGET_MODE.CONTENT);
+		globalAppData.setDiskUseLimit(dto.getDiskUseLimit());
 		globalAppData.setTargetMode(targetMode);
 		globalAppData.writeAppDataToDisk();
 		
-		if(isSizeChange)
-			indexActor.tell(new Restart(), null);
+		if(needUpdate){
+			CompletableFuture<Boolean> f = handler.restartIndexAsync(globalAppData.getDirectoryList());
+			f.exceptionally((exception) -> {
+				LOG.error("To update indexes failed " + ExceptionUtils.getStackTrace(exception));
+				return true;
+			});
+		}
+			//indexActor.tell(new Restart(), null);
 	}
 
-	public void closeAppLucene() throws IOException {
+	public void closeLucene() throws IOException {
 		handler.close();
 	}
 
@@ -274,17 +284,6 @@ public class RootService {
 					dto.setModifiedTime(Files.getLastModifiedTime(path)
 							.toMillis());
 					dto.setFileSize(Files.size(path));
-					/*
-					 * try { getHightlightContent =
-					 * handler.highlight(docs.scoreDocs[i].doc, keyword);
-					 * functionList.add(getHightlightContent); } catch
-					 * (ParseException e) { LOG.warn(e.toString()); continue; }
-					 * catch (InvalidTokenOffsetsException e) {
-					 * LOG.warn(e.toString()); continue; } catch
-					 * (com.qwefgh90.io.jsearch.JSearch.ParseException e) {
-					 * LOG.warn(e.toString()); continue; } catch (IOException e)
-					 * { LOG.warn(e.toString()); continue; }
-					 */
 				} else {
 					dto.setExist(false);
 					dto.setModifiedTime(document.getField("lastModifiedTime")
@@ -300,23 +299,9 @@ public class RootService {
 				dto.setParentPathString(Paths.get(document.get("pathString"))
 						.getParent().toAbsolutePath().toString());
 				dto.setMimeType(document.get("mimeType"));
-				// docMap.put(dto.getPathString(), dto);
 				list.add(dto);
 			}
 
-			/*
-			 * try { List<Future<Optional<Map.Entry<String, String>>>>
-			 * futureList = executor.invokeAll(functionList);
-			 * futureList.parallelStream().forEach(future -> { try {
-			 * Optional<Map.Entry<String, String>> result = future.get();
-			 * if(!result.isPresent()){ return; } String pathString =
-			 * result.get().getKey(); String contents = result.get().getValue();
-			 * docMap.get(pathString).setContents(contents); } catch (Exception
-			 * e) { LOG.warn(e.toString()); }
-			 * 
-			 * }); } catch (InterruptedException e) { LOG.warn(e.toString()); }
-			 * executor.shutdown();
-			 */
 			return Optional.of(list);
 		} catch (QueryNodeException e) {
 			LOG.info(ExceptionUtils.getStackTrace(e));
@@ -380,7 +365,7 @@ public class RootService {
 				: null;
 		if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
 			try {
-				desktop.browse(URI.create(url.orElse(AppStartupConfig.homeUrl)));
+				desktop.browse(URI.create(url.orElse(AppStartup.homeUrl)));
 			} catch (Exception e) {
 				LOG.warn(e.toString());
 			}

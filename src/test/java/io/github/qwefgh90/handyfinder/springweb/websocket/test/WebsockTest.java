@@ -10,10 +10,16 @@ import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.management.RuntimeErrorException;
 import javax.servlet.ServletException;
 
 import org.apache.catalina.LifecycleException;
@@ -45,13 +51,14 @@ import org.springframework.web.socket.sockjs.client.Transport;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 import javafx.application.Platform;
-import io.github.qwefgh90.handyfinder.gui.AppStartupConfig;
+import io.github.qwefgh90.handyfinder.gui.AppStartup;
+import io.github.qwefgh90.handyfinder.gui.GUIApplication;
 import io.github.qwefgh90.handyfinder.lucene.MimeOption;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.repository.MetaRespository;
 import io.github.qwefgh90.handyfinder.springweb.service.RootService;
-import io.github.qwefgh90.handyfinder.springweb.websocket.ProgressCommand;
-import io.github.qwefgh90.handyfinder.springweb.websocket.ProgressCommand.STATE;
+import io.github.qwefgh90.handyfinder.springweb.websocket.ProgressMessage;
+import io.github.qwefgh90.handyfinder.springweb.websocket.ProgressMessage.STATE;
 
 public class WebsockTest {
 	private final static Logger LOG = LoggerFactory
@@ -61,29 +68,28 @@ public class WebsockTest {
 	MetaRespository metaRepo;
 	MimeOption xmlObject;
 	List<Directory> list = new ArrayList<>();
-	static Thread th;
+	
 	@BeforeClass
-	public static void before() {
-		th = new Thread(() -> {
+	public static void before() throws InterruptedException, ExecutionException, TimeoutException {
+		new Thread(()->{
 			try {
-				AppStartupConfig.main(new String[] { "--no-gui" });
+				AppStartup.main(new String[] { "--no-gui" });
 			} catch (Exception e) {
-
+				throw new RuntimeException(e);
 			}
-		});
-		th.start();
+		}).start();
+		
+		GUIApplication.getSingleton().join();
+		LOG.info("WebApp is initialized.");
 	}
 
 	@Before
 	public void setup() throws LifecycleException, ServletException,
 			IOException, URISyntaxException, SQLException, ParseException,
-			InterruptedException {
-		Thread.sleep(5000);
-		AppStartupConfig.getGuiApp().getWebAppThread().awaitTermination(20,
-				TimeUnit.SECONDS);
-		rootService = AppStartupConfig.getBean(RootService.class);
-		metaRepo = AppStartupConfig.getBean(MetaRespository.class);
-		xmlObject = AppStartupConfig.getBean(MimeOption.class);
+			InterruptedException, ExecutionException, TimeoutException {
+		rootService = AppStartup.getBean(RootService.class);
+		metaRepo = AppStartup.getBean(MetaRespository.class);
+		xmlObject = AppStartup.getBean(MimeOption.class);
 		xmlObject.initGlobTrue();
 		Directory dir = new Directory();
 		dir.setRecursively(true);
@@ -97,9 +103,9 @@ public class WebsockTest {
 
 	@After
 	public void clean() throws Exception {
-		rootService.closeAppLucene();
+		rootService.closeLucene();
 		metaRepo.deleteDirectories();
-		AppStartupConfig.terminateProgram();
+		AppStartup.terminateProgram();
 		// DON'T TERMINATE. "MVN TEST" IS FAILED IN UBUNTU. AFTER TOMCAT CLOSE,
 		// WHEN EXECUTE RESOURCE CODE,
 		// THROW
@@ -132,9 +138,9 @@ public class WebsockTest {
 		stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 		stompClient.setTaskScheduler(taskScheduler);
 		stompClient.setDefaultHeartbeat(new long[] { 0, 0 });
-		stompClient.connect("ws://" + AppStartupConfig.address + ":"
-				+ AppStartupConfig.port + "/endpoint", headers, handler,
-				AppStartupConfig.port);
+		stompClient.connect("ws://" + AppStartup.address + ":"
+				+ AppStartup.port + "/endpoint", headers, handler,
+				AppStartup.port);
 
 		if (failure.get() != null) {
 			throw new AssertionError("", failure.get());
@@ -172,12 +178,12 @@ public class WebsockTest {
 			session.subscribe("/index/progress", new StompFrameHandler() {
 				@Override
 				public Type getPayloadType(StompHeaders headers) {
-					return ProgressCommand.class;
+					return ProgressMessage.class;
 				}
 
 				@Override
 				public void handleFrame(StompHeaders headers, Object payload) {
-					ProgressCommand json = (ProgressCommand) payload;
+					ProgressMessage json = (ProgressMessage) payload;
 					LOG.info("Got " + ToStringBuilder.reflectionToString(json));
 					if (json.getState() == STATE.PROGRESS.TERMINATE) {
 

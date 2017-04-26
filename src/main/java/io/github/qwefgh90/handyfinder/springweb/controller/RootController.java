@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.google.gson.JsonObject;
 
+import io.github.qwefgh90.handyfinder.gui.AppStartup;
 import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.springweb.model.Command;
 import io.github.qwefgh90.handyfinder.springweb.model.DocumentDto;
@@ -128,6 +129,19 @@ public class RootController {
 		} catch (IOException e) {
 			LOG.warn(ExceptionUtils.getStackTrace(e));
 			return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@RequestMapping(value = "/auth", method = RequestMethod.POST)
+	public ResponseEntity<String> auth(@RequestBody Map<String,String> info) {
+		String key = info.getOrDefault("key", null);
+		if(key == null){
+			return new ResponseEntity<String>(HttpStatus.UNAUTHORIZED);
+		}else{
+			if(AppStartup.secretKey.equals(key))
+				return new ResponseEntity<String>(HttpStatus.OK);
+			else
+				return new ResponseEntity<String>(HttpStatus.UNAUTHORIZED);
 		}
 	}
 
