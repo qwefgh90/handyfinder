@@ -3,9 +3,9 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.qwefgh90</groupId>
 	<artifactId>handyfinder</artifactId>
-	<version>0.104</version>
+	<version>0.105</version>
 	<properties>
-		<project.version>0.104</project.version>
+		<project.version>0.105</project.version>
 		<project.artifactId>jsearch</project.artifactId>
 		<project.source.encoding>UTF-8</project.source.encoding>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -195,9 +195,9 @@
 					<needShortcut>true</needShortcut>
 					<needMenu>true</needMenu>
 					<verbose>true</verbose>
-					<nativeReleaseVersion>0.104</nativeReleaseVersion>
+					<nativeReleaseVersion>0.105</nativeReleaseVersion>
 					<bundleArguments>
-						<identifier>0.104</identifier>
+						<identifier>0.105</identifier>
 						<installdirChooser>true</installdirChooser>
 						<licenseFile>LICENSE</licenseFile>
 					</bundleArguments>
