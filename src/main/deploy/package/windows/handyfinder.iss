@@ -4,8 +4,8 @@
 SignTool=signtool
 AppId=Handyfinder
 AppName=handyfinder
-AppVersion=0.104
-AppVerName=handyfinder 0.104
+AppVersion=0.105
+AppVerName=handyfinder 0.105
 AppPublisher=Handyfinder
 AppComments=handyfinder
 AppCopyright=Copyright (C) 2016
