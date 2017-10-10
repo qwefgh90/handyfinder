@@ -116,7 +116,13 @@ public class FunctionalLatch {
 		final CountDownLatch latch = new CountDownLatch(1);
 		final Locker loc = new Locker(Optional.of(f), Optional.of(interval), Optional.of(latch));
 		lockerList.add(loc);
-		latch.await(timeout, unit);
+		try {
+			latch.await(timeout, unit);
+		}finally {
+			synchronized(lockerList){
+				lockerList.remove(loc);			
+			}
+		}
 	}
 
 	/**

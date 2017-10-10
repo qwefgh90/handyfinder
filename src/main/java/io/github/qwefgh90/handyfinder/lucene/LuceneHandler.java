@@ -10,6 +10,7 @@ import io.github.qwefgh90.handyfinder.lucene.model.Directory;
 import io.github.qwefgh90.handyfinder.memory.monitor.FunctionalLatch;
 import io.github.qwefgh90.handyfinder.springweb.websocket.MessageController;
 import io.github.qwefgh90.jsearch.JSearch;
+import scala.Option;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,6 +43,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -117,6 +120,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	final private int maxGramSize = 8;
 	final private long multiplyForNGram;
 	final FunctionalLatch latch = new FunctionalLatch();
+	private final ReentrantLock lock = new ReentrantLock();
 	final LuceneHandlerState state = LuceneHandlerState.self;
 	final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
 	final ExecutorService mainExecutor = Executors.newCachedThreadPool();
@@ -292,46 +296,60 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		totalProcess.set(sizeOfindexDirectories(list));
 		invokerForCommand.startProgress(totalProcess.get());
 		
-		LOG.info("First try");
-		final List<CompletableFuture<IndexResult>> listOfFutureToBeIndexed = indexDirectoriesAsync(list);	//First try
-		final CompletableFuture<Integer> futureOfAllTry = CompletableFuture.allOf(listOfFutureToBeIndexed.toArray(new CompletableFuture[listOfFutureToBeIndexed.size()]))
+		LOG.debug("First try");
+
+
+		final List<CompletableFuture<IndexResult>> completableList = indexDirectoriesAsync(list);
+		final Supplier<Stream<CompletableFuture<IndexResult>>> listOfFutureToBeIndexedSup = () -> 
+			completableList
+			.stream()
+			.map(f -> f.exceptionally(t -> IndexResult.EXCEPTION(Optional.of(ExceptionUtils.getStackTrace(t)), Optional.empty())));
+
+		final CompletableFuture<Integer> futureOfAllTry = CompletableFuture.allOf(listOfFutureToBeIndexedSup.get().toArray(size -> new CompletableFuture[size])) 
 				.thenComposeAsync((result) -> {
-					return CompletableFuture.supplyAsync(() ->{	//Second try
-						//Get a result from futures
-						final List<IndexResult> listOfFirstTry = listOfFutureToBeIndexed.stream()
-								.map((CompletableFuture<IndexResult> future) -> {try {
-									return future.get();
-								} catch (InterruptedException e) {
-									throw new IllegalStateException(e);
-								} catch (ExecutionException e) {
-									throw new IllegalStateException("A stream is failed. " + ExceptionUtils.getStackTrace(e));
-								}}).collect(Collectors.toList());
-						final long firstSuccessCount = listOfFirstTry.stream().filter((IndexResult _result) -> {
-							return _result.code == IndexResult.IndexResultCode.SUCCESS;}).count();
+					return CompletableFuture.supplyAsync(() ->
+					{	//Second try
+						final Supplier<Stream<IndexResult>> listOfFirstTrySup = () -> listOfFutureToBeIndexedSup.get()
+								.map((CompletableFuture<IndexResult> future) -> {
+									try {
+										return future.get();
+									} catch (InterruptedException e1) {
+										return IndexResult.EXCEPTION(Optional.of(ExceptionUtils.getStackTrace(e1)), Optional.empty());
+									} catch (ExecutionException e1) {
+										return IndexResult.EXCEPTION(Optional.of(ExceptionUtils.getStackTrace(e1)), Optional.empty());
+									}
+								});
+						final long firstSuccessCount = listOfFirstTrySup.get()
+								.filter((IndexResult _result) -> {
+									return _result.code == IndexResult.IndexResultCode.SUCCESS;})
+								.count();
 						
 						//Print a log
-						LOG.info("First try to index is completed. " + firstSuccessCount + " / " + listOfFirstTry.size());
+						LOG.info("First try to index is completed. " + firstSuccessCount + " / " + listOfFirstTrySup.get().count());
 
 						//Get failed documents
-						final Stream<Path> failedDocumentsStream = listOfFirstTry.stream()
-								.filter((IndexResult _result) -> { return _result.code == IndexResult.IndexResultCode.EXCEPTION;})
-								.map((IndexResult mapParam) -> { return mapParam.path.get(); });
+						final Stream<Path> failedDocumentsStream = listOfFirstTrySup.get()
+								.filter((IndexResult _result) -> (_result.code == IndexResult.IndexResultCode.EXCEPTION) && _result.path.isPresent())
+								.map((IndexResult pathResult) -> { return pathResult.path.get(); });
 
-						LOG.info("Second try");
+						LOG.debug("Second try");
 						//Try it
-						final List<CompletableFuture<IndexResult>> futureForSecondTry = indexFailedDocumentsAsync(failedDocumentsStream);
+						final List<CompletableFuture<IndexResult>> futureForSecondTryList = indexFailedDocumentsAsync(failedDocumentsStream);
+						final Supplier<Stream<CompletableFuture<IndexResult>>> futureForSecondTrySup = () -> futureForSecondTryList
+								.stream()
+								.map(f -> f.exceptionally(t -> IndexResult.EXCEPTION(Optional.of(ExceptionUtils.getStackTrace(t)), Optional.empty())));
 						try {
 							//Await computing
-							CompletableFuture.allOf(futureForSecondTry.toArray(new CompletableFuture[futureForSecondTry.size()])).get();
+							CompletableFuture.allOf(futureForSecondTrySup.get().toArray(size -> new CompletableFuture[size])).get();
 
 							//Get a result from futures
-							final List<IndexResult> listOfSecondTry = futureForSecondTry.stream()
+							final List<IndexResult> listOfSecondTry = futureForSecondTrySup.get()
 									.map((CompletableFuture<IndexResult> future) -> {try {
 										return future.get();
 									} catch (InterruptedException e) {
-										throw new IllegalStateException(e);
+										return IndexResult.EXCEPTION(Optional.of(ExceptionUtils.getStackTrace(e)), Optional.empty());
 									} catch (ExecutionException e) {
-										throw new IllegalStateException("A stream is failed. " + ExceptionUtils.getStackTrace(e));
+										return IndexResult.EXCEPTION(Optional.of(ExceptionUtils.getStackTrace(e)), Optional.empty());
 									}}).collect(Collectors.toList());
 
 							final long secondSuccessCount = listOfSecondTry.stream().filter((IndexResult _result) -> {
@@ -340,7 +358,6 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 							//Print a log
 							LOG.info("Second try to index is completed. "  + secondSuccessCount + " / " + listOfSecondTry.size());
 							compactAndCleanIndex();
-							invokerForCommand.terminateProgress(totalProcess.get());
 							return (int)(firstSuccessCount + secondSuccessCount);						
 						} catch (InterruptedException | ExecutionException e) {
 							LOG.warn(ExceptionUtils.getStackTrace(e));
@@ -352,6 +369,13 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 
 					});
 				});
+		futureOfAllTry.whenComplete((i, t) ->{
+			if(t != null)
+				LOG.error("The Indexing task failed.", t);
+			else
+				LOG.info("The indexing task is finished successfully.");
+			invokerForCommand.terminateProgress(totalProcess.get());
+		});
 		return futureOfAllTry;
 	}
 	
@@ -804,10 +828,11 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 			if (!isDiskAvailable()) {
 				return Optional.of(futureList);
 			}
+			/*
 			List<CompletableFuture<IndexResult>> someFutureList = pathList.stream()
 					.map(_path -> CompletableFuture.supplyAsync(() -> indexFile(_path), indexExecutor))
-					.collect(Collectors.toList());
-			futureList.addAll(someFutureList);
+					.collect(Collectors.toList());*/
+			//futureList.addAll(someFutureList);
 			return Optional.of(futureList);
 		}
 		return Optional.empty();
@@ -830,9 +855,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 				return IndexResult.SUCCESS;
 			}
 		} catch (Exception e) {
-			//failedPathSet.add(file);
-			LOG.warn("later, we will index again : " + file.toString());
-			LOG.warn(ExceptionUtils.getStackTrace(e));
+			LOG.warn("later, we will index again : " + file.toString(), e);
 			return IndexResult.EXCEPTION(Optional.empty(), Optional.of(file));
 		}
 	}
@@ -842,8 +865,9 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	 * 
 	 * @param path
 	 * @throws IOException
+	 * @throws InterruptedException 
 	 */
-	boolean index(final Path path) throws IOException {
+	boolean index(final Path path) throws IOException, InterruptedException {
 		final MediaType mimeType = JSearch.getContentType(path.toFile(), path
 				.getFileName().toString());
 		
@@ -870,94 +894,42 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 		final Field pathStringField = new StringField("pathString", path.toAbsolutePath().toString(), Store.YES);
 		final Field pathStringForQueryField = new Field("pathStringForQuery", path.toAbsolutePath().toString(), typeWithStore);
 
-		final Field contentsField = new Field("contents", extractContentsFromFile(path.toFile()), type);
+		lock.lock();
 
-		final Document doc = new Document();
-		doc.add(mimeTypeString);
-		doc.add(title);
-		doc.add(createdTimeField);
-		doc.add(lastModifiedTimeField);
-		doc.add(pathStringField);
-		doc.add(pathStringForQueryField);
-		doc.add(contentsField);
-		
-		final long maxHeapSize = Runtime.getRuntime().maxMemory();					
-		final long currentHeap = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory(); 
-		if((maxHeapSize) < (currentHeap + (Files.size(path) * multiplyForNGram))){	//if over size of max heap
-			LOG.debug("Waiting. System hasn't enough memory space for running index");
-			try {
-				latch.await(() -> {
-					try {
-						final long _currentHeap = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory(); 
-						if((maxHeapSize) > (_currentHeap + (Files.size(path) * multiplyForNGram))){
-							return true;	//have enough memory space
-						}else {
-							LOG.debug("A job is waiting for realease");
-							return false;	//no have enough memory space
-						}
-					} catch (IOException e) {
-						LOG.warn("Exception in functional latch\n" + ExceptionUtils.getStackTrace(e));
-						return true;
-					}
-				}, 1, 10, TimeUnit.SECONDS);
-				LOG.debug("go thread");
-			} catch (InterruptedException e) {
-				LOG.warn(ExceptionUtils.getStackTrace(e));
-			}
-		}
-
-		LOG.debug("\n before update Document\n* Memory check - \n* limit : " +(maxHeapSize) + " / size : " + (currentHeap + (Files.size(path) * multiplyForNGram) 
-				+ "\n* Ram buffer for index : " + indexConfig.getRAMBufferSizeMB() + "," + indexConfig.getMaxBufferedDeleteTerms() + "," + indexConfig.getMaxBufferedDocs()
-				));
-		
-		if(state.isStopping())
-			return false;
-		
-		checkAndRecoverIndexWriter();
-		// WARNING) This is high memory cost operation
-		writer.updateDocument(new Term("pathString", path.toAbsolutePath().toString()), doc);
-		writer.commit(); // commit() is important for real-time search
-		LOG.info("Indexed : " + path);
-		return true;
-	}
-	
-	/*
-	private final Consumer<List<Path>> parallelIndex = (pathList) -> {
-		final ExecutorService threads = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-		pathList.forEach((file) -> {
-			threads.submit(new Runnable(){
-				@Override
-				public void run() {
-					if (isStopping()) {
-						return;
-					}
-					if (!isDiskAvailable()) {
-						return;
-					}
-					try {
-						if(!index(file)){
-							LOG.warn("some changes in operation : " + file.toString());
-						}else{
-							currentProgress.incrementAndGet();
-							invokerForCommand.updateProgress(currentProgress.get(), file, totalProcess.get()); // STATE
-						}
-					} catch (Exception e) {
-						failedPathSet.add(file);
-						LOG.warn("later, we will index again : " + file.toString());
-						LOG.warn(ExceptionUtils.getStackTrace(e));
-					}
-				}
-			});
-		});
-		threads.shutdown();
 		try {
-			threads.awaitTermination(24, TimeUnit.HOURS);
-		} catch (InterruptedException e) {
-			threads.shutdownNow();
-			LOG.error(ExceptionUtils.getStackTrace(e));
+			final Field contentsField = new Field("contents", extractContentsFromFile(path.toFile()), type);
+
+			final Document doc = new Document();
+			doc.add(mimeTypeString);
+			doc.add(title);
+			doc.add(createdTimeField);
+			doc.add(lastModifiedTimeField);
+			doc.add(pathStringField);
+			doc.add(pathStringForQueryField);
+			doc.add(contentsField);
+			final long maxHeapSize = Runtime.getRuntime().maxMemory();					
+			long currentHeap = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory(); 
+
+			if(state.isStopping())
+				return false;
+
+			checkAndRecoverIndexWriter();
+
+			currentHeap = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory(); 
+			LOG.debug("\n before update Document\n* Memory check - \n* limit : " +(maxHeapSize)  + " / current size : " + currentHeap + " / size : " + (currentHeap + (Files.size(path) * multiplyForNGram) 
+					+ "\n* Ram buffer for index : " + indexConfig.getRAMBufferSizeMB() + "," + indexConfig.getMaxBufferedDeleteTerms() + "," + indexConfig.getMaxBufferedDocs()
+					));
+
+			// WARNING) This is high memory cost operation
+			writer.updateDocument(new Term("pathString", path.toAbsolutePath().toString()), doc);
+			writer.commit(); // commit() is important for real-time search
+
+			LOG.info("Indexed : " + path);
+			return true;
+		}finally {
+			lock.unlock();
 		}
-	};
-	*/
+	}
 	
 	/**
 	 * check if indexed. function time test : 1000 of indexed documents consume
@@ -1152,6 +1124,7 @@ public final class LuceneHandler implements Cloneable, AutoCloseable {
 	}
 	
 	void compactAndCleanIndex() throws IOException{
+		checkAndRecoverIndexWriter();
 		writer.forceMergeDeletes();
 		writer.deleteUnusedFiles();
 		writer.commit();
