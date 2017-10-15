@@ -41,10 +41,8 @@ Branches
 
 ## Signing
 
-* **windows.**
-- `signtool.exe sign /f e:\opensource.p12 /p xx /t http://timestamp.comodoca.com/authenticode $f`
-* **mac os.**
-- `codesign -s "Open Source Developer, Changwon Ch" --deep handyfinder.app`
+- windows: `signtool.exe sign /f e:\opensource.p12 /p xx /t http://timestamp.comodoca.com/authenticode $f`
+- mac os: `codesign -s "Open Source Developer, Changwon Ch" --deep handyfinder.app`
 
 
 # Contribution
