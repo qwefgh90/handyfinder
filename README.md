@@ -35,10 +35,17 @@ Branches
 - JSearch is used for body text of document which tika supports
 
 # Run & Test
-
 - When you want to contribute, use STS
 - When you want to test, type "mvn clean test"
 - When you want to make native binary, type "mvn jfx:native" (for windows, download Inno from http://www.jrsoftware.org/)
+
+## Signing
+
+* **windows.**
+- `signtool.exe sign /f e:\opensource.p12 /p xx /t http://timestamp.comodoca.com/authenticode $f`
+* **mac os.**
+- `codesign -s "Open Source Developer, Changwon Ch" --deep handyfinder.app`
+
 
 # Contribution
 
